@@ -30,6 +30,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("http get: %v", myerr)
 		http.Error(w, myerr.Error(), 500)
+		return
 	}
 
 	facts, err := io.ReadAll(res.Body)
@@ -39,8 +40,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("io readall: %v", myerr)
 		http.Error(w, myerr.Error(), 500)
+		return
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		log.Printf("invalid response: %v, status code: %d", string(facts), res.StatusCode)
+		http.Error(w, string(facts), res.StatusCode)
+		return
+	}
 
 	fmt.Fprint(w, string(facts))
 }
