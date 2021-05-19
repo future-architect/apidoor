@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -28,7 +29,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		myerr := MyError{
 			Message: err.Error(),
 		}
-		log.Printf("http get: %v", myerr)
+
+		s, err := json.Marshal(myerr)
+		if err != nil {
+			log.Printf("unexpected error message: %v", err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		log.Printf("http get: %v", string(s))
 		http.Error(w, myerr.Error(), 500)
 		return
 	}
@@ -38,7 +47,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		myerr := MyError{
 			Message: err.Error(),
 		}
-		log.Printf("io readall: %v", myerr)
+
+		s, err := json.Marshal(myerr)
+		if err != nil {
+			log.Printf("unexpected error message: %v", err)
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		log.Printf("io readall: %v", string(s))
 		http.Error(w, myerr.Error(), 500)
 		return
 	}
