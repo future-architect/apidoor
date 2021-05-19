@@ -28,12 +28,13 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		myerr := MyError{
 			Message: err.Error(),
 		}
-		log.Fatal(myerr)
+		log.Printf("http get: %v", myerr)
+		http.Error(w, myerr.Error(), 500)
 	}
 
 	facts, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("io readall: %v", err)
 	}
 	defer res.Body.Close()
 
