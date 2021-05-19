@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -14,12 +15,27 @@ type MyError struct {
 	Message string `json:"message"`
 }
 
+type OuterUrlData struct {
+	Url []string `json:"url"`
+}
+
 func (err *MyError) Error() string {
 	return fmt.Sprintf("error: %s", err.Message)
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	url := "https://cat-fact.herokuapp.com"
+	file, err := os.ReadFile("./urlData.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var data OuterUrlData
+	err = json.Unmarshal(file, &data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	url := data.Url[0]
 	endpoint := "/facts/random"
 	animal := "cat"
 	amount := 2
