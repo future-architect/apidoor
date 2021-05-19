@@ -42,7 +42,20 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	animal := "cat"
 	amount := 2
 
-	res, err := http.Get(url + endpoint + "?animal_type=" + animal + "&amount=" + fmt.Sprint(amount))
+	req, err := http.NewRequest("GET", url+endpoint+"?animal_type="+animal+"&amount="+fmt.Sprint(amount), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+	req.Header.Set("Authorization", "testtoken")
+
+	if req.Header.Get("Authorization") == "" {
+		log.Print("unauthorized request")
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	client := new(http.Client)
+	res, err := client.Do(req)
 	if err != nil {
 		myerr := MyError{
 			Message: err.Error(),
