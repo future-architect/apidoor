@@ -23,6 +23,8 @@ func (err *MyError) Error() string {
 	return fmt.Sprintf("error: %s", err.Message)
 }
 
+var count int = 0
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	file, err := os.ReadFile("./urlData.json")
 	if err != nil {
@@ -83,6 +85,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	count++
+	log.Printf("called: %d times", count)
 	fmt.Fprint(w, string(facts))
 }
 
