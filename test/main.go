@@ -30,7 +30,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	var data OuterUrlData
 	err = json.Unmarshal(file, &data)
 	if err != nil {
@@ -41,6 +40,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	endpoint := "/facts/random"
 	animal := "cat"
 	amount := 2
+
+	r.Header.Set("Authorization", "testtoken")
+
+	if r.Header.Get("Authorization") == "" {
+		log.Print("unauthorized request")
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
 
 	res, err := http.Get(url + endpoint + "?animal_type=" + animal + "&amount=" + fmt.Sprint(amount))
 	if err != nil {
