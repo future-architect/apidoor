@@ -9,6 +9,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type MyError struct {
+	Message string `json:"message"`
+}
+
+func (err *MyError) Error() string {
+	return fmt.Sprintf("error: %s", err.Message)
+}
+
 func handler(w http.ResponseWriter, r *http.Request) {
 	url := "https://cat-fact.herokuapp.com"
 	endpoint := "/facts/random"
@@ -17,14 +25,17 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := http.Get(url + endpoint + "?animal_type=" + animal + "&amount=" + fmt.Sprint(amount))
 	if err != nil {
-		log.Fatal(err)
+		myerr := MyError{
+			Message: err.Error(),
+		}
+		log.Fatal(myerr)
 	}
 
 	facts, err := io.ReadAll(res.Body)
-	res.Body.Close()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer res.Body.Close()
 
 	fmt.Fprint(w, string(facts))
 }
