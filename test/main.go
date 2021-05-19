@@ -30,7 +30,6 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	var data OuterUrlData
 	err = json.Unmarshal(file, &data)
 	if err != nil {
@@ -42,20 +41,15 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	animal := "cat"
 	amount := 2
 
-	req, err := http.NewRequest("GET", url+endpoint+"?animal_type="+animal+"&amount="+fmt.Sprint(amount), nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	req.Header.Set("Authorization", "testtoken")
+	r.Header.Set("Authorization", "testtoken")
 
-	if req.Header.Get("Authorization") == "" {
+	if r.Header.Get("Authorization") == "" {
 		log.Print("unauthorized request")
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
-	client := new(http.Client)
-	res, err := client.Do(req)
+	res, err := http.Get(url + endpoint + "?animal_type=" + animal + "&amount=" + fmt.Sprint(amount))
 	if err != nil {
 		myerr := MyError{
 			Message: err.Error(),
