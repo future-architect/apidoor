@@ -34,7 +34,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	facts, err := io.ReadAll(res.Body)
 	if err != nil {
-		log.Printf("io readall: %v", err)
+		myerr := MyError{
+			Message: err.Error(),
+		}
+		log.Printf("io readall: %v", myerr)
+		http.Error(w, myerr.Error(), 500)
 	}
 	defer res.Body.Close()
 
