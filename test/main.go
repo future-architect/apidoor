@@ -36,20 +36,27 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	url := data.Url[0]
-	endpoint := "/facts/random"
-	animal := "cat"
-	amount := 2
+	r.Header.Set("Content-Type", "application/json")
+	if r.Header.Get("Content-Type") != "application/json" {
+		log.Print("unexpected request content")
+		http.Error(w, "unexpected request content", http.StatusPreconditionFailed)
+		return
+	}
 
 	r.Header.Set("Authorization", "testtoken")
-
 	if r.Header.Get("Authorization") == "" {
 		log.Print("unauthorized request")
 		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
-	res, err := http.Get(url + endpoint + "?animal_type=" + animal + "&amount=" + fmt.Sprint(amount))
+	url := data.Url[0]
+	endpoint := "/facts/"
+	path := chi.URLParam(r, "path")
+	animal := r.URL.Query().Get("animal")
+	amount := r.URL.Query().Get("amount")
+
+	res, err := http.Get(url + endpoint + path + "?animal_type=" + animal + "&amount=" + amount)
 	if err != nil {
 		myerr := MyError{
 			Message: err.Error(),
@@ -99,7 +106,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	r := chi.NewRouter()
-	r.Route("/", func(r chi.Router) {
+	r.Route("/{path}", func(r chi.Router) {
 		r.Get("/", handler)
 		// r.Put("/", putHandler)
 		// r.Delete("/", deleteHandler)
