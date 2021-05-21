@@ -99,6 +99,11 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	r := chi.NewRouter()
-	r.Get("/", handler)
+	r.Route("/", func(r chi.Router) {
+		r.Get("/", handler)
+		// r.Put("/", putHandler)
+		// r.Delete("/", deleteHandler)
+		// r.Post("/", postHandler)
+	})
 	http.ListenAndServe(":3000", r)
 }
