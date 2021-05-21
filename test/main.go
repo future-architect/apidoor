@@ -93,9 +93,14 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer res.Body.Close()
 
-	if res.StatusCode != 200 {
-		log.Printf("invalid response: %v, status code: %d", string(facts), res.StatusCode)
-		http.Error(w, string(facts), res.StatusCode)
+	switch code := res.StatusCode; {
+	case 400 <= code && code <= 499:
+		log.Printf("client error: %v, status code: %d", string(facts), code)
+		http.Error(w, string(facts), code)
+		return
+	case 500 <= code && code <= 599:
+		log.Printf("server error: %v, status code: %d", string(facts), code)
+		http.Error(w, string(facts), code)
 		return
 	}
 
