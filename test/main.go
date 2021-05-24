@@ -28,6 +28,15 @@ func (err *MyError) Error() string {
 	return fmt.Sprintf("error: %s", err.Message)
 }
 
+func contains(list []int, a int) bool {
+	for _, v := range list {
+		if v == a {
+			return true
+		}
+	}
+	return false
+}
+
 var count int = 0
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -36,8 +45,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var urldata OuterUrlData
-	err = json.Unmarshal(urlfile, &urldata)
-	if err != nil {
+	if err = json.Unmarshal(urlfile, &urldata); err != nil {
 		log.Fatal(err)
 	}
 
@@ -46,8 +54,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	var keydata OuterKeyData
-	err = json.Unmarshal(keyfile, &keydata)
-	if err != nil {
+	if err = json.Unmarshal(keyfile, &keydata); err != nil {
 		log.Fatal(err)
 	}
 
@@ -84,14 +91,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !func() bool {
-		for _, v := range apilist {
-			if v == apinum {
-				return true
-			}
-		}
-		return false
-	}() {
+	if !contains(apilist, apinum) {
 		log.Print("unauthorized API request")
 		http.Error(w, "unauthorized API request", http.StatusForbidden)
 		return
