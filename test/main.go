@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -19,6 +20,10 @@ type OuterUrlData struct {
 	Url []string `json:"url"`
 }
 
+type OuterKeyData struct {
+	Keys map[string][]int `json:"keys"`
+}
+
 func (err *MyError) Error() string {
 	return fmt.Sprintf("error: %s", err.Message)
 }
@@ -26,12 +31,22 @@ func (err *MyError) Error() string {
 var count int = 0
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	file, err := os.ReadFile("./urlData.json")
+	urlfile, err := os.ReadFile("./urlData.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	var data OuterUrlData
-	err = json.Unmarshal(file, &data)
+	var urldata OuterUrlData
+	err = json.Unmarshal(urlfile, &urldata)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	keyfile, err := os.ReadFile("./keyData.json")
+	if err != nil {
+		log.Fatal(err)
+	}
+	var keydata OuterKeyData
+	err = json.Unmarshal(keyfile, &keydata)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -50,11 +65,38 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := data.Url[0]
+	apikey := r.URL.Query().Get("apikey")
+	apilist, ok := keydata.Keys[apikey]
+	if !ok {
+		log.Print("api key doesn't exist")
+		http.Error(w, "invalid API key", http.StatusForbidden)
+		return
+	}
+
 	endpoint := "/facts/"
 	path := chi.URLParam(r, "path")
 	animal := r.URL.Query().Get("animal")
 	amount := r.URL.Query().Get("amount")
+	apinum, err := strconv.Atoi(r.URL.Query().Get("apinum"))
+	if err != nil {
+		log.Print("invalid API number")
+		http.Error(w, "invalid API number", http.StatusBadRequest)
+		return
+	}
+
+	if !func() bool {
+		for _, v := range apilist {
+			if v == apinum {
+				return true
+			}
+		}
+		return false
+	}() {
+		log.Print("unauthorized API request")
+		http.Error(w, "unauthorized API request", http.StatusForbidden)
+		return
+	}
+	url := urldata.Url[apinum]
 
 	res, err := http.Get(url + endpoint + path + "?animal_type=" + animal + "&amount=" + amount)
 	if err != nil {
