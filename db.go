@@ -6,8 +6,8 @@ import (
 	"os"
 )
 
-var urldata OuterUrlData
-var keydata OuterKeyData
+var Urldata OuterUrlData
+var Keydata OuterKeyData
 
 func contains(list []int, a int) bool {
 	for _, v := range list {
@@ -18,43 +18,33 @@ func contains(list []int, a int) bool {
 	return false
 }
 
-func GetAPINum(url string) (int, error) {
-	for i, v := range urldata.Url {
-		if v == url {
-			return i, nil
-		}
-	}
-
-	return -1, &MyError{Message: "API not found"}
-}
-
-func RequestChecker(num int, key string) error {
-	apilist, ok := keydata.Keys[key]
+func GetAPIURL(num int, key string) (string, error) {
+	apilist, ok := Keydata.Keys[key]
 	if !ok {
-		return &MyError{Message: "invalid key"}
+		return "", &MyError{Message: "invalid key"}
 	}
 
-	if contains(apilist, num) {
-		return nil
+	if !contains(apilist, num) {
+		return "", &MyError{Message: "unauthorized request"}
 	}
 
-	return &MyError{Message: "unauthorized request"}
+	return Urldata.Url[num], nil
 }
 
 func init() {
-	urlfile, err := os.ReadFile("../../urlData.json")
+	urlfile, err := os.ReadFile(os.Getenv("GOPATH") + "/src/apidoor/urlData.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err = json.Unmarshal(urlfile, &urldata); err != nil {
+	if err = json.Unmarshal(urlfile, &Urldata); err != nil {
 		log.Fatal(err)
 	}
 
-	keyfile, err := os.ReadFile("../../keyData.json")
+	keyfile, err := os.ReadFile(os.Getenv("GOPATH") + "/src/apidoor/keyData.json")
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err = json.Unmarshal(keyfile, &keydata); err != nil {
+	if err = json.Unmarshal(keyfile, &Keydata); err != nil {
 		log.Fatal(err)
 	}
 }

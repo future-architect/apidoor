@@ -5,8 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/go-chi/chi/v5"
+	"strconv"
 )
 
 var count int = 0
@@ -26,35 +25,29 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := "https://cat-fact.herokuapp.com"
 	apikey := r.URL.Query().Get("apikey")
-
-	apinum, err := GetAPINum(url)
+	num, err := strconv.Atoi(r.URL.Query().Get("num"))
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if err := RequestChecker(apinum, apikey); err != nil {
+	url, err := GetAPIURL(num, apikey)
+	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, err.Error(), http.StatusForbidden)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	endpoint := "/facts/"
-	path := chi.URLParam(r, "path")
-	animal := r.URL.Query().Get("animal")
-	amount := r.URL.Query().Get("amount")
-
-	res, err := http.Get(url + endpoint + path + "?animal_type=" + animal + "&amount=" + amount)
+	res, err := http.Get(url)
 	if err != nil {
 		log.Printf("error in http get: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	facts, err := io.ReadAll(res.Body)
+	contents, err := io.ReadAll(res.Body)
 	if err != nil {
 		log.Printf("error in io.ReadAll: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,16 +57,16 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	switch code := res.StatusCode; {
 	case 400 <= code && code <= 499:
-		log.Printf("client error: %v, status code: %d", string(facts), code)
-		http.Error(w, string(facts), code)
+		log.Printf("client error: %v, status code: %d", string(contents), code)
+		http.Error(w, string(contents), code)
 		return
 	case 500 <= code && code <= 599:
-		log.Printf("server error: %v, status code: %d", string(facts), code)
-		http.Error(w, string(facts), code)
+		log.Printf("server error: %v, status code: %d", string(contents), code)
+		http.Error(w, string(contents), code)
 		return
 	}
 
 	count++
 	log.Printf("called: %d times", count)
-	fmt.Fprint(w, string(facts))
+	fmt.Fprint(w, string(contents))
 }
