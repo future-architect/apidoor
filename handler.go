@@ -11,14 +11,12 @@ import (
 var count int = 0
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	r.Header.Set("Content-Type", "application/json")
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
 		return
 	}
 
-	r.Header.Set("Authorization", "testtoken")
 	if r.Header.Get("Authorization") == "" {
 		log.Print("unauthorized request")
 		http.Error(w, "forbidden", http.StatusForbidden)
@@ -29,7 +27,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	num, err := strconv.Atoi(r.URL.Query().Get("num"))
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid API number", http.StatusBadRequest)
 		return
 	}
 
