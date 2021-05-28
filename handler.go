@@ -17,13 +17,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Header.Get("Authorization") == "" {
-		log.Print("unauthorized request")
-		http.Error(w, "forbidden", http.StatusForbidden)
-		return
-	}
-
-	apikey := r.URL.Query().Get("apikey")
+	apikey := r.Header.Get("Authorization")
 	num, err := strconv.Atoi(r.URL.Query().Get("num"))
 	if err != nil {
 		log.Print(err.Error())

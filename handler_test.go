@@ -10,105 +10,86 @@ import (
 )
 
 type testdata struct {
-	rescode       int
-	content       string
-	authorization string
-	apinum        string
-	apikey        string
-	out           string
-	outcode       int
+	rescode int
+	content string
+	apinum  string
+	apikey  string
+	out     string
+	outcode int
 }
 
 var table = []testdata{
 	// valid request
 	{
-		rescode:       http.StatusOK,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "0",
-		apikey:        "apikey1",
-		out:           "response from API server",
-		outcode:       http.StatusOK,
+		rescode: http.StatusOK,
+		content: "application/json",
+		apinum:  "0",
+		apikey:  "apikey1",
+		out:     "response from API server",
+		outcode: http.StatusOK,
 	},
 	// client error
 	{
-		rescode:       http.StatusBadRequest,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "0",
-		apikey:        "apikey1",
-		out:           "response from API server",
-		outcode:       http.StatusBadRequest,
+		rescode: http.StatusBadRequest,
+		content: "application/json",
+		apinum:  "0",
+		apikey:  "apikey1",
+		out:     "response from API server",
+		outcode: http.StatusBadRequest,
 	},
 	// server error
 	{
-		rescode:       http.StatusInternalServerError,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "0",
-		apikey:        "apikey1",
-		out:           "response from API server",
-		outcode:       http.StatusInternalServerError,
+		rescode: http.StatusInternalServerError,
+		content: "application/json",
+		apinum:  "0",
+		apikey:  "apikey1",
+		out:     "response from API server",
+		outcode: http.StatusInternalServerError,
 	},
 	// invalid Content-Type
 	{
-		rescode:       http.StatusOK,
-		content:       "text/html",
-		authorization: "testtoken",
-		apinum:        "0",
-		apikey:        "apikey1",
-		out:           "unexpected request content",
-		outcode:       http.StatusBadRequest,
-	},
-	// invalid Authorization
-	{
-		rescode:       http.StatusOK,
-		content:       "application/json",
-		authorization: "",
-		apinum:        "0",
-		apikey:        "apikey1",
-		out:           "forbidden",
-		outcode:       http.StatusForbidden,
+		rescode: http.StatusOK,
+		content: "text/html",
+		apinum:  "0",
+		apikey:  "apikey1",
+		out:     "unexpected request content",
+		outcode: http.StatusBadRequest,
 	},
 	// invalid apinum
 	{
-		rescode:       http.StatusOK,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "hoge",
-		apikey:        "apikey1",
-		out:           "invalid API number",
-		outcode:       http.StatusBadRequest,
+		rescode: http.StatusOK,
+		content: "application/json",
+		apinum:  "hoge",
+		apikey:  "apikey1",
+		out:     "invalid API number",
+		outcode: http.StatusBadRequest,
 	},
 	// unauthorized request (invalid key)
 	{
-		rescode:       http.StatusOK,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "0",
-		apikey:        "apikey5",
-		out:           "error: invalid key",
-		outcode:       http.StatusBadRequest,
+		rescode: http.StatusOK,
+		content: "application/json",
+		apinum:  "0",
+		apikey:  "apikey5",
+		out:     "error: invalid key",
+		outcode: http.StatusBadRequest,
 	},
 	// unauthorized request (invalid num)
 	{
-		rescode:       http.StatusOK,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "-1",
-		apikey:        "apikey1",
-		out:           "error: unauthorized request",
-		outcode:       http.StatusBadRequest,
+		rescode: http.StatusOK,
+		content: "application/json",
+		apinum:  "-1",
+		apikey:  "apikey1",
+		out:     "error: unauthorized request",
+		outcode: http.StatusBadRequest,
 	},
 	// invalid URL
 	{
-		rescode:       http.StatusOK,
-		content:       "application/json",
-		authorization: "testtoken",
-		apinum:        "1",
-		apikey:        "apikey2",
-		out:           "Get \"hoge\": unsupported protocol scheme \"\"",
-		outcode:       http.StatusInternalServerError,
+		rescode: http.StatusOK,
+		content: "application/json",
+		apinum:  "1",
+		apikey:  "apikey2",
+		out:     "Get \"hoge\": unsupported protocol scheme \"\"",
+		outcode: http.StatusInternalServerError,
 	},
 }
 
@@ -127,9 +108,9 @@ func TestHandler(t *testing.T) {
 			"hoge",
 		}
 
-		r := httptest.NewRequest(http.MethodGet, "/hoge?apikey="+tt.apikey+"&num="+tt.apinum, nil)
+		r := httptest.NewRequest(http.MethodGet, "/hoge?num="+tt.apinum, nil)
 		r.Header.Set("Content-Type", tt.content)
-		r.Header.Set("Authorization", tt.authorization)
+		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
 		apidoor.Handler(w, r)
 
