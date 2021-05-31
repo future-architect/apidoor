@@ -10,8 +10,8 @@ import (
 
 func main() {
 	r := chi.NewRouter()
-	r.Route("/{path}", func(r chi.Router) {
-		r.Get("/", apidoor.Handler)
+	r.Route("/{host}", func(r chi.Router) {
+		r.Get("/{path}", apidoor.Handler)
 		// r.Put("/", putHandler)
 		// r.Delete("/", deleteHandler)
 		// r.Post("/", postHandler)

@@ -5,7 +5,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"strconv"
 )
 
 var count int = 0
@@ -18,21 +17,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	apikey := r.Header.Get("Authorization")
-	num, err := strconv.Atoi(r.URL.Query().Get("num"))
-	if err != nil {
-		log.Print(err.Error())
-		http.Error(w, "invalid API number", http.StatusBadRequest)
-		return
-	}
 
-	url, err := GetAPIURL(num, apikey)
-	if err != nil {
+	if err := GetAPIURL(apikey, r.RequestURI); err != nil {
 		log.Print(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	res, err := http.Get(url)
+	res, err := http.Get("http:/" + r.RequestURI)
 	if err != nil {
 		log.Printf("error in http get: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

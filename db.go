@@ -1,50 +1,22 @@
 package apidoor
 
 import (
-	"encoding/json"
-	"log"
-	"os"
+	"context"
+
+	"github.com/go-redis/redis/v8"
 )
 
-var Urldata OuterUrlData
-var Keydata OuterKeyData
+var ctx = context.Background()
+var rdb = redis.NewClient(&redis.Options{
+	Addr:     "localhost:6379",
+	Password: "",
+	DB:       0,
+})
 
-func contains(list []int, a int) bool {
-	for _, v := range list {
-		if v == a {
-			return true
-		}
-	}
-	return false
-}
-
-func GetAPIURL(num int, key string) (string, error) {
-	apilist, ok := Keydata.Keys[key]
-	if !ok {
-		return "", &MyError{Message: "invalid key"}
+func GetAPIURL(key string, path string) error {
+	if !rdb.SIsMember(ctx, key, path).Val() {
+		return &MyError{Message: "unauthorized request"}
 	}
 
-	if !contains(apilist, num) {
-		return "", &MyError{Message: "unauthorized request"}
-	}
-
-	return Urldata.Url[num], nil
-}
-
-func init() {
-	urlfile, err := os.ReadFile(os.Getenv("GOPATH") + "/src/apidoor/urlData.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = json.Unmarshal(urlfile, &Urldata); err != nil {
-		log.Fatal(err)
-	}
-
-	keyfile, err := os.ReadFile(os.Getenv("GOPATH") + "/src/apidoor/keyData.json")
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err = json.Unmarshal(keyfile, &Keydata); err != nil {
-		log.Fatal(err)
-	}
+	return nil
 }

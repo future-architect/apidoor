@@ -2,17 +2,19 @@ package apidoor_test
 
 import (
 	"apidoor"
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type testdata struct {
 	rescode int
 	content string
-	apinum  string
 	apikey  string
 	out     string
 	outcode int
@@ -23,7 +25,6 @@ var table = []testdata{
 	{
 		rescode: http.StatusOK,
 		content: "application/json",
-		apinum:  "0",
 		apikey:  "apikey1",
 		out:     "response from API server",
 		outcode: http.StatusOK,
@@ -32,7 +33,6 @@ var table = []testdata{
 	{
 		rescode: http.StatusBadRequest,
 		content: "application/json",
-		apinum:  "0",
 		apikey:  "apikey1",
 		out:     "response from API server",
 		outcode: http.StatusBadRequest,
@@ -41,7 +41,6 @@ var table = []testdata{
 	{
 		rescode: http.StatusInternalServerError,
 		content: "application/json",
-		apinum:  "0",
 		apikey:  "apikey1",
 		out:     "response from API server",
 		outcode: http.StatusInternalServerError,
@@ -50,48 +49,26 @@ var table = []testdata{
 	{
 		rescode: http.StatusOK,
 		content: "text/html",
-		apinum:  "0",
 		apikey:  "apikey1",
 		out:     "unexpected request content",
-		outcode: http.StatusBadRequest,
-	},
-	// invalid apinum
-	{
-		rescode: http.StatusOK,
-		content: "application/json",
-		apinum:  "hoge",
-		apikey:  "apikey1",
-		out:     "invalid API number",
 		outcode: http.StatusBadRequest,
 	},
 	// unauthorized request (invalid key)
 	{
 		rescode: http.StatusOK,
 		content: "application/json",
-		apinum:  "0",
-		apikey:  "apikey5",
-		out:     "error: invalid key",
-		outcode: http.StatusBadRequest,
-	},
-	// unauthorized request (invalid num)
-	{
-		rescode: http.StatusOK,
-		content: "application/json",
-		apinum:  "-1",
-		apikey:  "apikey1",
+		apikey:  "apikey2",
 		out:     "error: unauthorized request",
 		outcode: http.StatusBadRequest,
 	},
-	// invalid URL
-	{
-		rescode: http.StatusOK,
-		content: "application/json",
-		apinum:  "1",
-		apikey:  "apikey2",
-		out:     "Get \"hoge\": unsupported protocol scheme \"\"",
-		outcode: http.StatusInternalServerError,
-	},
 }
+
+var ctx = context.Background()
+var rdb = redis.NewClient(&redis.Options{
+	Addr:     "localhost:6379",
+	Password: "",
+	DB:       0,
+})
 
 func TestHandler(t *testing.T) {
 	for index, tt := range table {
@@ -102,13 +79,13 @@ func TestHandler(t *testing.T) {
 		}))
 		defer ts.Close()
 
-		// change destination of API temporarily
-		apidoor.Urldata.Url = []string{
-			ts.URL,
-			"hoge",
-		}
+		host := ts.URL[6:]
 
-		r := httptest.NewRequest(http.MethodGet, "/hoge?num="+tt.apinum, nil)
+		// change destination of API temporarily
+		rdb.FlushAll(ctx)
+		rdb.SAdd(ctx, "apikey1", host)
+
+		r := httptest.NewRequest(http.MethodGet, host, nil)
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
