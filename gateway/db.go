@@ -1,4 +1,4 @@
-package apidoor
+package gateway
 
 import (
 	"context"

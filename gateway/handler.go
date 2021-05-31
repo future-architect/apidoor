@@ -1,7 +1,6 @@
-package apidoor
+package gateway
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
@@ -9,7 +8,6 @@ import (
 )
 
 var count int = 0
-var ctx = context.Background()
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -22,7 +20,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	reqpath := r.URL.Path
 	query := r.URL.RawQuery
 
-	path, err := GetAPIURL(ctx, apikey, reqpath)
+	path, err := GetAPIURL(r.Context(), apikey, reqpath)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)

@@ -1,8 +1,8 @@
-package apidoor_test
+package gateway_test
 
 import (
-	"apidoor"
 	"context"
+	"gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -90,7 +90,7 @@ func TestHandler(t *testing.T) {
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
-		apidoor.Handler(w, r)
+		gateway.Handler(w, r)
 
 		rw := w.Result()
 		defer rw.Body.Close()
