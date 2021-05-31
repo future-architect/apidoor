@@ -1,6 +1,7 @@
 package apidoor
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -8,6 +9,7 @@ import (
 )
 
 var count int = 0
+var ctx = context.Background()
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -17,19 +19,23 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	apikey := r.Header.Get("Authorization")
+	reqpath := r.URL.Path
+	query := r.URL.RawQuery
 
-	if err := GetAPIURL(apikey, r.RequestURI); err != nil {
+	path, err := GetAPIURL(ctx, apikey, reqpath)
+	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	res, err := http.Get("http:/" + r.RequestURI)
+	res, err := http.Get("http://" + path + "?" + query)
 	if err != nil {
 		log.Printf("error in http get: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer res.Body.Close()
 
 	contents, err := io.ReadAll(res.Body)
 	if err != nil {

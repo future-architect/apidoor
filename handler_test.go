@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -65,7 +66,7 @@ var table = []testdata{
 
 var ctx = context.Background()
 var rdb = redis.NewClient(&redis.Options{
-	Addr:     "localhost:6379",
+	Addr:     os.Getenv("REDIS_HOST"),
 	Password: "",
 	DB:       0,
 })
@@ -83,9 +84,9 @@ func TestHandler(t *testing.T) {
 
 		// change destination of API temporarily
 		rdb.FlushAll(ctx)
-		rdb.SAdd(ctx, "apikey1", host)
+		rdb.HSet(ctx, "apikey1", "/test", host)
 
-		r := httptest.NewRequest(http.MethodGet, host, nil)
+		r := httptest.NewRequest(http.MethodGet, "/test", nil)
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
