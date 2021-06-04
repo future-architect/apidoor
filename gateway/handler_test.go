@@ -17,6 +17,8 @@ type testdata struct {
 	rescode int
 	content string
 	apikey  string
+	field   string
+	request string
 	out     string
 	outcode int
 }
@@ -27,6 +29,8 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusOK,
 	},
@@ -35,6 +39,8 @@ var table = []testdata{
 		rescode: http.StatusBadRequest,
 		content: "application/json",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusBadRequest,
 	},
@@ -43,6 +49,8 @@ var table = []testdata{
 		rescode: http.StatusInternalServerError,
 		content: "application/json",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusInternalServerError,
 	},
@@ -51,6 +59,8 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "text/html",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "unexpected request content",
 		outcode: http.StatusBadRequest,
 	},
@@ -59,6 +69,28 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey2",
+		field:   "/test/.*",
+		request: "/test/hoge",
+		out:     "error: unauthorized request",
+		outcode: http.StatusBadRequest,
+	},
+	// invalid field in redis-server
+	{
+		rescode: http.StatusOK,
+		content: "application/json",
+		apikey:  "apikey1",
+		field:   "/test/*[",
+		request: "/test/hoge",
+		out:     "error: unexpected field in redis",
+		outcode: http.StatusBadRequest,
+	},
+	// unauthorized request (invalid URL)
+	{
+		rescode: http.StatusOK,
+		content: "application/json",
+		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/t/hoge",
 		out:     "error: unauthorized request",
 		outcode: http.StatusBadRequest,
 	},
@@ -84,9 +116,9 @@ func TestHandler(t *testing.T) {
 
 		// change destination of API temporarily
 		rdb.FlushAll(ctx)
-		rdb.HSet(ctx, "apikey1", "/test", host)
+		rdb.HSet(ctx, "apikey1", tt.field, host)
 
-		r := httptest.NewRequest(http.MethodGet, "/test", nil)
+		r := httptest.NewRequest(http.MethodGet, tt.request, nil)
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
