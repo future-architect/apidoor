@@ -1,22 +1,21 @@
-package apidoor_test
+package gateway_test
 
 import (
-	"apidoor"
-	"context"
+	"gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
+	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/go-redis/redis/v8"
 )
 
 type testdata struct {
 	rescode int
 	content string
 	apikey  string
+	field   string
+	request string
 	out     string
 	outcode int
 }
@@ -27,6 +26,8 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusOK,
 	},
@@ -35,6 +36,8 @@ var table = []testdata{
 		rescode: http.StatusBadRequest,
 		content: "application/json",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusBadRequest,
 	},
@@ -43,6 +46,8 @@ var table = []testdata{
 		rescode: http.StatusInternalServerError,
 		content: "application/json",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusInternalServerError,
 	},
@@ -51,6 +56,8 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "text/html",
 		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/test/hoge",
 		out:     "unexpected request content",
 		outcode: http.StatusBadRequest,
 	},
@@ -59,17 +66,22 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey2",
+		field:   "/test/.*",
+		request: "/test/hoge",
+		out:     "error: unauthorized request",
+		outcode: http.StatusBadRequest,
+	},
+	// unauthorized request (invalid URL)
+	{
+		rescode: http.StatusOK,
+		content: "application/json",
+		apikey:  "apikey1",
+		field:   "/test/.*",
+		request: "/t/hoge",
 		out:     "error: unauthorized request",
 		outcode: http.StatusBadRequest,
 	},
 }
-
-var ctx = context.Background()
-var rdb = redis.NewClient(&redis.Options{
-	Addr:     os.Getenv("REDIS_HOST"),
-	Password: "",
-	DB:       0,
-})
 
 func TestHandler(t *testing.T) {
 	for index, tt := range table {
@@ -82,15 +94,16 @@ func TestHandler(t *testing.T) {
 
 		host := ts.URL[6:]
 
-		// change destination of API temporarily
-		rdb.FlushAll(ctx)
-		rdb.HSet(ctx, "apikey1", "/test", host)
+		gateway.Data["apikey1"] = append(gateway.Data["apikey1"], gateway.Field{
+			Re:   regexp.MustCompile(tt.field),
+			Path: host,
+		})
 
-		r := httptest.NewRequest(http.MethodGet, "/test", nil)
+		r := httptest.NewRequest(http.MethodGet, tt.request, nil)
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
-		apidoor.Handler(w, r)
+		gateway.Handler(w, r)
 
 		rw := w.Result()
 		defer rw.Body.Close()
