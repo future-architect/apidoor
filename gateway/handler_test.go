@@ -1,16 +1,13 @@
 package gateway_test
 
 import (
-	"context"
 	"gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
+	"regexp"
 	"strings"
 	"testing"
-
-	"github.com/go-redis/redis/v8"
 )
 
 type testdata struct {
@@ -74,16 +71,6 @@ var table = []testdata{
 		out:     "error: unauthorized request",
 		outcode: http.StatusBadRequest,
 	},
-	// invalid field in redis-server
-	{
-		rescode: http.StatusOK,
-		content: "application/json",
-		apikey:  "apikey1",
-		field:   "/test/*[",
-		request: "/test/hoge",
-		out:     "error: unexpected field in redis",
-		outcode: http.StatusBadRequest,
-	},
 	// unauthorized request (invalid URL)
 	{
 		rescode: http.StatusOK,
@@ -96,13 +83,6 @@ var table = []testdata{
 	},
 }
 
-var ctx = context.Background()
-var rdb = redis.NewClient(&redis.Options{
-	Addr:     os.Getenv("REDIS_HOST"),
-	Password: "",
-	DB:       0,
-})
-
 func TestHandler(t *testing.T) {
 	for index, tt := range table {
 		message := []byte("response from API server")
@@ -114,9 +94,10 @@ func TestHandler(t *testing.T) {
 
 		host := ts.URL[6:]
 
-		// change destination of API temporarily
-		rdb.FlushAll(ctx)
-		rdb.HSet(ctx, "apikey1", tt.field, host)
+		gateway.Data["apikey1"] = append(gateway.Data["apikey1"], gateway.Field{
+			Re:   regexp.MustCompile(tt.field),
+			Path: host,
+		})
 
 		r := httptest.NewRequest(http.MethodGet, tt.request, nil)
 		r.Header.Set("Content-Type", tt.content)
