@@ -21,7 +21,6 @@ type Field struct {
 
 type KeyData map[string][]Field
 
-var c = context.Background()
 var Data = make(KeyData)
 
 func GetAPIURL(ctx context.Context, key, path string) (string, error) {
@@ -40,15 +39,16 @@ func GetAPIURL(ctx context.Context, key, path string) (string, error) {
 }
 
 func init() {
-	for _, k := range rdb.Keys(c, "*").Val() {
-		for _, hk := range rdb.HKeys(c, k).Val() {
+	ctx := context.Background()
+	for _, k := range rdb.Keys(ctx, "*").Val() {
+		for _, hk := range rdb.HKeys(ctx, k).Val() {
 			re, err := regexp.Compile(hk)
 			if err != nil {
 				panic(err)
 			}
 			Data[k] = append(Data[k], Field{
 				Re:   re,
-				Path: rdb.HGet(c, k, hk).Val(),
+				Path: rdb.HGet(ctx, k, hk).Val(),
 			})
 		}
 	}
