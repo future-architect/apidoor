@@ -7,8 +7,6 @@ import (
 	"net/http"
 )
 
-var count int = 0
-
 func Handler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
@@ -54,7 +52,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	count++
-	log.Printf("called: %d times", count)
+	UpdateLog(apikey, path)
 	fmt.Fprint(w, string(contents))
 }
