@@ -41,8 +41,7 @@ func PushLog() {
 
 			switch err := db.QueryRow("SELECT * FROM apilog WHERE apikey=$1 AND apipath=$2", keyk, fieldk).Scan(&tmp.apikey, &tmp.apilog, &tmp.num); err {
 			case sql.ErrNoRows:
-				_, err := db.Exec("INSERT INTO apilog(apikey, apipath, num) VALUES($1, $2, 1)", keyk, fieldk)
-				if err != nil {
+				if _, err := db.Exec("INSERT INTO apilog(apikey, apipath, num) VALUES($1, $2, 1)", keyk, fieldk); err != nil {
 					log.Fatal(err)
 				}
 			case nil:

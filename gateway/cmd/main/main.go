@@ -10,7 +10,7 @@ import (
 )
 
 func timer() {
-	for range time.Tick(time.Second) {
+	for range time.Tick(time.Minute) {
 		gateway.PushLog()
 	}
 }
