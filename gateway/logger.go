@@ -3,6 +3,7 @@ package gateway
 import (
 	"database/sql"
 	"log"
+	"os"
 
 	_ "github.com/lib/pq"
 )
@@ -21,7 +22,13 @@ func UpdateLog(key, path string) {
 }
 
 func PushLog() {
-	db, err := sql.Open("postgres", "host=127.0.0.1 port=5555 user=root password=password dbname=root sslmode=disable")
+	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
+		"host="+os.Getenv("DATABASE_HOST")+" "+
+			"port="+os.Getenv("DATABASE_PORT")+" "+
+			"user="+os.Getenv("DATABASE_USER")+" "+
+			"password="+os.Getenv("DATABASE_PASSWORD")+" "+
+			"dbname="+os.Getenv("DATABASE_NAME")+" "+
+			"sslmode="+os.Getenv("DATABASE_SSLMODE"))
 	if err != nil {
 		log.Fatal(err)
 	}

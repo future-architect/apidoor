@@ -1,7 +1,7 @@
 version: "3"
 services: 
     postgres:
-        image: postgres
+        image: postgres:11.12
         container_name: postgres
         ports: 
             - 5555:5432
@@ -15,7 +15,7 @@ services:
         - ./init:/docker-entrypoint-initdb.d
         - /etc/localtime:/etc/localtime:ro
     pgweb:
-        image: sosedoff/pgweb
+        image: sosedoff/pgweb:0.11.7
         container_name: pgweb
         ports: 
             - "8081:8081"
