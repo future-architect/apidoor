@@ -59,4 +59,6 @@ func TestPushLog(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	db.Exec("DELETE FROM apilog WHERE apikey='key'")
 }
