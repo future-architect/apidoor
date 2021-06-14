@@ -12,12 +12,12 @@ import (
 func TestUpdateLog(t *testing.T) {
 	for i := 1; i <= 2; i++ {
 		gateway.UpdateLog("key", "path")
-		if gateway.TmpLog["key"]["path"] != i {
-			t.Fatalf("unexpected TmpLog[key][path]: %d, expected %d", gateway.TmpLog["key"]["path"], i)
+		if gateway.TmpLog.Data["key"]["path"] != i {
+			t.Fatalf("unexpected TmpLog[key][path]: %d, expected %d", gateway.TmpLog.Data["key"]["path"], i)
 		}
 	}
 
-	if _, ok := gateway.TmpLog["key"]["unusedpath"]; ok {
+	if _, ok := gateway.TmpLog.Data["key"]["unusedpath"]; ok {
 		t.Fatal("unexpected field in data")
 	}
 }
