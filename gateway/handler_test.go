@@ -121,6 +121,5 @@ func TestHandler(t *testing.T) {
 		if trimmed != tt.out {
 			t.Fatalf("case %d: unexpected response: %s, expected: %s", index, trimmed, tt.out)
 		}
-
 	}
 }
