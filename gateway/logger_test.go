@@ -3,6 +3,7 @@ package gateway_test
 import (
 	"database/sql"
 	"gateway"
+	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
@@ -11,18 +12,24 @@ import (
 func TestUpdateLog(t *testing.T) {
 	for i := 1; i <= 2; i++ {
 		gateway.UpdateLog("key", "path")
-		if gateway.TmpLog["key"]["path"] != i {
-			t.Fatalf("unexpected TmpLog[key][path]: %d, expected %d", gateway.TmpLog["key"]["path"], i)
+		if gateway.TmpLog.Data["key"]["path"] != i {
+			t.Fatalf("unexpected TmpLog[key][path]: %d, expected %d", gateway.TmpLog.Data["key"]["path"], i)
 		}
 	}
 
-	if _, ok := gateway.TmpLog["key"]["unusedpath"]; ok {
+	if _, ok := gateway.TmpLog.Data["key"]["unusedpath"]; ok {
 		t.Fatal("unexpected field in data")
 	}
 }
 
 func TestPushLog(t *testing.T) {
-	db, err := sql.Open("postgres", "host=127.0.0.1 port=5555 user=root password=password dbname=root sslmode=disable")
+	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
+		"host="+os.Getenv("DATABASE_HOST")+" "+
+			"port="+os.Getenv("DATABASE_PORT")+" "+
+			"user="+os.Getenv("DATABASE_USER")+" "+
+			"password="+os.Getenv("DATABASE_PASSWORD")+" "+
+			"dbname="+os.Getenv("DATABASE_NAME")+" "+
+			"sslmode="+os.Getenv("DATABASE_SSLMODE"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,4 +59,6 @@ func TestPushLog(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+
+	db.Exec("DELETE FROM apilog WHERE apikey='key'")
 }

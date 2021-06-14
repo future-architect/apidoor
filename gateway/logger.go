@@ -3,31 +3,49 @@ package gateway
 import (
 	"database/sql"
 	"log"
+	"os"
+	"sync"
 
 	_ "github.com/lib/pq"
 )
 
-type Log map[string]map[string]int
+type Log struct {
+	sync.Mutex
+	Data map[string]map[string]int
+}
 
-var TmpLog = make(Log)
+var TmpLog = Log{
+	Data: make(map[string]map[string]int),
+}
 
 func UpdateLog(key, path string) {
-	if _, ok := TmpLog[key][path]; !ok {
-		TmpLog[key] = make(map[string]int)
-		TmpLog[key][path] = 1
+	if _, ok := TmpLog.Data[key][path]; !ok {
+		TmpLog.Data[key] = make(map[string]int)
+		TmpLog.Data[key][path] = 1
 	} else {
-		TmpLog[key][path]++
+		TmpLog.Data[key][path]++
 	}
 }
 
 func PushLog() {
-	db, err := sql.Open("postgres", "host=127.0.0.1 port=5555 user=root password=password dbname=root sslmode=disable")
+	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
+		"host="+os.Getenv("DATABASE_HOST")+" "+
+			"port="+os.Getenv("DATABASE_PORT")+" "+
+			"user="+os.Getenv("DATABASE_USER")+" "+
+			"password="+os.Getenv("DATABASE_PASSWORD")+" "+
+			"dbname="+os.Getenv("DATABASE_NAME")+" "+
+			"sslmode="+os.Getenv("DATABASE_SSLMODE"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer db.Close()
 
-	for keyk, keyv := range TmpLog {
+	TmpLog.Lock()
+	data := TmpLog.Data
+	TmpLog.Data = make(map[string]map[string]int)
+	TmpLog.Unlock()
+
+	for keyk, keyv := range data {
 		for fieldk, fieldv := range keyv {
 			tmp := struct {
 				apikey string
@@ -53,6 +71,4 @@ func PushLog() {
 			}
 		}
 	}
-
-	TmpLog = make(Log)
 }
