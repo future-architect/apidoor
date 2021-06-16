@@ -93,12 +93,11 @@ func TestHandler(t *testing.T) {
 
 		host := ts.URL[6:]
 
-		var u, v gateway.URITemplate
-		u.Init(tt.field)
-		v.Init(host)
+		u := gateway.NewURITemplate(tt.field)
+		v := gateway.NewURITemplate(host)
 		gateway.Data["apikey1"] = append(gateway.Data["apikey1"], gateway.Field{
-			Template: u,
-			Path:     v,
+			Template: *u,
+			Path:     *v,
 		})
 
 		r := httptest.NewRequest(http.MethodGet, tt.request, nil)

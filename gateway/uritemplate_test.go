@@ -59,10 +59,9 @@ var templatedata = []templatetest{
 
 func TestURITemplate(t *testing.T) {
 	for i, tt := range templatedata {
-		var u, v gateway.URITemplate
-		u.Init(tt.reqpath)
-		v.Init(tt.template)
-		ismatch, params := u.TemplateMatch(v)
+		u := gateway.NewURITemplate(tt.reqpath)
+		v := gateway.NewURITemplate(tt.template)
+		ismatch, params := u.TemplateMatch(*v)
 		if ismatch != tt.ismatch {
 			t.Fatalf("case %d: whether template and request are same or not is wrong", i)
 		}

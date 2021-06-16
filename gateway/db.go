@@ -28,8 +28,7 @@ func GetAPIURL(ctx context.Context, key, path string) (string, error) {
 		return "", &MyError{Message: "unauthorized request"}
 	}
 
-	var u URITemplate
-	u.Init(path)
+	u := NewURITemplate(path)
 	for _, v := range fields {
 		if ok, _ := u.TemplateMatch(v.Template); ok {
 			return v.Path.JoinPath(), nil
@@ -43,12 +42,11 @@ func init() {
 	ctx := context.Background()
 	for _, k := range rdb.Keys(ctx, "*").Val() {
 		for _, hk := range rdb.HKeys(ctx, k).Val() {
-			var u, v URITemplate
-			u.Init(hk)
-			v.Init(rdb.HGet(ctx, k, hk).Val())
+			u := NewURITemplate(hk)
+			v := NewURITemplate(rdb.HGet(ctx, k, hk).Val())
 			Data[k] = append(Data[k], Field{
-				Template: u,
-				Path:     v,
+				Template: *u,
+				Path:     *v,
 			})
 		}
 	}
