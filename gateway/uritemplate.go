@@ -60,7 +60,7 @@ func (u *URITemplate) JoinPath() string {
 	return strings.Join(s, "/")
 }
 
-func (u *URITemplate) Allocate(m map[string]string) error {
+func (u *URITemplate) AllocateParameter(m map[string]string) error {
 	for i, block := range u.path {
 		if block.isparam {
 			if v, ok := m[block.value]; !ok {

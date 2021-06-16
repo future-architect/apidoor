@@ -68,7 +68,7 @@ func TestURITemplate(t *testing.T) {
 		if params == nil {
 			continue
 		}
-		if err := v.Allocate(params); err != nil {
+		if err := v.AllocateParameter(params); err != nil {
 			t.Fatalf("case %d: get error %s", i, err)
 		}
 		if v.JoinPath() != tt.reqpath[1:] {
