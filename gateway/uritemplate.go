@@ -3,6 +3,7 @@ package gateway
 import (
 	"errors"
 	"log"
+	"path"
 	"strings"
 )
 
@@ -62,7 +63,7 @@ func (u *URITemplate) JoinPath() string {
 		s = append(s, v.value)
 	}
 
-	return strings.Join(s, "/")
+	return path.Join(s...)
 }
 
 func (u *URITemplate) AllocateParameter(m map[string]string) error {
