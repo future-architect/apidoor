@@ -39,21 +39,21 @@ func NewURITemplate(path string) *URITemplate {
 	return u
 }
 
-func (u *URITemplate) TemplateMatch(t URITemplate) (bool, map[string]string) {
+func (u *URITemplate) TemplateMatch(t URITemplate) (map[string]string, bool) {
 	params := make(map[string]string)
 	if len(u.path) != len(t.path) {
-		return false, nil
+		return nil, false
 	}
 
 	for i := 0; i < len(u.path); i++ {
 		if t.path[i].isParam {
 			params[t.path[i].value] = u.path[i].value
 		} else if u.path[i].value != t.path[i].value {
-			return false, nil
+			return nil, false
 		}
 	}
 
-	return true, params
+	return params, true
 }
 
 func (u *URITemplate) JoinPath() string {

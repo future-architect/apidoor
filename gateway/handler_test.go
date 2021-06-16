@@ -30,6 +30,16 @@ var table = []testdata{
 		out:     "response from API server",
 		outcode: http.StatusOK,
 	},
+	// valid request not using parameter
+	{
+		rescode: http.StatusOK,
+		content: "application/json",
+		apikey:  "apikey1",
+		field:   "/test",
+		request: "/test",
+		out:     "response from API server",
+		outcode: http.StatusOK,
+	},
 	// client error
 	{
 		rescode: http.StatusBadRequest,

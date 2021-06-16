@@ -30,7 +30,7 @@ func GetAPIURL(ctx context.Context, key, path string) (string, error) {
 
 	u := NewURITemplate(path)
 	for _, v := range fields {
-		if ok, _ := u.TemplateMatch(v.Template); ok {
+		if _, ok := u.TemplateMatch(v.Template); ok {
 			return v.Path.JoinPath(), nil
 		}
 	}
