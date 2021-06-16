@@ -27,18 +27,6 @@ func NewURITemplate(path string) *URITemplate {
 	return u
 }
 
-/*
-func (u *URITemplate) Init(path string) {
-	slice := strings.Split(path[1:], "/")
-	for _, v := range slice {
-		u.path = append(u.path, block{
-			value:   v,
-			isparam: strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}"),
-		})
-	}
-}
-*/
-
 func (u *URITemplate) TemplateMatch(t URITemplate) (bool, []string) {
 	var params []string
 	if len(u.path) != len(t.path) {
@@ -65,7 +53,7 @@ func (u *URITemplate) JoinPath() string {
 	return strings.Join(s, "/")
 }
 
-func (u *URITemplate) AssignParameter(s []string) error {
+func (u *URITemplate) Allocate(s []string) error {
 	var indices []int
 	for i, v := range u.path {
 		if v.isparam {
