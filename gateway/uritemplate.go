@@ -2,12 +2,13 @@ package gateway
 
 import (
 	"errors"
+	"log"
 	"strings"
 )
 
 type block struct {
 	value   string
-	isparam bool
+	isParam bool
 }
 
 type URITemplate struct {
@@ -15,19 +16,23 @@ type URITemplate struct {
 }
 
 func NewURITemplate(path string) *URITemplate {
-	u := new(URITemplate)
+	u := &URITemplate{}
+	if len(path) == 0 {
+		log.Fatal("invalid path")
+	}
+
 	slice := strings.Split(path[1:], "/")
 	for _, v := range slice {
-		isparam := strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}")
+		isParam := strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}")
 		var value string
-		if isparam {
+		if isParam {
 			value = v[1 : len(v)-1]
 		} else {
 			value = v
 		}
 		u.path = append(u.path, block{
 			value,
-			isparam,
+			isParam,
 		})
 	}
 
@@ -41,7 +46,7 @@ func (u *URITemplate) TemplateMatch(t URITemplate) (bool, map[string]string) {
 	}
 
 	for i := 0; i < len(u.path); i++ {
-		if t.path[i].isparam {
+		if t.path[i].isParam {
 			params[t.path[i].value] = u.path[i].value
 		} else if u.path[i].value != t.path[i].value {
 			return false, nil
@@ -62,7 +67,7 @@ func (u *URITemplate) JoinPath() string {
 
 func (u *URITemplate) AllocateParameter(m map[string]string) error {
 	for i, block := range u.path {
-		if block.isparam {
+		if block.isParam {
 			if v, ok := m[block.value]; !ok {
 				return errors.New("no such parameter")
 			} else {
