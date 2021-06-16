@@ -1,6 +1,9 @@
 package gateway
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 type block struct {
 	value   string
@@ -12,7 +15,7 @@ type URITemplate struct {
 }
 
 func (u *URITemplate) Init(path string) {
-	slice := strings.Split(path, "/")
+	slice := strings.Split(path[1:], "/")
 	for _, v := range slice {
 		u.path = append(u.path, block{
 			value:   v,
@@ -36,4 +39,33 @@ func (u *URITemplate) TemplateMatch(t URITemplate) (bool, []string) {
 	}
 
 	return true, params
+}
+
+func (u *URITemplate) JoinPath() string {
+	var s []string
+	for _, v := range u.path {
+		s = append(s, v.value)
+	}
+
+	return strings.Join(s, "/")
+}
+
+func (u *URITemplate) AssignParameter(s []string) error {
+	var indices []int
+	for i, v := range u.path {
+		if v.isparam {
+			indices = append(indices, i)
+		}
+	}
+
+	if len(indices) != len(s) {
+		return errors.New("number of parameters doesn't match")
+	}
+
+	for i, v := range indices {
+		u.path[v].value = s[i]
+		u.path[v].isparam = false
+	}
+
+	return nil
 }

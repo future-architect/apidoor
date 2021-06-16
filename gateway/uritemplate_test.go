@@ -66,13 +66,14 @@ func TestURITemplate(t *testing.T) {
 		if ismatch != tt.ismatch {
 			t.Fatalf("case %d: whether template and request are same or not is wrong", i)
 		}
-		if len(params) != len(tt.params) {
-			t.Fatalf("case %d: expected matched params size %d, get %d", i, len(tt.params), len(params))
+		if params == nil {
+			continue
 		}
-		for j, value := range params {
-			if value != tt.params[j] {
-				t.Fatalf("case %d: unexpected matched param %s, expected %s", i, value, tt.params[j])
-			}
+		if err := v.AssignParameter(params); err != nil {
+			t.Fatalf("case %d: get error %s", i, err)
+		}
+		if v.JoinPath() != tt.reqpath[1:] {
+			t.Fatalf("case %d: unexpected path %s, expected %s", i, v.JoinPath(), tt.reqpath[1:])
 		}
 	}
 }

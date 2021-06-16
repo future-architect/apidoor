@@ -3,7 +3,6 @@ package gateway
 import (
 	"context"
 	"os"
-	"regexp"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -15,8 +14,8 @@ var rdb = redis.NewClient(&redis.Options{
 })
 
 type Field struct {
-	Re   *regexp.Regexp
-	Path string
+	Template URITemplate
+	Path     URITemplate
 }
 
 type KeyData map[string][]Field
@@ -29,9 +28,11 @@ func GetAPIURL(ctx context.Context, key, path string) (string, error) {
 		return "", &MyError{Message: "unauthorized request"}
 	}
 
+	var u URITemplate
+	u.Init(path)
 	for _, v := range fields {
-		if v.Re.Match([]byte(path)) {
-			return v.Path[1:], nil
+		if ok, _ := u.TemplateMatch(v.Template); ok {
+			return v.Path.JoinPath(), nil
 		}
 	}
 
@@ -42,13 +43,12 @@ func init() {
 	ctx := context.Background()
 	for _, k := range rdb.Keys(ctx, "*").Val() {
 		for _, hk := range rdb.HKeys(ctx, k).Val() {
-			re, err := regexp.Compile(hk)
-			if err != nil {
-				panic(err)
-			}
+			var u, v URITemplate
+			u.Init(hk)
+			v.Init(rdb.HGet(ctx, k, hk).Val())
 			Data[k] = append(Data[k], Field{
-				Re:   re,
-				Path: rdb.HGet(ctx, k, hk).Val(),
+				Template: u,
+				Path:     v,
 			})
 		}
 	}
