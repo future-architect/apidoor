@@ -24,14 +24,14 @@ func (u *URITemplate) Init(path string) {
 func (u *URITemplate) TemplateMatch(t URITemplate) (bool, []string) {
 	var params []string
 	if len(u.path) != len(t.path) {
-		return false, []string{}
+		return false, nil
 	}
 
 	for i := 0; i < len(u.path); i++ {
 		if t.path[i].isparam {
 			params = append(params, u.path[i].value)
 		} else if u.path[i].value != t.path[i].value {
-			return false, []string{}
+			return false, nil
 		}
 	}
 
