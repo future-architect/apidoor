@@ -21,9 +21,9 @@ func main() {
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
 		r.Get("/*", gateway.Handler)
-		// r.Put("/", putHandler)
-		// r.Delete("/", deleteHandler)
-		// r.Post("/", postHandler)
+		r.Put("/*", gateway.PutHandler)
+		r.Delete("/*", gateway.DeleteHandler)
+		r.Post("/*", gateway.PostHandler)
 	})
 	http.ListenAndServe(":3000", r)
 }
