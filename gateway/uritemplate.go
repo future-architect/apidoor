@@ -20,6 +20,8 @@ func NewURITemplate(path string) *URITemplate {
 	u := &URITemplate{}
 	if len(path) == 0 {
 		log.Fatal("invalid path")
+	} else if len(path) == 1 {
+		return u
 	}
 
 	slice := strings.Split(path[1:], "/")
