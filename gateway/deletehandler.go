@@ -20,21 +20,21 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	path, err := GetAPIURL(r.Context(), apikey, reqpath)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid key or path", http.StatusBadRequest)
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodDelete, "http://"+path+"?"+query, nil)
 	if err != nil {
-		log.Print("invalid request")
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Print(err.Error())
+		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
-		log.Printf("error in http delete: %v", err)
+		log.Printf("error occur in http delete: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -53,7 +53,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 
 	UpdateLog(apikey, path)
 	if _, err := io.Copy(w, res.Body); err != nil {
-		log.Printf("error occur while writing response")
+		log.Printf("error occur while writing response: %s", err.Error())
 		http.Error(w, "error occur while writing response", http.StatusInternalServerError)
 	}
 }

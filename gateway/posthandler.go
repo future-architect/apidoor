@@ -19,14 +19,14 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 	path, err := GetAPIURL(r.Context(), apikey, reqpath)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "invalid key or path", http.StatusBadRequest)
 		return
 	}
 
 	res, err := http.Post("http://"+path, "application/json", r.Body)
 	if err != nil {
-		log.Printf("error in http post: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Printf("error in http post: %s", err.Error())
+		http.Error(w, "invalid request", http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
@@ -44,7 +44,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 
 	UpdateLog(apikey, path)
 	if _, err := io.Copy(w, res.Body); err != nil {
-		log.Printf("error occur while writing response")
+		log.Printf("error occur while writing response: %s", err.Error())
 		http.Error(w, "error occur while writing response", http.StatusInternalServerError)
 	}
 }
