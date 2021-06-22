@@ -47,7 +47,7 @@ var table = []testdata{
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/test/hoge",
-		out:     "response from API server",
+		out:     "client error",
 		outcode: http.StatusBadRequest,
 	},
 	// server error
@@ -57,7 +57,7 @@ var table = []testdata{
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/test/hoge",
-		out:     "response from API server",
+		out:     "server error",
 		outcode: http.StatusInternalServerError,
 	},
 	// invalid Content-Type
@@ -77,7 +77,7 @@ var table = []testdata{
 		apikey:  "apikey2",
 		field:   "/test/{test}",
 		request: "/test/hoge",
-		out:     "error: unauthorized request",
+		out:     "invalid key or path",
 		outcode: http.StatusBadRequest,
 	},
 	// unauthorized request (invalid URL)
@@ -87,7 +87,7 @@ var table = []testdata{
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/t/hoge",
-		out:     "error: unauthorized request",
+		out:     "invalid key or path",
 		outcode: http.StatusBadRequest,
 	},
 }
@@ -114,7 +114,7 @@ func TestHandler(t *testing.T) {
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
-		gateway.Handler(w, r)
+		gateway.PostHandler(w, r)
 
 		rw := w.Result()
 		defer rw.Body.Close()
