@@ -1,7 +1,6 @@
 package gateway
 
 import (
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -33,25 +32,20 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer res.Body.Close()
 
-	contents, err := io.ReadAll(res.Body)
-	if err != nil {
-		log.Printf("error in io.ReadAll: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer res.Body.Close()
-
 	switch code := res.StatusCode; {
 	case 400 <= code && code <= 499:
-		log.Printf("client error: %v, status code: %d", string(contents), code)
-		http.Error(w, string(contents), code)
+		log.Printf("client error: %v, status code: %d", res.Body, code)
+		http.Error(w, "client error", code)
 		return
 	case 500 <= code && code <= 599:
-		log.Printf("server error: %v, status code: %d", string(contents), code)
-		http.Error(w, string(contents), code)
+		log.Printf("server error: %v, status code: %d", res.Body, code)
+		http.Error(w, "server error", code)
 		return
 	}
 
 	UpdateLog(apikey, path)
-	fmt.Fprint(w, string(contents))
+	if _, err := io.Copy(w, res.Body); err != nil {
+		log.Printf("error occur while writing response")
+		http.Error(w, "error occur while writing response", http.StatusInternalServerError)
+	}
 }
