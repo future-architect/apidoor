@@ -5,7 +5,6 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"regexp"
 	"strings"
 	"testing"
 )
@@ -21,13 +20,23 @@ type testdata struct {
 }
 
 var table = []testdata{
-	// valid request
+	// valid request using parameter
 	{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
-		field:   "/test/.*",
+		field:   "/test/{test}",
 		request: "/test/hoge",
+		out:     "response from API server",
+		outcode: http.StatusOK,
+	},
+	// valid request not using parameter
+	{
+		rescode: http.StatusOK,
+		content: "application/json",
+		apikey:  "apikey1",
+		field:   "/test",
+		request: "/test",
 		out:     "response from API server",
 		outcode: http.StatusOK,
 	},
@@ -36,7 +45,7 @@ var table = []testdata{
 		rescode: http.StatusBadRequest,
 		content: "application/json",
 		apikey:  "apikey1",
-		field:   "/test/.*",
+		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusBadRequest,
@@ -46,7 +55,7 @@ var table = []testdata{
 		rescode: http.StatusInternalServerError,
 		content: "application/json",
 		apikey:  "apikey1",
-		field:   "/test/.*",
+		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "response from API server",
 		outcode: http.StatusInternalServerError,
@@ -56,7 +65,7 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "text/html",
 		apikey:  "apikey1",
-		field:   "/test/.*",
+		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "unexpected request content",
 		outcode: http.StatusBadRequest,
@@ -66,7 +75,7 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey2",
-		field:   "/test/.*",
+		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "error: unauthorized request",
 		outcode: http.StatusBadRequest,
@@ -76,7 +85,7 @@ var table = []testdata{
 		rescode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
-		field:   "/test/.*",
+		field:   "/test/{test}",
 		request: "/t/hoge",
 		out:     "error: unauthorized request",
 		outcode: http.StatusBadRequest,
@@ -94,9 +103,11 @@ func TestHandler(t *testing.T) {
 
 		host := ts.URL[6:]
 
+		u := gateway.NewURITemplate(tt.field)
+		v := gateway.NewURITemplate(host)
 		gateway.Data["apikey1"] = append(gateway.Data["apikey1"], gateway.Field{
-			Re:   regexp.MustCompile(tt.field),
-			Path: host,
+			Template: *u,
+			Path:     *v,
 		})
 
 		r := httptest.NewRequest(http.MethodGet, tt.request, nil)
