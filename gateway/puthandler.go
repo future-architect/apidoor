@@ -28,6 +28,7 @@ func PutHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
+	RequestHeaderSetter(r, req)
 
 	client := &http.Client{}
 	res, err := client.Do(req)

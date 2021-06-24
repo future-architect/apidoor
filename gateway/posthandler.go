@@ -22,10 +22,19 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := http.Post("http://"+path, "application/json", r.Body)
+	req, err := http.NewRequest(http.MethodPost, "http://"+path, r.Body)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	RequestHeaderSetter(r, req)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
 	if err != nil {
 		log.Printf("error in http post: %s", err.Error())
-		http.Error(w, "invalid request", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()

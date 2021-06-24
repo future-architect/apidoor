@@ -23,10 +23,19 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := http.Get("http://" + path + "?" + query)
+	req, err := http.NewRequest(http.MethodGet, "http://"+path+"?"+query, nil)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+	RequestHeaderSetter(r, req)
+
+	client := &http.Client{}
+	res, err := client.Do(req)
 	if err != nil {
 		log.Printf("error in http get: %s", err.Error())
-		http.Error(w, "invalid request", http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
