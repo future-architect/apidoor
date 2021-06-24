@@ -9,6 +9,9 @@ import (
 )
 
 func ApiNumChecker(key, path string) error {
+	TmpLog.Lock()
+	defer TmpLog.Unlock()
+
 	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
 		"host="+os.Getenv("DATABASE_HOST")+" "+
 			"port="+os.Getenv("DATABASE_PORT")+" "+
