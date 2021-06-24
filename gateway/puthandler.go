@@ -22,6 +22,12 @@ func PutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := ApiNumChecker(apikey, path); err != nil {
+		log.Print(err.Error())
+		http.Error(w, "API limit exceeded", http.StatusBadRequest)
+		return
+	}
+
 	req, err := http.NewRequest(http.MethodPut, "http://"+path, r.Body)
 	if err != nil {
 		log.Print(err.Error())
