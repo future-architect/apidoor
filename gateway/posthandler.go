@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func PostHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
@@ -14,7 +14,6 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	apikey := r.Header.Get("Authorization")
 	reqpath := r.URL.Path
-	query := r.URL.RawQuery
 
 	path, err := GetAPIURL(r.Context(), apikey, reqpath)
 	if err != nil {
@@ -23,9 +22,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := http.Get("http://" + path + "?" + query)
+	res, err := http.Post("http://"+path, "application/json", r.Body)
 	if err != nil {
-		log.Printf("error in http get: %s", err.Error())
+		log.Printf("error in http post: %s", err.Error())
 		http.Error(w, "invalid request", http.StatusInternalServerError)
 		return
 	}

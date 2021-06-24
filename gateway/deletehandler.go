@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
@@ -23,10 +23,18 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := http.Get("http://" + path + "?" + query)
+	req, err := http.NewRequest(http.MethodDelete, "http://"+path+"?"+query, nil)
 	if err != nil {
-		log.Printf("error in http get: %s", err.Error())
-		http.Error(w, "invalid request", http.StatusInternalServerError)
+		log.Print(err.Error())
+		http.Error(w, "invalid request", http.StatusBadRequest)
+		return
+	}
+
+	client := &http.Client{}
+	res, err := client.Do(req)
+	if err != nil {
+		log.Printf("error occur in http delete: %s", err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
