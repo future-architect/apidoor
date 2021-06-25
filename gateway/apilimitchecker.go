@@ -8,7 +8,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-func ApiNumChecker(key, path string) error {
+func ApiLimitChecker(key, path string) error {
 	TmpLog.Lock()
 	defer TmpLog.Unlock()
 

@@ -87,7 +87,7 @@ func TestAPINumChecker(t *testing.T) {
 			}
 		}
 
-		switch err := gateway.ApiNumChecker("key", "path"); err {
+		switch err := gateway.ApiLimitChecker("key", "path"); err {
 		case nil:
 			if tt.err != nil {
 				t.Fatalf("case %d: expected %v, get %v", i, tt.err, err)
