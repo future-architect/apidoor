@@ -29,19 +29,14 @@ func ApiNumChecker(key, path string) error {
 		return errors.New("error occurs in database")
 	}
 
-	var max int
-	switch err := db.QueryRow("SELECT apimaxnum FROM apilimit WHERE apikey=$1 AND apipath=$2", key, path).Scan(&max); err {
-	case sql.ErrNoRows:
-		return nil
-	case nil:
-		if k, ok := TmpLog.Data[key][path]; ok {
-			n += k
+	k := TmpLog.Data[key][path]
+	for _, field := range APIData[key] {
+		if field.Template.JoinPath() == path {
+			if n+k >= field.Max {
+				return errors.New("limit exceeded")
+			}
 		}
-		if n >= max {
-			return errors.New("limit exceeded")
-		}
-		return nil
-	default:
-		return errors.New("error occurs in database")
 	}
+
+	return nil
 }

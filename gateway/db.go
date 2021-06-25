@@ -16,14 +16,15 @@ var rdb = redis.NewClient(&redis.Options{
 type Field struct {
 	Template URITemplate
 	Path     URITemplate
+	Max      int
 }
 
 type KeyData map[string][]Field
 
-var Data = make(KeyData)
+var APIData = make(KeyData)
 
 func GetAPIURL(ctx context.Context, key, path string) (string, error) {
-	fields, ok := Data[key]
+	fields, ok := APIData[key]
 	if !ok {
 		return "", &MyError{Message: "unauthorized request"}
 	}
@@ -44,9 +45,17 @@ func init() {
 		for _, hk := range rdb.HKeys(ctx, k).Val() {
 			u := NewURITemplate(hk)
 			v := NewURITemplate(rdb.HGet(ctx, k, hk).Val())
-			Data[k] = append(Data[k], Field{
+			n := 5
+			/*
+				n, err := strconv.Atoi(rdb.HGet(ctx, k, hk).Val())
+				if err != nil {
+					log.Fatal(err)
+				}
+			*/
+			APIData[k] = append(APIData[k], Field{
 				Template: *u,
 				Path:     *v,
+				Max:      n,
 			})
 		}
 	}

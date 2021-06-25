@@ -72,15 +72,20 @@ func TestAPINumChecker(t *testing.T) {
 		if _, err := db.Exec("INSERT INTO apilog(apikey, apipath, num) VALUES('key', 'path', $1)", tt.data); err != nil {
 			t.Fatalf("case %d: error occurs in database, %v", i, err)
 		}
-		if tt.max >= 0 {
-			if _, err := db.Exec("INSERT INTO apilimit(apikey, apipath, apimaxnum) VALUES('key', 'path', $1)", tt.max); err != nil {
-				t.Fatalf("case %d: error occurs in database, %v", i, err)
-			}
-		}
 
 		gateway.TmpLog.Data = make(map[string]map[string]int)
 		gateway.TmpLog.Data["key"] = make(map[string]int)
 		gateway.TmpLog.Data["key"]["path"] = tt.local
+
+		if tt.max >= 0 {
+			gateway.APIData["key"] = []gateway.Field{
+				{
+					Template: *gateway.NewURITemplate("/path"),
+					Path:     *gateway.NewURITemplate("/path"),
+					Max:      tt.max,
+				},
+			}
+		}
 
 		switch err := gateway.ApiNumChecker("key", "path"); err {
 		case nil:
