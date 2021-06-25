@@ -32,8 +32,17 @@ func ApiLimitChecker(key, path string) error {
 	k := TmpLog.Data[key][path]
 	for _, field := range APIData[key] {
 		if field.Template.JoinPath() == path {
-			if n+k >= field.Max {
-				return errors.New("limit exceeded")
+			switch max := field.Max.(type) {
+			case int:
+				if n+k >= max {
+					return errors.New("limit exceeded")
+				}
+			case string:
+				if max != "-" {
+					return errors.New("unexpected limit value")
+				}
+			default:
+				return errors.New("unexpected limit value")
 			}
 		}
 	}

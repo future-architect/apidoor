@@ -16,7 +16,7 @@ var rdb = redis.NewClient(&redis.Options{
 type Field struct {
 	Template URITemplate
 	Path     URITemplate
-	Max      int
+	Max      interface{}
 }
 
 type KeyData map[string][]Field

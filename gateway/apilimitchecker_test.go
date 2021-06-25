@@ -13,7 +13,7 @@ import (
 type apinumtest struct {
 	data  int
 	local int
-	max   int
+	max   interface{}
 	err   error
 }
 
@@ -36,7 +36,7 @@ var apinumdata = []apinumtest{
 	{
 		data:  1,
 		local: 1,
-		max:   -1,
+		max:   "-",
 		err:   nil,
 	},
 	// invalid request
@@ -52,6 +52,20 @@ var apinumdata = []apinumtest{
 		local: 2,
 		max:   4,
 		err:   errors.New("limit exceeded"),
+	},
+	// unexpected value in data
+	{
+		data:  2,
+		local: 2,
+		max:   "unlimited",
+		err:   errors.New("unexpected limit value"),
+	},
+	// unexpected value in data
+	{
+		data:  2,
+		local: 2,
+		max:   false,
+		err:   errors.New("unexpected limit value"),
 	},
 }
 
@@ -77,14 +91,12 @@ func TestAPINumChecker(t *testing.T) {
 		gateway.TmpLog.Data["key"] = make(map[string]int)
 		gateway.TmpLog.Data["key"]["path"] = tt.local
 
-		if tt.max >= 0 {
-			gateway.APIData["key"] = []gateway.Field{
-				{
-					Template: *gateway.NewURITemplate("/path"),
-					Path:     *gateway.NewURITemplate("/path"),
-					Max:      tt.max,
-				},
-			}
+		gateway.APIData["key"] = []gateway.Field{
+			{
+				Template: *gateway.NewURITemplate("/path"),
+				Path:     *gateway.NewURITemplate("/path"),
+				Max:      tt.max,
+			},
 		}
 
 		switch err := gateway.ApiLimitChecker("key", "path"); err {
