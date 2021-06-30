@@ -23,7 +23,7 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ApiLimitChecker(apikey, path); err != nil {
+	if err := APILimitChecker(apikey, path); err != nil {
 		log.Print(err.Error())
 		http.Error(w, "API limit exceeded", http.StatusBadRequest)
 		return

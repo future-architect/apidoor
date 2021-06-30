@@ -16,6 +16,7 @@ var rdb = redis.NewClient(&redis.Options{
 type Field struct {
 	Template URITemplate
 	Path     URITemplate
+	Num      int
 	Max      interface{}
 }
 
@@ -46,8 +47,9 @@ func init() {
 			u := NewURITemplate(hk)
 			v := NewURITemplate(rdb.HGet(ctx, k, hk).Val())
 			n := 5
+			m := 10
 			/*
-				n, err := strconv.Atoi(rdb.HGet(ctx, k, hk).Val())
+				m, err := strconv.Atoi(rdb.HGet(ctx, k, hk).Val())
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -55,7 +57,8 @@ func init() {
 			APIData[k] = append(APIData[k], Field{
 				Template: *u,
 				Path:     *v,
-				Max:      n,
+				Num:      n,
+				Max:      m,
 			})
 		}
 	}
