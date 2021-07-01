@@ -105,7 +105,7 @@ func TestHandler(t *testing.T) {
 
 		u := gateway.NewURITemplate(tt.field)
 		v := gateway.NewURITemplate(host)
-		gateway.Data["apikey1"] = append(gateway.Data["apikey1"], gateway.Field{
+		gateway.APIData["apikey1"] = append(gateway.APIData["apikey1"], gateway.Field{
 			Template: *u,
 			Path:     *v,
 		})
