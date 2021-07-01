@@ -29,7 +29,6 @@ func PushLog() {
 	defer file.Close()
 
 	reader := csv.NewReader(file)
-	count := make(map[string]map[string]int)
 	for {
 		line, err := reader.Read()
 		if err != nil {
@@ -39,34 +38,11 @@ func PushLog() {
 			log.Fatal(err)
 		}
 
+		date := line[0]
 		key := line[1]
 		path := line[2]
-		if _, ok := count[key][path]; ok {
-			count[key][path]++
-		} else {
-			if _, ok := count[key]; !ok {
-				count[key] = make(map[string]int)
-			}
-			count[key][path] = 1
-		}
-	}
-
-	for k, v := range count {
-		for p, n := range v {
-			var isExist bool
-			if err := db.QueryRow("SELECT EXISTS(SELECT * FROM apilog WHERE apikey=$1 AND apipath=$2)", k, p).Scan(&isExist); err != nil {
-				log.Fatal(err)
-			}
-
-			if isExist {
-				if _, err := db.Exec("UPDATE apilog SET num=num+$1 WHERE apikey=$2 AND apipath=$3", n, k, p); err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				if _, err := db.Exec("INSERT INTO apilog(apikey, apipath, num) VALUES($1, $2, $3)", k, p, n); err != nil {
-					log.Fatal(err)
-				}
-			}
+		if _, err := db.Exec("INSERT INTO apilog(rundate, apikey, apipath) VALUES($1, $2, $3)", date, key, path); err != nil {
+			log.Fatal(err)
 		}
 	}
 

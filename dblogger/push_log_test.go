@@ -6,9 +6,20 @@ import (
 	"encoding/csv"
 	"os"
 	"testing"
+	"time"
 
 	_ "github.com/lib/pq"
 )
+
+var testdata = struct {
+	date string
+	key  string
+	path string
+}{
+	date: "2021-07-01T14:01:46+09:00",
+	key:  "key",
+	path: "path",
+}
 
 func TestPushLog(t *testing.T) {
 	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
@@ -38,39 +49,34 @@ func TestPushLog(t *testing.T) {
 
 	writer := csv.NewWriter(file)
 	writer.Write([]string{
-		"2021-06-30 17:54:07.2278208 +0900 JST m=+0.032315701",
-		"key",
-		"path",
-	})
-	writer.Write([]string{
-		"2021-06-30 17:54:07.2290175 +0900 JST m=+0.033512401",
-		"key",
-		"path",
+		testdata.date,
+		testdata.key,
+		testdata.path,
 	})
 	writer.Flush()
 	dblogger.PushLog()
 
-	var n int
-	if err := db.QueryRow("SELECT num from apilog WHERE apikey='key' AND apipath='path'").Scan(&n); err != nil {
+	row := struct {
+		date string
+		key  string
+		path string
+	}{}
+	if err := db.QueryRow("SELECT * FROM apilog WHERE apikey='key' AND apipath='path'").Scan(&row.date, &row.key, &row.path); err != nil {
 		t.Fatal(err)
 	}
-	if n != 2 {
-		t.Fatalf("unexpected count %d, expected 2", n)
-	}
 
-	writer.Write([]string{
-		"2021-07-01 10:28:32.9216589 +0900 JST m=+0.099747001",
-		"key",
-		"path",
-	})
-	writer.Flush()
-	dblogger.PushLog()
-
-	if err := db.QueryRow("SELECT num from apilog WHERE apikey='key' AND apipath='path'").Scan(&n); err != nil {
+	d, err := time.Parse(time.RFC3339, testdata.date)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if n != 3 {
-		t.Fatalf("unexpected count %d, expected 3", n)
+	row.date = d.Format(time.RFC3339)
+
+	if row.date != testdata.date {
+		t.Fatalf("unexpected date %s, expected %s", row.date, testdata.date)
+	} else if row.key != testdata.key {
+		t.Fatalf("unexpected key %s, expected %s", row.key, testdata.key)
+	} else if row.path != testdata.path {
+		t.Fatalf("unexpected path %s, expected %s", row.path, testdata.path)
 	}
 
 	if _, err := db.Exec("DELETE FROM apilog WHERE apikey='key' AND apipath='path'"); err != nil {
