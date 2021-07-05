@@ -11,7 +11,7 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
-		r.Get("/*", gateway.Handler)
+		r.Get("/*", gateway.GetHandler)
 		r.Put("/*", gateway.PutHandler)
 		r.Delete("/*", gateway.DeleteHandler)
 		r.Post("/*", gateway.PostHandler)

@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func GetHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)

@@ -114,7 +114,7 @@ func TestHandler(t *testing.T) {
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
-		gateway.Handler(w, r)
+		gateway.GetHandler(w, r)
 
 		rw := w.Result()
 		defer rw.Body.Close()
