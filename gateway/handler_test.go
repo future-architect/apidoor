@@ -78,7 +78,7 @@ var table = []testdata{
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "invalid key or path",
-		outcode: http.StatusBadRequest,
+		outcode: http.StatusNotFound,
 	},
 	// unauthorized request (invalid URL)
 	{
@@ -88,7 +88,7 @@ var table = []testdata{
 		field:   "/test/{test}",
 		request: "/t/hoge",
 		out:     "invalid key or path",
-		outcode: http.StatusBadRequest,
+		outcode: http.StatusNotFound,
 	},
 }
 
