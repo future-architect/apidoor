@@ -8,7 +8,7 @@ import (
 )
 
 func TestUpdateLog(t *testing.T) {
-	file, err := os.OpenFile("./log/log.csv", os.O_RDWR|os.O_CREATE, 0600)
+	file, err := os.OpenFile(os.Getenv("LOGPATH"), os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
 		t.Fatal(err)
 	}

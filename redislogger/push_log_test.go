@@ -29,7 +29,7 @@ var rdb = redis.NewClient(&redis.Options{
 })
 
 func TestPushLog(t *testing.T) {
-	file, err := os.OpenFile("./log/log.csv", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	file, err := os.OpenFile(os.Getenv("LOGPATH"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
