@@ -65,14 +65,17 @@ func TestPushLog(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	d, err := time.Parse(time.RFC3339, testdata.date)
+	t1, err := time.Parse(time.RFC3339, testdata.date)
 	if err != nil {
 		t.Fatal(err)
 	}
-	row.date = d.Format(time.RFC3339)
+	t2, err := time.Parse(time.RFC3339, row.date)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	if row.date != testdata.date {
-		t.Fatalf("unexpected date %s, expected %s", row.date, testdata.date)
+	if !t1.Equal(t2) {
+		t.Fatalf("unexpected date %s, expected %s", t1.String(), t2.String())
 	} else if row.key != testdata.key {
 		t.Fatalf("unexpected key %s, expected %s", row.key, testdata.key)
 	} else if row.path != testdata.path {
