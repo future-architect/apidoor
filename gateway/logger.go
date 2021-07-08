@@ -15,6 +15,6 @@ func UpdateLog(key, path string) {
 	defer file.Close()
 
 	writer := csv.NewWriter(file)
-	writer.Write([]string{time.Now().String(), key, path})
+	writer.Write([]string{time.Now().Format(time.RFC3339), key, path})
 	writer.Flush()
 }
