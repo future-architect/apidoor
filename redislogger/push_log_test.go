@@ -12,14 +12,25 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-var testdata = struct {
+var now = time.Now()
+
+var testdata = []struct {
 	date string
 	key  string
 	path string
 }{
-	date: time.Now().Format(time.RFC3339),
-	key:  "key",
-	path: "path",
+	// data not counted by logger
+	{
+		date: now.Add(-2 * time.Minute).Format(time.RFC3339),
+		key:  "key",
+		path: "path",
+	},
+	// data counted by logger
+	{
+		date: now.Add(-2 * time.Second).Format(time.RFC3339),
+		key:  "key",
+		path: "path",
+	},
 }
 
 var rdb = redis.NewClient(&redis.Options{
@@ -40,11 +51,11 @@ func TestPushLog(t *testing.T) {
 	}
 
 	writer := csv.NewWriter(file)
-	for i := 1; i <= 2; i++ {
+	for _, tt := range testdata {
 		writer.Write([]string{
-			testdata.date,
-			testdata.key,
-			testdata.path,
+			tt.date,
+			tt.key,
+			tt.path,
 		})
 	}
 	writer.Flush()
@@ -52,15 +63,15 @@ func TestPushLog(t *testing.T) {
 	ctx := context.Background()
 	rdb.HDel(ctx, "key", "path")
 
-	for i := 1; i <= 2; i++ {
-		redislogger.PushLog()
-		n, err := strconv.Atoi(rdb.HGet(ctx, "key", "path").Val())
-		if err != nil {
-			t.Fatal(err)
-		}
-		if n != 2*i {
-			t.Fatalf("unexpected count %d, expected %d", n, 2*i)
-		}
+	redislogger.PushLog()
+
+	n, err := strconv.Atoi(rdb.HGet(ctx, "key", "path").Val())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if n != 1 {
+		t.Fatalf("unexpected count %d, expected %d", n, 1)
 	}
 
 	if err := file.Truncate(0); err != nil {
