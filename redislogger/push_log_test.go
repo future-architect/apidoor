@@ -31,6 +31,11 @@ var testdata = []struct {
 		key:  "key",
 		path: "path",
 	},
+	{
+		date: now.Add(-2 * time.Second).Format(time.RFC3339),
+		key:  "key",
+		path: "path",
+	},
 }
 
 var rdb = redis.NewClient(&redis.Options{
@@ -63,15 +68,17 @@ func TestPushLog(t *testing.T) {
 	ctx := context.Background()
 	rdb.HDel(ctx, "key", "path")
 
-	redislogger.PushLog()
+	for i := 1; i <= 2; i++ {
+		redislogger.PushLog()
 
-	n, err := strconv.Atoi(rdb.HGet(ctx, "key", "path").Val())
-	if err != nil {
-		t.Fatal(err)
-	}
+		n, err := strconv.Atoi(rdb.HGet(ctx, "key", "path").Val())
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	if n != 1 {
-		t.Fatalf("unexpected count %d, expected %d", n, 1)
+		if n != i*2 {
+			t.Fatalf("unexpected count %d, expected %d", n, i*2)
+		}
 	}
 
 	if err := file.Truncate(0); err != nil {
