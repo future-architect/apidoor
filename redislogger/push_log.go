@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -25,6 +26,7 @@ func PushLog() {
 
 	reader := csv.NewReader(file)
 	count := make(map[string]map[string]int)
+	threshold := time.Now().Add(-1 * time.Minute)
 	for {
 		line, err := reader.Read()
 		if err != nil {
@@ -34,12 +36,19 @@ func PushLog() {
 			log.Fatal(err)
 		}
 
+		t, err := time.Parse(time.RFC3339, line[0])
+		if err != nil {
+			log.Fatal(err)
+		}
 		key, path := line[1], line[2]
-		if _, ok := count[key]; ok {
-			count[key][path]++
-		} else {
-			count[key] = make(map[string]int)
-			count[key][path] = 1
+
+		if t.After(threshold) {
+			if _, ok := count[key]; ok {
+				count[key][path]++
+			} else {
+				count[key] = make(map[string]int)
+				count[key][path] = 1
+			}
 		}
 	}
 
