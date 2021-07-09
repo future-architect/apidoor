@@ -20,7 +20,7 @@ func main() {
 
 	rt := GetEnvWithDeault("READTIMEOUT", 5)
 	rht := GetEnvWithDeault("READHEADERTIMEOUT", 5)
-	wt := GetEnvWithDeault("WRITETIMEOUT", 5)
+	wt := GetEnvWithDeault("WRITETIMEOUT", 20)
 	it := GetEnvWithDeault("IDLETIMEOUT", 5)
 	mhb := GetEnvWithDeault("MAXHEADERBYTES", 1<<20)
 
