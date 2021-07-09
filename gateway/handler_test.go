@@ -78,7 +78,7 @@ var table = []testdata{
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "invalid key or path",
-		outcode: http.StatusBadRequest,
+		outcode: http.StatusNotFound,
 	},
 	// unauthorized request (invalid URL)
 	{
@@ -88,7 +88,7 @@ var table = []testdata{
 		field:   "/test/{test}",
 		request: "/t/hoge",
 		out:     "invalid key or path",
-		outcode: http.StatusBadRequest,
+		outcode: http.StatusNotFound,
 	},
 }
 
@@ -114,7 +114,7 @@ func TestHandler(t *testing.T) {
 		r.Header.Set("Content-Type", tt.content)
 		r.Header.Set("Authorization", tt.apikey)
 		w := httptest.NewRecorder()
-		gateway.Handler(w, r)
+		gateway.GetHandler(w, r)
 
 		rw := w.Result()
 		defer rw.Body.Close()

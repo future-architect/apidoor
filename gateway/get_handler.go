@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+func GetHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
@@ -13,26 +13,31 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	apikey := r.Header.Get("Authorization")
+	if apikey == "" {
+		log.Print("No authorization key")
+		http.Error(w, "no authorization", http.StatusBadRequest)
+	}
+
 	reqpath := r.URL.Path
 	query := r.URL.RawQuery
 
 	path, err := GetAPIURL(r.Context(), apikey, reqpath)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, "invalid key or path", http.StatusBadRequest)
+		http.Error(w, "invalid key or path", http.StatusNotFound)
 		return
 	}
 
 	if err := APILimitChecker(apikey, path); err != nil {
 		log.Print(err.Error())
-		http.Error(w, "API limit exceeded", http.StatusBadRequest)
+		http.Error(w, "API limit exceeded", http.StatusForbidden)
 		return
 	}
 
 	req, err := http.NewRequest(http.MethodGet, "http://"+path+"?"+query, nil)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, "invalid request", http.StatusBadRequest)
+		http.Error(w, "couldn't make request", http.StatusInternalServerError)
 		return
 	}
 	RequestHeaderSetter(r, req)
