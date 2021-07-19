@@ -1,0 +1,14 @@
+version: "3.8"
+services:
+    postgres:
+        image: postgres:13.3
+        container_name: tmp
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+        ports:
+            - "5555:5432"
+        user: root
+        tty: true
+        restart: always
