@@ -46,7 +46,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 		list = append(list, row)
 	}
 
-	res, err := json.Marshal(list)
+	res, err := json.Marshal(Products{list})
 	if err != nil {
 		log.Print("error occurs while reading response")
 		http.Error(w, "error occur in database", http.StatusInternalServerError)

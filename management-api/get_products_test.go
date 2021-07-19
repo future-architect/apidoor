@@ -74,12 +74,12 @@ func TestGetProducts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var res []managementapi.Api
+	var res managementapi.Products
 	if err := json.Unmarshal(body, &res); err != nil {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(data, res) {
+	if !reflect.DeepEqual(data, res.Products) {
 		t.Fatalf("unexpected response: expected %v, get %v", data, res)
 	}
 
