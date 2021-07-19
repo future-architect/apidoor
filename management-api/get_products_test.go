@@ -1,7 +1,6 @@
 package managementapi_test
 
 import (
-	"database/sql"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -12,12 +11,13 @@ import (
 
 	"managementapi"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 func TestGetProducts(t *testing.T) {
 	// insert data for test
-	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
+	db, err := sqlx.Open(os.Getenv("DATABASE_DRIVER"),
 		"host="+os.Getenv("DATABASE_HOST")+" "+
 			"port="+os.Getenv("DATABASE_PORT")+" "+
 			"user="+os.Getenv("DATABASE_USER")+" "+

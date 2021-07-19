@@ -1,18 +1,18 @@
 package managementapi
 
 import (
-	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 // get list of information of APIs from database
 func GetProducts(w http.ResponseWriter, r *http.Request) {
-	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
+	db, err := sqlx.Open(os.Getenv("DATABASE_DRIVER"),
 		"host="+os.Getenv("DATABASE_HOST")+" "+
 			"port="+os.Getenv("DATABASE_PORT")+" "+
 			"user="+os.Getenv("DATABASE_USER")+" "+
@@ -26,7 +26,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT * from apiinfo")
+	rows, err := db.Queryx("SELECT * from apiinfo")
 	if err != nil {
 		log.Print("error occurs while running query")
 		http.Error(w, "error occurs in database", http.StatusInternalServerError)
@@ -37,7 +37,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var row Api
 
-		if err := rows.Scan(&row.ID, &row.Name, &row.Source, &row.Description, &row.Thumbnail); err != nil {
+		if err := rows.StructScan(&row); err != nil {
 			log.Print("error occurs while reading row")
 			http.Error(w, "error occurs in database", http.StatusInternalServerError)
 			return
