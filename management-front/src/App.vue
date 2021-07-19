@@ -1,19 +1,19 @@
 <template>
-  <Header id="header"/>
+  <Header id="header" />
   <div id="main">
     <router-link to="/">Home</router-link>
-    <router-view/>
+    <router-view />
   </div>
-  <Footer/>
+  <Footer />
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
-import Header from '@/components/Header.vue';
-import Footer from '@/components/Footer.vue';
+import { defineComponent } from "vue";
+import Header from "@/components/Header.vue";
+import Footer from "@/components/Footer.vue";
 
 export default defineComponent({
-  name: 'App',
+  name: "App",
   components: {
     Header,
     Footer,

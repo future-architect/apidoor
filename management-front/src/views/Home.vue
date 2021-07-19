@@ -1,13 +1,11 @@
 <template>
-  <div>
-    This is API management page<br>
-  </div>
+  <div>This is API management page<br /></div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent } from "vue";
 
 export default defineComponent({
-  name: 'Home',
+  name: "Home",
 });
 </script>
