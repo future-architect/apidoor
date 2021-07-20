@@ -16,7 +16,6 @@ describe("Test API Handler", () => {
       mock.onGet("/products").reply(200, productsData);
 
       const data = await getProducts();
-      console.log(data);
 
       expect(data.products[0].id).toBe(3);
     });
