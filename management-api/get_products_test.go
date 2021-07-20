@@ -33,7 +33,7 @@ func TestGetProducts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var data = []managementapi.Api{
+	var data = []managementapi.Product{
 		{
 			ID:          3,
 			Name:        "Awesome API",

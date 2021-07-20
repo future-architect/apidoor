@@ -1,6 +1,6 @@
 package managementapi
 
-type Api struct {
+type Product struct {
 	ID          int    `json:"id" db:"id"`
 	Name        string `json:"name" db:"name"`
 	Source      string `json:"source" db:"source"`
@@ -9,5 +9,5 @@ type Api struct {
 }
 
 type Products struct {
-	Products []Api `json:"products"`
+	Products []Product `json:"products"`
 }

@@ -33,9 +33,9 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var list []Api
+	var list []Product
 	for rows.Next() {
-		var row Api
+		var row Product
 
 		if err := rows.StructScan(&row); err != nil {
 			log.Print("error occurs while reading row")
@@ -46,7 +46,7 @@ func GetProducts(w http.ResponseWriter, r *http.Request) {
 		list = append(list, row)
 	}
 
-	res, err := json.Marshal(Products{list})
+	res, err := json.Marshal(Products{Products: list})
 	if err != nil {
 		log.Print("error occurs while reading response")
 		http.Error(w, "error occur in database", http.StatusInternalServerError)
