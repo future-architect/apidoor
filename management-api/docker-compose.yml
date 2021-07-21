@@ -6,6 +6,7 @@ services:
         environment:
             - POSTGRES_USER=root
             - POSTGRES_PASSWORD=password
+            - POSTGRES_INITDB_ARGS=--encoding=UTF-8
         ports:
             - "5555:5432"
         user: root
