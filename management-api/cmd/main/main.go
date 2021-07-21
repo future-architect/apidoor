@@ -13,6 +13,9 @@ func main() {
 	r.Route("/health", func(r chi.Router) {
 		r.Get("/", managementapi.Health)
 	})
+	r.Route("/products", func(r chi.Router) {
+		r.Get("/", managementapi.GetProducts)
+	})
 
 	s := &http.Server{
 		Addr:    ":3000",
