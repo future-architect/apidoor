@@ -2,7 +2,7 @@ version: "3.8"
 services:
     postgres:
         image: postgres:13.3
-        container_name: tmp
+        container_name: postgres
         environment:
             - POSTGRES_USER=root
             - POSTGRES_PASSWORD=password
@@ -12,3 +12,9 @@ services:
         user: root
         tty: true
         restart: always
+        volumes:
+            # for Mac
+            - ./sql:/docker-entrypoint-initdb.d
+            # for Windows
+            # SQL_PATH should set in this format: /c/path/to/sql
+            - ${SQL_PATH}:/docker-entrypoint-initdb.d
