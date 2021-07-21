@@ -6,10 +6,10 @@ services:
         environment:
             - POSTGRES_USER=root
             - POSTGRES_PASSWORD=password
-        restart: always
-        tty: true
         ports:
             - "5555:5432"
         user: root
+        tty: true
+        restart: always
         volumes:
             - ./init.sql:/docker-entrypoint-initdb.d
