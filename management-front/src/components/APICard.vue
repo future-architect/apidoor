@@ -6,13 +6,13 @@
 
 <script lang="ts">
 import { defineComponent, PropType } from "vue";
-import { APIInfo } from "@/models/api-info";
+import { Product } from "@/models/product";
 
 export default defineComponent({
   name: "APICard",
   props: {
     info: {
-      type: Object as PropType<APIInfo>,
+      type: Object as PropType<Product>,
       required: true,
     },
   },

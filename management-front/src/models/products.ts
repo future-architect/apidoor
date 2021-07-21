@@ -1,5 +1,5 @@
-import { APIInfo } from "@/models/api-info";
+import { Product } from "@/models/product";
 
 export interface Products {
-  products: APIInfo[];
+  products: Product[];
 }

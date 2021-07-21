@@ -1,4 +1,4 @@
-export interface APIInfo {
+export interface Product {
   id: number;
   name: string;
   source: string;
