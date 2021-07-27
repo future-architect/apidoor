@@ -1,8 +1,8 @@
-import { APIInfo } from "@/models/api-info";
+import { Product } from "@/models/product";
 import { Products } from "@/models/products";
 
-export const isAPIInfo = (arg: unknown): arg is APIInfo => {
-  const tmp = arg as APIInfo;
+export const isAPIInfo = (arg: unknown): arg is Product => {
+  const tmp = arg as Product;
 
   return (
     typeof tmp?.id === "number" &&
