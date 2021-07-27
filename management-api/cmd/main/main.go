@@ -8,6 +8,9 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// @title Management API
+// @version 1.0
+// @description This is an API that manages products.
 func main() {
 	r := chi.NewRouter()
 	r.Route("/health", func(r chi.Router) {
