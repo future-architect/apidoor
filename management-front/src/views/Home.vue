@@ -1,7 +1,9 @@
 <template>
-  <div>This is API management page<br /></div>
-  <div v-for="product in APIs.products" :key="product.id">
-    <APICard :info="product" />
+  <h1>This is API management page<br /></h1>
+  <div class="container">
+    <div v-for="product in APIs.products" :key="product.id">
+      <APICard :info="product" />
+    </div>
   </div>
 </template>
 
@@ -33,3 +35,12 @@ export default defineComponent({
   },
 });
 </script>
+
+<style lang="scss">
+.container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  align-content: flex-start;
+}
+</style>
