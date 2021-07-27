@@ -10,7 +10,12 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// GetProducts gets list of information of product(API) from database.
+// GetProducts godoc
+// @Summary Get list of products
+// @Description Get list of APIs and its information
+// @produce json
+// @Success 200 {object} Products
+// @Router /products [get]
 func GetProducts(w http.ResponseWriter, r *http.Request) {
 	db, err := sqlx.Open(os.Getenv("DATABASE_DRIVER"),
 		"host="+os.Getenv("DATABASE_HOST")+" "+

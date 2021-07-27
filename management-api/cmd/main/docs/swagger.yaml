@@ -1,0 +1,50 @@
+definitions:
+  managementapi.Product:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      source:
+        type: string
+      thumbnail:
+        type: string
+    type: object
+  managementapi.Products:
+    properties:
+      products:
+        items:
+          $ref: '#/definitions/managementapi.Product'
+        type: array
+    type: object
+info:
+  contact: {}
+  description: This is an API that manages products.
+  title: Management API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: checks whether this API works correctly or not
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: checks if API works
+  /products:
+    get:
+      description: Get list of APIs and its information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/managementapi.Products'
+      summary: Get list of products
+swagger: "2.0"
