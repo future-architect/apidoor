@@ -1,7 +1,6 @@
 <template>
   <Header id="header" />
   <div id="main">
-    <router-link to="/">Home</router-link>
     <router-view />
   </div>
   <Footer />

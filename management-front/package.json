@@ -11,6 +11,7 @@
     "mock": "json-server --watch mock.json"
   },
   "dependencies": {
+    "@ionic/vue": "^5.6.12",
     "axios": "^0.21.1",
     "core-js": "^3.6.5",
     "vue": "^3.0.0",
