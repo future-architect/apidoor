@@ -1,0 +1,20 @@
+{
+	"products": {
+		"products": [
+			{
+				"id": 3,
+				"name": "Awesome API",
+				"source": "Nice Company",
+				"description": "provide fantastic information.",
+				"thumbnail": "test.com/img/123"
+			},
+			{
+				"id": 4,
+				"name": "Awesome API v2",
+				"source": "Nice Company",
+				"description": "provide special information.",
+				"thumbnail": "test.com/img/456"
+			}
+		]
+	}
+}
