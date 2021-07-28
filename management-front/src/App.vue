@@ -1,6 +1,7 @@
 <template>
   <Header id="header" />
   <div id="main">
+    <router-link to="/">Home</router-link>
     <router-view />
   </div>
   <Footer />
@@ -49,7 +50,7 @@ export default defineComponent({
   position: sticky;
   top: 0;
   width: 100%;
-  height: 2em;
+  height: 4em;
 }
 
 html {
