@@ -27,7 +27,7 @@
 - `DATABASE_SSLMODE`
     - 用途: SSLを有効化するか(ex. disable)
 
-リポジトリのコードを変更せずローカルで実行する場合はexと同様に設定すると実行可能になります。`source env.sh`でローカル実行用の環境変数を読み込むことが出来ます。
+リポジトリのコードを変更せずローカルで実行する場合はexと同様に設定すると実行可能になります。`docker-compose.yml`の`services/api/environment`を変更することで設定できます。
 
 `docker-compose.yml`の`volumes`を、使用しているOSに関する記述以外コメントアウトしてください。
 
@@ -37,7 +37,12 @@ dockerによるマウントがWSL上で出来ないため、`sql`ディレクト
 ## 実行
 このREADMEのあるディレクトリで以下のコマンドを実行してください。
 ```
+# proxy環境下での実行時のみ
+docker-compose build \
+  --build-arg HTTP_PROXY=${YOUR_PROXY} \
+  --build-arg HTTPS_PROXY=${YOUR_PROXY} \
+  --build-arg http_proxy=${YOUR_PROXY} \
+  --build-arg ${YOUR_PROXY}
+
 docker-compose up -d
-cd cmd/main
-go run main.go
 ```
