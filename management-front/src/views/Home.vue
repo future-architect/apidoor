@@ -40,6 +40,7 @@ export default defineComponent({
 .container {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   align-items: flex-start;
   align-content: flex-start;
 }
