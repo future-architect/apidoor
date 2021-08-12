@@ -1,5 +1,19 @@
 version: "3.8"
 services:
+    api:
+        build: .
+        ports: 
+            - 3000:3000
+        tty: true
+        restart: always
+        environment:
+            - DATABASE_DRIVER=postgres
+            - DATABASE_HOST=127.0.0.1
+            - DATABASE_PORT=5555
+            - DATABASE_USER=root
+            - DATABASE_PASSWORD=password
+            - DATABASE_NAME=root
+            - DATABASE_SSLMODE=disable
     postgres:
         image: postgres:13.3
         container_name: postgres
