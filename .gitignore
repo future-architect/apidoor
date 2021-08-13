@@ -119,3 +119,5 @@ typings/
 
 # Binaries
 main
+/management-api/management-api
+/gateway/gateway
