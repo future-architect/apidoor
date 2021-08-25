@@ -31,8 +31,5 @@
 ログファイルは各列に日付(RFC3339形式)、APIキー、APIのパスをこの順で含んだCSV形式で作成されます。
 
 ## 実行
-redis-serverの起動後、このREADMEのあるディレクトリで以下のコマンドを実行してください。
-```
-cd cmd/main
-go run main.go
-```
+
+[Getting Started](../README_ja.md)を参照ください。

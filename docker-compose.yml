@@ -1,0 +1,64 @@
+version: "3.8"
+services:
+    redis:
+        image: redis:6.2.5
+        container_name: redis-server
+        ports:
+            - "6379:6379"
+    gateway:
+        build: ./gateway
+        container_name: gateway
+        ports:
+            - "3000:3000"
+        environment:
+            - READTIMEOUT=5
+            - READHEADERTIMEOUT=5
+            - WRITETIMEOUT=20
+            - IDLETIMEOUT=5
+            - MAXHEADERBYTES=1048576
+            - REDIS_HOST=redis:6379
+            - LOG_PATH="/log.csv"
+        volumes:
+            - "/log:/log"
+    management-api:
+        build: ./management-api
+        container_name: management-api
+        ports:
+            - "3001:3001"
+        environment:
+            - DATABASE_DRIVER=postgres
+            - DATABASE_HOST=postgres
+            - DATABASE_PORT=5555
+            - DATABASE_USER=root
+            - DATABASE_PASSWORD=password
+            - DATABASE_NAME=root
+            - DATABASE_SSLMODE=disable
+    postgres:
+        image: postgres:13.3
+        container_name: postgres
+        environment:
+            - POSTGRES_USER=root
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_INITDB_ARGS=--encoding=UTF-8
+        ports:
+            - "5555:5432"
+#        volumes:
+#            - ./init:/docker-entrypoint-initdb.d
+#            - /etc/localtime:/etc/localtime:ro
+#        volumes:
+#            # for Mac
+#            - ./sql:/docker-entrypoint-initdb.d
+#            # for Windows
+#            # SQL_PATH should set in this format: /c/path/to/sql
+#            - ${SQL_PATH}:/docker-entrypoint-initdb.d
+    pgweb:
+        image: sosedoff/pgweb:0.11.7
+        container_name: pgweb
+        ports:
+            - "8081:8081"
+        environment:
+            - DATABASE_URL=postgres://root:password@postgres:5432/root?sslmode=disable
+        links:
+            - postgres:postgres
+        depends_on:
+            - postgres

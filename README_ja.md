@@ -11,7 +11,8 @@ TODO
 ## Features
 
 ## Prerequisites
-- go v1.16^
+- 
+- Go v1.16^
 - redis-server v6.2^
 - docker v20.10^
 - docker-compose v1.29^
@@ -19,37 +20,18 @@ TODO
 
 ## Getting Started
 
-### リポジトリのクローン
 ```
+# Clone me
 git clone https://gitlab.com/osaki-lab/apidoor.git
 cd apidoor
-```
 
-### redis-server の起動
-API エンドポイントや利用回数の管理のため、redis-server を起動します。
-```
-sudo service redis-server start
-```
-
-### gateway の起動
-管理している API へのリクエストをプロキシするゲートウェイを起動します。環境変数などの細かい設定に関しては[こちら](https://gitlab.com/osaki-lab/apidoor/-/tree/master/gateway)をご覧ください。
-```
-cd gateway/cmd/gateway
-go run main.go
-```
-
-### management-api の起動
-管理している API に関する情報やその利用状況を提供する API を起動します。環境変数などの細かい設定に関しては[こちら](https://gitlab.com/osaki-lab/apidoor/-/tree/master/management-api)をご覧ください。
-```
-cd management-api
-# proxy環境下での実行時のみ
+# Build all services
 docker-compose build \
-  --build-arg HTTP_PROXY=${YOUR_PROXY} \
-  --build-arg HTTPS_PROXY=${YOUR_PROXY} \
   --build-arg http_proxy=${YOUR_PROXY} \
-  --build-arg ${YOUR_PROXY}
+  --build-arg https_proxy=${YOUR_PROXY}
 
-docker-compose up -d
+# Launch apidoor services
+docker compose up -d
 ```
 
 ### management-front の起動
@@ -66,4 +48,3 @@ TODO
 
 # License
 Apache 2
-

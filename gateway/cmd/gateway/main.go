@@ -1,7 +1,10 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"local.packages/gateway"
@@ -18,11 +21,11 @@ func main() {
 		r.Post("/*", gateway.PostHandler)
 	})
 
-	rt := GetEnvWithDeault("READTIMEOUT", 5)
-	rht := GetEnvWithDeault("READHEADERTIMEOUT", 5)
-	wt := GetEnvWithDeault("WRITETIMEOUT", 20)
-	it := GetEnvWithDeault("IDLETIMEOUT", 5)
-	mhb := GetEnvWithDeault("MAXHEADERBYTES", 1<<20)
+	rt := GetEnvWithDefault("READTIMEOUT", 5)
+	rht := GetEnvWithDefault("READHEADERTIMEOUT", 5)
+	wt := GetEnvWithDefault("WRITETIMEOUT", 20)
+	it := GetEnvWithDefault("IDLETIMEOUT", 5)
+	mhb := GetEnvWithDefault("MAXHEADERBYTES", 1<<20)
 
 	s := &http.Server{
 		Addr:              ":3000",
@@ -35,4 +38,20 @@ func main() {
 	}
 
 	s.ListenAndServe()
+}
+
+func GetEnvWithDefault(env string, def int) int {
+	if def <= 0 {
+		log.Fatal("default value should be positive")
+	}
+
+	n, err := strconv.Atoi(os.Getenv(env))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if n <= 0 {
+		n = def
+	}
+
+	return n
 }

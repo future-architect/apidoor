@@ -35,14 +35,5 @@
 dockerによるマウントがWSL上で出来ないため、`sql`ディレクトリをホストマシン内の任意の位置にコピーしてください。また、そのパスを`SQL_PATH`として環境変数に設定してください。
 
 ## 実行
-このREADMEのあるディレクトリで以下のコマンドを実行してください。
-```
-# proxy環境下での実行時のみ
-docker-compose build \
-  --build-arg HTTP_PROXY=${YOUR_PROXY} \
-  --build-arg HTTPS_PROXY=${YOUR_PROXY} \
-  --build-arg http_proxy=${YOUR_PROXY} \
-  --build-arg ${YOUR_PROXY}
 
-docker-compose up -d
-```
+[Getting Started](../README_ja.md)を参照ください。

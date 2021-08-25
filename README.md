@@ -4,6 +4,8 @@
 
 apidoor is an OSS product that accelerates the construction of the API market.
 
+[日本語](README_ja.md)
+
 ## What is apidoor for
 
 TODO

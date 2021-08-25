@@ -21,7 +21,7 @@ func main() {
 	})
 
 	s := &http.Server{
-		Addr:    ":3000",
+		Addr:    ":3001",
 		Handler: r,
 	}
 
