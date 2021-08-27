@@ -17,7 +17,8 @@ services:
             - IDLETIMEOUT=5
             - MAXHEADERBYTES=1048576
             - REDIS_HOST=redis:6379
-            - LOG_PATH="/log.csv"
+            - LOG_PATH=/log.csv
+            - NO_PROXY=test-server
         volumes:
             - "/log:/log"
     management-api:
@@ -33,6 +34,11 @@ services:
             - DATABASE_PASSWORD=password
             - DATABASE_NAME=root
             - DATABASE_SSLMODE=disable
+    test-server:
+        build: ./quickstart
+        container_name: test-server
+        environment: 
+            - NO_PROXY=gateway
     postgres:
         image: postgres:13.3
         container_name: postgres
