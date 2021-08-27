@@ -1,3 +1,4 @@
+basePath: /mgmt
 definitions:
   managementapi.Product:
     properties:

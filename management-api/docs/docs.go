@@ -107,7 +107,7 @@ type swaggerInfo struct {
 var SwaggerInfo = swaggerInfo{
 	Version:     "1.0",
 	Host:        "",
-	BasePath:    "",
+	BasePath:    "/mgmt",
 	Schemes:     []string{},
 	Title:       "Management API",
 	Description: "This is an API that manages products.",

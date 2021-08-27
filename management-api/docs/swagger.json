@@ -6,6 +6,7 @@
         "contact": {},
         "version": "1.0"
     },
+    "basePath": "/mgmt",
     "paths": {
         "/health": {
             "get": {
