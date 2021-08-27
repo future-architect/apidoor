@@ -2,17 +2,20 @@
 
 # apidoor
 
-apidoor は API の商材管理や利用状況確認を便利にする OSS です。
+apidoor は WebAPI の商材管理や利用状況確認を便利にする OSS です。
 
 ## What is apidoor for
 
-TODO
+* WebAPIを様々な接続先に公開するときに、APIの一覧やアクセストークンの払い出しを行いたいユースケースの場合
 
 ## Features
 
-TODO
+* [x] WebAPIのルーティングやアクセス制限
+* [ ] APIトークンの自動払い出し
+* [ ] 商材管理
+* [ ] 利用状況の確認
 
-## Prerequisites
+## Getting Started
 
 Prerequisites:
 
@@ -45,9 +48,9 @@ docker exec -it redis-server sh
 
 # Check apidoor works
 curl -H "Content-Type: application/json" -H "Authorization: key" localhost:3000/test
-```
 
-# You can access Management Console
+
+# You can also access Management Console
 localhost:8080
 ```
 

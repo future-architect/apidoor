@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"local.packages/managementapi"
@@ -29,5 +30,7 @@ func main() {
 		Handler: r,
 	}
 
-	s.ListenAndServe()
+	if err := s.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }
