@@ -11,13 +11,17 @@ import (
 // @title Management API
 // @version 1.0
 // @description This is an API that manages products.
+//
+// @BasePath /mgmt
 func main() {
 	r := chi.NewRouter()
-	r.Route("/health", func(r chi.Router) {
-		r.Get("/", managementapi.Health)
-	})
-	r.Route("/products", func(r chi.Router) {
-		r.Get("/", managementapi.GetProducts)
+	r.Route("/mgmt", func(r chi.Router) {
+		r.Route("/health", func(r chi.Router) {
+			r.Get("/", managementapi.Health)
+		})
+		r.Route("/products", func(r chi.Router) {
+			r.Get("/", managementapi.GetProducts)
+		})
 	})
 
 	s := &http.Server{
