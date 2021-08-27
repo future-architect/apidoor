@@ -44,7 +44,7 @@ services:
     test-server:
         build: ./quickstart
         container_name: test-server
-        environment: 
+        environment:
             - NO_PROXY=gateway
     postgres:
         image: postgres:13.3
@@ -70,8 +70,9 @@ services:
         ports:
             - "8081:8081"
         environment:
-            - DATABASE_URL=postgres://root:password@postgres:5432/root?sslmode=disable
+            - DATABASE_URL=postgres://root:password@db:5432/root?sslmode=disable
+            - NO_PROXY=postgres
         links:
-            - postgres:postgres
+            - postgres:db
         depends_on:
             - postgres
