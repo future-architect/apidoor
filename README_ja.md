@@ -10,15 +10,16 @@ TODO
 
 ## Features
 
+TODO
+
 ## Prerequisites
-- 
-- Go v1.16^
-- redis-server v6.2^
+
+Prerequisites:
+
 - docker v20.10^
 - docker-compose v1.29^
-- npm v6.14^
 
-## Getting Started
+Flow：
 
 ```
 # Clone me
@@ -28,7 +29,9 @@ cd apidoor
 # Build all services
 docker-compose build \
   --build-arg http_proxy=${YOUR_PROXY} \
-  --build-arg https_proxy=${YOUR_PROXY}
+  --build-arg https_proxy=${YOUR_PROXY} \
+  --build-arg proxy=${YOUR_PROXY} \
+  --build-arg https-proxy=${YOUR_PROXY}
 
 # Launch apidoor services
 docker compose up -d
@@ -44,13 +47,9 @@ docker exec -it redis-server sh
 curl -H "Content-Type: application/json" -H "Authorization: key" localhost:3000/test
 ```
 
-### management-front の起動
-GUI 上で API の管理等を行う Vue.js アプリケーションを起動します。環境変数などの細かい設定に関しては[こちら](https://gitlab.com/osaki-lab/apidoor/-/tree/master/management-front)をご覧ください。
+# You can access Management Console
+localhost:8080
 ```
-npm install
-npm run serve
-```
-コマンドの実行後、[localhost:8081](localhost:8081) にアクセスしてください。
 
 ## Architecture
 
