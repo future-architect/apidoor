@@ -17,16 +17,21 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("No authorization key")
 		http.Error(w, "no authorization", http.StatusBadRequest)
 	}
-	reqpath := r.URL.Path
-
-	path, err := GetAPIURL(r.Context(), apikey, reqpath)
+	fields, err := GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "invalid key or path", http.StatusNotFound)
 		return
 	}
 
-	if err := APILimitChecker(apikey, path); err != nil {
+	path, err := fields.URI(r.URL.Path)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "invalid key or path", http.StatusNotFound)
+		return
+	}
+
+	if err := fields.CheckAPILimit(path); err != nil {
 		log.Print(err.Error())
 		http.Error(w, "API limit exceeded", http.StatusForbidden)
 		return
@@ -38,10 +43,9 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "couldn't make request", http.StatusInternalServerError)
 		return
 	}
-	RequestHeaderSetter(r, req)
+	SetRequestHeader(r, req)
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("error in http post: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
