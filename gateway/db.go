@@ -13,53 +13,52 @@ var rdb = redis.NewClient(&redis.Options{
 	DB:       0,
 })
 
-type Field struct {
-	Template URITemplate
-	Path     URITemplate
-	Num      int
-	Max      interface{}
-}
+func GetFields(ctx context.Context, key string) (Fields, error) {
+	var fields []Field
 
-type KeyData map[string][]Field
-
-var APIData = make(KeyData)
-
-func GetAPIURL(ctx context.Context, key, path string) (string, error) {
-	fields, ok := APIData[key]
-	if !ok {
-		return "", &MyError{Message: "unauthorized request"}
+	for _, hk := range rdb.HKeys(ctx, key).Val() {
+		u := NewURITemplate(hk)
+		v := NewURITemplate(rdb.HGet(ctx, key, hk).Val())
+		fields = append(fields, Field{
+			Template: *u,
+			Path:     *v,
+			Num:      5,  // TODO
+			Max:      10, // TODO
+		})
 	}
 
-	u := NewURITemplate(path)
-	for _, v := range fields {
-		if _, ok := u.TemplateMatch(v.Template); ok {
-			return v.Path.JoinPath(), nil
-		}
+	if len(fields) == 0 {
+		return nil, &MyError{Message: "unauthorized request"}
 	}
 
-	return "", &MyError{Message: "unauthorized request"}
+	return fields, nil
 }
 
-func init() {
-	ctx := context.Background()
-	for _, k := range rdb.Keys(ctx, "*").Val() {
-		for _, hk := range rdb.HKeys(ctx, k).Val() {
-			u := NewURITemplate(hk)
-			v := NewURITemplate(rdb.HGet(ctx, k, hk).Val())
-			n := 5
-			m := 10
-			/*
-				m, err := strconv.Atoi(rdb.HGet(ctx, k, hk).Val())
-				if err != nil {
-					log.Fatal(err)
-				}
-			*/
-			APIData[k] = append(APIData[k], Field{
-				Template: *u,
-				Path:     *v,
-				Num:      n,
-				Max:      m,
-			})
-		}
-	}
-}
+
+//func GetURL(ctx context.Context, key, path string) (string, error) {
+//	var apiMapping []Field
+//
+//	for _, hk := range rdb.HKeys(ctx, key).Val() {
+//		u := NewURITemplate(hk)
+//		v := NewURITemplate(rdb.HGet(ctx, key, hk).Val())
+//		apiMapping= append(apiMapping, Field{
+//			Template: *u,
+//			Path:     *v,
+//			Num:      5,  // TODO
+//			Max:      10, // TODO
+//		})
+//	}
+//
+//	if len(apiMapping) == 0 {
+//		return "", &MyError{Message: "unauthorized request"}
+//	}
+//
+//	u := NewURITemplate(path)
+//	for _, v := range apiMapping {
+//		if _, ok := u.TemplateMatch(v.Template); ok {
+//			return v.Path.JoinPath(), nil
+//		}
+//	}
+//
+//	return "", &MyError{Message: "unauthorized request"}
+//}

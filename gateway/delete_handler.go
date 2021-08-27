@@ -17,32 +17,37 @@ func DeleteHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("No authorization key")
 		http.Error(w, "no authorization", http.StatusBadRequest)
 	}
-	reqpath := r.URL.Path
-	query := r.URL.RawQuery
 
-	path, err := GetAPIURL(r.Context(), apikey, reqpath)
+	fields, err := GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "invalid key or path", http.StatusNotFound)
 		return
 	}
 
-	if err := APILimitChecker(apikey, path); err != nil {
+	path, err := fields.URI(r.URL.Path)
+	if err != nil {
+		log.Print(err.Error())
+		http.Error(w, "invalid key or path", http.StatusNotFound)
+		return
+	}
+
+	if err := fields.CheckAPILimit(path); err != nil {
 		log.Print(err.Error())
 		http.Error(w, "API limit exceeded", http.StatusForbidden)
 		return
 	}
 
+	query := r.URL.RawQuery
 	req, err := http.NewRequest(http.MethodDelete, "http://"+path+"?"+query, nil)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "couldn't make request", http.StatusInternalServerError)
 		return
 	}
-	RequestHeaderSetter(r, req)
+	SetRequestHeader(r, req)
 
-	client := &http.Client{}
-	res, err := client.Do(req)
+	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("error occur in http delete: %s", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)

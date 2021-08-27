@@ -37,7 +37,9 @@ func main() {
 		MaxHeaderBytes:    mhb,
 	}
 
-	s.ListenAndServe()
+	if err := s.ListenAndServe(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func GetEnvWithDefault(env string, def int) int {

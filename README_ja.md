@@ -45,10 +45,12 @@ docker exec -it redis-server sh
 127.0.0.1:6379> hset key test test-server:3333/welcome
 127.0.0.1:6379> exit
 > exit
+> exit
 
 # Check apidoor works
-curl -H "Content-Type: application/json" -H "Authorization: key" localhost:3000/test
-
+curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/test
+# welcome to apidoor!
+```
 
 # You can also access Management Console
 localhost:8080
