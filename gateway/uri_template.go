@@ -24,7 +24,7 @@ func NewURITemplate(path string) *URITemplate {
 		return u
 	}
 
-	slice := strings.Split(path[1:], "/")
+	slice := strings.Split(strings.Trim(path, "/"), "/")
 	for _, v := range slice {
 		isParam := strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}")
 		var value string

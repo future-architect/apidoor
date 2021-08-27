@@ -17,16 +17,17 @@ services:
             - IDLETIMEOUT=5
             - MAXHEADERBYTES=1048576
             - REDIS_HOST=redis:6379
-            - LOG_PATH="/log.csv"
+            - LOG_PATH=/log.csv
+            - NO_PROXY=test-server
         volumes:
             - "/log:/log"
-#    management-front:
-#        build: ./management-front
-#        container_name: management-front
-#        ports:
-#            - "8080:8080"
-#        environment:
-#            - VUE_APP_API_BASE_URL=management-api:3001
+    management-front:
+        build: ./management-front
+        container_name: management-front
+        ports:
+            - "8080:8080"
+        environment:
+            - VUE_APP_API_BASE_URL=http://management-api:3001
     management-api:
         build: ./management-api
         container_name: management-api
@@ -40,6 +41,11 @@ services:
             - DATABASE_PASSWORD=password
             - DATABASE_NAME=root
             - DATABASE_SSLMODE=disable
+    test-server:
+        build: ./quickstart
+        container_name: test-server
+        environment: 
+            - NO_PROXY=gateway
     postgres:
         image: postgres:13.3
         container_name: postgres
