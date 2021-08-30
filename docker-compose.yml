@@ -20,7 +20,7 @@ services:
             - LOG_PATH=/log.csv
             - NO_PROXY=test-server
         volumes:
-            - "/log:/log"
+            - "./log:/log"
     management-front:
         build: ./management-front
         container_name: management-front
