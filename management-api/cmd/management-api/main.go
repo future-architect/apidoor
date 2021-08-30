@@ -20,6 +20,9 @@ func main() {
 		r.Route("/health", func(r chi.Router) {
 			r.Get("/", managementapi.Health)
 		})
+		r.Route("/api", func(r chi.Router) {
+			r.Post("/", managementapi.PostAPIRouting)
+		})
 		r.Route("/products", func(r chi.Router) {
 			r.Get("/", managementapi.GetProducts)
 		})

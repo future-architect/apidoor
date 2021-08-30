@@ -11,3 +11,6 @@ type Product struct {
 type Products struct {
 	Products []Product `json:"products"`
 }
+
+type Routing struct {
+}
