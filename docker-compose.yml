@@ -20,10 +20,7 @@ services:
             - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
-            # for Mac
             - ./log:/log
-            # for WSL
-            - /c/log:/log
     management-front:
         build: ./management-front
         container_name: management-front

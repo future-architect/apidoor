@@ -31,12 +31,8 @@ Flow：
 
 ```
 # Clone me
-git clone https://gitlab.com/osaki-lab/apidoor.git
+git clone https://github.com/future-architect/apidoor.git
 cd apidoor
-
-# fix docker-compose
-## comment out L24 or L26 depending on your OS
-vi docker-compose.yml
 
 # Build all services
 docker-compose build \
@@ -60,10 +56,7 @@ curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/t
 # welcome to apidoor!
 
 # Check log file is provided
-## for mac
-sudo cat log/log.csv
-## for WSL
-sudo cat /mnt/c/log/log.csv
+cat ./log/log.csv
 
 # You can also access Management Console
 localhost:8080
