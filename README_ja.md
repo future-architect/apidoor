@@ -41,7 +41,7 @@ docker-compose build \
   --build-arg https-proxy=${YOUR_PROXY}
 
 # Launch apidoor services
-docker compose up -d
+docker-compose up -d
 
 # Set your first API routing
 docker exec -it redis-server sh
@@ -56,9 +56,9 @@ curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/t
 
 # Check log file is provided
 ## for mac
-sudo cat log/log.csv
+cat log/log.csv
 ## for WSL
-sudo cat /mnt/c/log/log.csv
+cat /mnt/c/log/log.csv
 
 # You can also access Management Console
 localhost:8080

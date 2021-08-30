@@ -46,7 +46,7 @@ docker-compose build \
   --build-arg https-proxy=${YOUR_PROXY}
 
 # Launch apidoor services
-docker compose up -d
+docker-compose up -d
 
 # Set your first API routing
 docker exec -it redis-server sh
