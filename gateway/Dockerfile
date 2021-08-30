@@ -7,6 +7,8 @@ ADD cmd/gateway/*.go cmd/gateway/
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-s -w -buildid=' -trimpath -o /bin/main cmd/gateway/main.go
 
 FROM gcr.io/distroless/base
+WORKDIR /log
 EXPOSE 3000
+WORKDIR /
 COPY --from=build /bin/main .
 CMD ["/main"]
