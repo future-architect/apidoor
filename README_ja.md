@@ -26,7 +26,7 @@ Flow：
 
 ```
 # Clone me
-git clone https://gitlab.com/osaki-lab/apidoor.git
+git clone https://github.com/future-architect/apidoor.git
 cd apidoor
 
 # Build all services
@@ -37,7 +37,7 @@ docker-compose build \
   --build-arg https-proxy=${YOUR_PROXY}
 
 # Launch apidoor services
-docker compose up -d
+docker-compose up -d
 
 # Set your first API routing
 docker exec -it redis-server sh
@@ -49,6 +49,9 @@ docker exec -it redis-server sh
 # Check apidoor works
 curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/test
 # welcome to apidoor!
+
+# Check log file is provided
+cat ./log/log.csv
 
 # You can also access Management Console
 localhost:8080

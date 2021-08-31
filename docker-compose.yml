@@ -17,10 +17,10 @@ services:
             - IDLETIMEOUT=5
             - MAXHEADERBYTES=1048576
             - REDIS_HOST=redis:6379
-            - LOG_PATH=/log.csv
+            - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
-            - "./log:/log"
+            - ./log:/log
     management-front:
         build: ./management-front
         container_name: management-front
