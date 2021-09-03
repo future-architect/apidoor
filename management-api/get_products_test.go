@@ -51,7 +51,7 @@ func TestGetProducts(t *testing.T) {
 	}
 
 	q := `
-	INSERT INTO 
+	INSERT INTO
 		apiinfo(id, name, source, description, thumbnail)
 	VALUES
 		($1, $2, $3, $4, $5)

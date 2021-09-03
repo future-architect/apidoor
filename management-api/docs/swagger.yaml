@@ -1,5 +1,14 @@
 basePath: /mgmt
 definitions:
+  managementapi.PostAPIRoutingReq:
+    properties:
+      api_key:
+        type: string
+      forward_url:
+        type: string
+      path:
+        type: string
+    type: object
   managementapi.Product:
     properties:
       description:
@@ -26,6 +35,24 @@ info:
   title: Management API
   version: "1.0"
 paths:
+  /api:
+    post:
+      description: Post a new API routing
+      parameters:
+      - description: routing parameters
+        in: body
+        name: api_routing
+        required: true
+        schema:
+          $ref: '#/definitions/managementapi.PostAPIRoutingReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+      summary: Post API routing
   /health:
     get:
       description: checks whether this API works correctly or not
