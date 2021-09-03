@@ -37,7 +37,7 @@ services:
         environment:
             - DATABASE_DRIVER=postgres
             - DATABASE_HOST=postgres
-            - DATABASE_PORT=5555
+            - DATABASE_PORT=5432
             - DATABASE_USER=root
             - DATABASE_PASSWORD=password
             - DATABASE_NAME=root
