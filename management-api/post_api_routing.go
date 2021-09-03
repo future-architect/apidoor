@@ -25,7 +25,6 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
-	defer r.Body.Close()
 	if err != nil {
 		log.Printf("read body error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
