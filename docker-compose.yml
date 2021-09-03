@@ -2,7 +2,7 @@ version: "3.8"
 services:
     redis:
         image: redis:6.2.5
-        container_name: apiredis-server
+        container_name: redis-server
         ports:
             - "6379:6379"
     gateway:
@@ -16,7 +16,7 @@ services:
             - WRITETIMEOUT=20
             - IDLETIMEOUT=5
             - MAXHEADERBYTES=1048576
-            - REDIS_HOST=apiredis:6379
+            - REDIS_HOST=redis:6379
             - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
