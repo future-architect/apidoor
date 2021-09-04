@@ -16,6 +16,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 	if apikey == "" {
 		log.Print("No authorization key")
 		http.Error(w, "no authorization", http.StatusBadRequest)
+		return
 	}
 	fields, err := GetFields(r.Context(), apikey)
 	if err != nil {
