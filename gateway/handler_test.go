@@ -1,15 +1,27 @@
 package gateway_test
 
 import (
+	"context"
 	"gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
+
+	"github.com/go-redis/redis/v8"
 )
 
-type testdata struct {
+var rdb = redis.NewClient(&redis.Options{
+	Addr:     os.Getenv("REDIS_HOST"),
+	Password: "",
+	DB:       0,
+})
+
+var ctx = context.Background()
+
+type handlerTest struct {
 	rescode int
 	content string
 	apikey  string
@@ -19,7 +31,7 @@ type testdata struct {
 	outcode int
 }
 
-var table = []testdata{
+var handlerTestData = []handlerTest{
 	// valid request using parameter
 	{
 		rescode: http.StatusOK,
@@ -70,6 +82,16 @@ var table = []testdata{
 		out:     "unexpected request content",
 		outcode: http.StatusBadRequest,
 	},
+	// no authorization header
+	{
+		rescode: http.StatusOK,
+		content: "application/json",
+		apikey:  "",
+		field:   "/test/{test}",
+		request: "/test/hoge",
+		out:     "no authorization",
+		outcode: http.StatusBadRequest,
+	},
 	// unauthorized request (invalid key)
 	{
 		rescode: http.StatusOK,
@@ -92,45 +114,71 @@ var table = []testdata{
 	},
 }
 
+type handlerData struct {
+	handler func(http.ResponseWriter, *http.Request)
+	method  string
+}
+
+var handlerList = []handlerData{
+	{
+		handler: gateway.GetHandler,
+		method:  "GET",
+	},
+	{
+		handler: gateway.PostHandler,
+		method:  "POST",
+	},
+	{
+		handler: gateway.PutHandler,
+		method:  "PUT",
+	},
+	{
+		handler: gateway.DeleteHandler,
+		method:  "DELETE",
+	},
+}
+
 func TestHandler(t *testing.T) {
-	for index, tt := range table {
-		message := []byte("response from API server")
-		ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(tt.rescode)
-			w.Write(message)
-		}))
-		defer ts.Close()
+	for _, h := range handlerList {
+		for index, tt := range handlerTestData {
+			// http server for test
+			message := []byte("response from API server")
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.rescode)
+				w.Write(message)
+			}))
+			defer ts.Close()
 
-		host := ts.URL[6:]
+			// set routing data
+			host := ts.URL[6:]
+			rdb.HSet(ctx, "apikey1", tt.field, host)
 
-		u := gateway.NewURITemplate(tt.field)
-		v := gateway.NewURITemplate(host)
-		gateway.APIData["apikey1"] = append(gateway.APIData["apikey1"], gateway.Field{
-			Template: *u,
-			Path:     *v,
-		})
+			// send request to test server
+			r := httptest.NewRequest(http.MethodGet, tt.request, nil)
+			r.Header.Set("Content-Type", tt.content)
+			if tt.apikey != "" {
+				r.Header.Set("Authorization", tt.apikey)
+			}
+			w := httptest.NewRecorder()
+			h.handler(w, r)
 
-		r := httptest.NewRequest(http.MethodGet, tt.request, nil)
-		r.Header.Set("Content-Type", tt.content)
-		r.Header.Set("Authorization", tt.apikey)
-		w := httptest.NewRecorder()
-		gateway.GetHandler(w, r)
+			// check response
+			rw := w.Result()
+			defer rw.Body.Close()
 
-		rw := w.Result()
-		defer rw.Body.Close()
+			if rw.StatusCode != tt.outcode {
+				t.Fatalf("method %s, case %d: unexpected status code %d, expected %d", h.method, index, rw.StatusCode, tt.outcode)
+			}
 
-		if rw.StatusCode != tt.outcode {
-			t.Fatalf("case %d: unexpected status code %d, expected %d", index, rw.StatusCode, tt.outcode)
-		}
+			b, err := io.ReadAll(rw.Body)
+			if err != nil {
+				t.Fatalf("method %s, case %d: unexpected body type", h.method, index)
+			}
 
-		b, err := io.ReadAll(rw.Body)
-		if err != nil {
-			t.Fatalf("case %d: unexpected body type", index)
-		}
-
-		trimmed := strings.TrimSpace(string(b))
-		if trimmed != tt.out {
-			t.Fatalf("case %d: unexpected response: %s, expected: %s", index, trimmed, tt.out)
+			trimmed := strings.TrimSpace(string(b))
+			if trimmed != tt.out {
+				t.Fatalf("method %s, case %d: unexpected response: %s, expected: %s", h.method, index, trimmed, tt.out)
+			}
 		}
 	}
 }
