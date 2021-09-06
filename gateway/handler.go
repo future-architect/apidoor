@@ -5,7 +5,8 @@ import (
 	"net/http"
 )
 
-func PutHandler(w http.ResponseWriter, r *http.Request) {
+func Handler(w http.ResponseWriter, r *http.Request) {
+	// check header
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
@@ -19,6 +20,7 @@ func PutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if key and requested path are valid
 	fields, err := GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
@@ -33,13 +35,23 @@ func PutHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// check if number of request does not exceed limit
 	if err := fields.CheckAPILimit(path); err != nil {
 		log.Print(err.Error())
 		http.Error(w, "API limit exceeded", http.StatusForbidden)
 		return
 	}
 
-	req, err := http.NewRequest(http.MethodPut, "http://"+path, r.Body)
+	// make and send request to destination
+	var req *http.Request
+	method := r.Method
+	query := r.URL.RawQuery
+
+	if method == http.MethodGet || method == http.MethodDelete {
+		req, err = http.NewRequest(method, "http://"+path+"?"+query, nil)
+	} else {
+		req, err = http.NewRequest(http.MethodPost, "http://"+path, r.Body)
+	}
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "couldn't make request", http.StatusInternalServerError)
@@ -49,12 +61,13 @@ func PutHandler(w http.ResponseWriter, r *http.Request) {
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Printf("error in http put: %s", err.Error())
+		log.Printf("error in http %s: %s", method, err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
 
+	// return response and write log
 	if err := ResposeChecker(&w, res); err != nil {
 		return
 	}
