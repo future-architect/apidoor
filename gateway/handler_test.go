@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"gateway"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/guregu/dynamo"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,11 +17,13 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-var rdb = redis.NewClient(&redis.Options{
-	Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
-	Password: "",
-	DB:       0,
-})
+var (
+	// redis
+	rdb *redis.Client
+	// dynamo
+	ddb                *dynamo.DB
+	apiForwardingTable string
+)
 
 var ctx = context.Background()
 
@@ -139,7 +144,27 @@ var handlerList = []handlerData{
 	},
 }
 
+func setupDB(t *testing.T, dbType string) {
+	if dbType == "REDIS" {
+		rdb = redis.NewClient(&redis.Options{
+			Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
+			Password: "",
+			DB:       0,
+		})
+	} else if dbType == "DYNAMO" {
+		ddb = dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
+			SharedConfigState: session.SharedConfigEnable,
+			Config:            aws.Config{Endpoint: aws.String(os.Getenv("DYNAMO_ENDPOINT"))},
+		})))
+		apiForwardingTable = os.Getenv("DYNAMO_TABLE_API_FORWARDING")
+	} else {
+		t.Fatalf("invalid db type: %s", dbType)
+	}
+}
+
 func TestHandler(t *testing.T) {
+	dbType := os.Getenv("DB_TYPE")
+	setupDB(t, dbType)
 	for _, h := range handlerList {
 		for index, tt := range handlerTestData {
 			// http server for test
@@ -152,7 +177,20 @@ func TestHandler(t *testing.T) {
 
 			// set routing data
 			host := ts.URL[6:]
-			rdb.HSet(ctx, "apikey1", tt.field, host)
+			if dbType == "REDIS" {
+				rdb.HSet(ctx, "apikey1", tt.field, host)
+			} else if dbType == "DYNAMO" {
+				item := gateway.APIForwarding{
+					APIKey:     "apikey1",
+					Path:       tt.field,
+					ForwardURL: host,
+				}
+				err := ddb.Table(apiForwardingTable).
+					Put(item).Run()
+				if err != nil {
+					t.Errorf("put item error: %v", err)
+				}
+			}
 
 			// send request to test server
 			r := httptest.NewRequest(http.MethodGet, tt.request, nil)

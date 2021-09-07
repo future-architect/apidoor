@@ -10,10 +10,10 @@ import (
 var DBDriver DB
 
 func init() {
-	dbType := os.Getenv("API_DB_TYPE")
+	dbType := os.Getenv("DB_TYPE")
 	var err error
 	if DBDriver, err = createDBDriver(dbType); err != nil {
-		log.Fatalf("api db set up error: %v", err)
+		log.Fatalf("db set up error: %v", err)
 	}
 }
 
@@ -22,9 +22,12 @@ type DB interface {
 }
 
 func createDBDriver(dbType string) (DB, error) {
-	if dbType == "REDIS" {
+	switch dbType {
+	case "REDIS":
 		return NewRedisDB(), nil
-	} else {
+	case "DYNAMO":
+		return NewDynamoDB(), nil
+	default:
 		return nil, fmt.Errorf("unsupported DB type: %s", dbType)
 	}
 }

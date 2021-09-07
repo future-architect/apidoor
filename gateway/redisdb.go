@@ -39,7 +39,7 @@ func (rd RedisDB) GetFields(ctx context.Context, key string) (Fields, error) {
 	}
 
 	if len(fields) == 0 {
-		return nil, &MyError{Message: "unauthorized request"}
+		return nil, ErrUnauthorizedRequest
 	}
 
 	return fields, nil

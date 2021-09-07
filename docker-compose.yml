@@ -82,3 +82,11 @@ services:
             - postgres:db
         depends_on:
             - postgres
+    localstack:
+        image: localstack/localstack:0.12.17
+        container_name: localstack
+        ports:
+            - "4566:4566"
+        environment:
+            - SERVICES=dynamodb
+            - DEFAULT_REGION=ap-northeast-1
