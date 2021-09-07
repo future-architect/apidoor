@@ -6,20 +6,27 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
-
-	"github.com/go-redis/redis/v8"
 )
 
-var rdb = redis.NewClient(&redis.Options{
-	Addr:     os.Getenv("REDIS_HOST"),
-	Password: "",
-	DB:       0,
-})
+var dbHost, templatePath string
 
-var ctx = context.Background()
+type dbMock struct{}
+
+func (dm dbMock) GetFields(ctx context.Context, key string) (gateway.Fields, error) {
+	if key == "apikeyNotExist" {
+		return nil, gateway.ErrUnauthorizedRequest
+	}
+	return gateway.Fields{
+		{
+			Template: *gateway.NewURITemplate(templatePath),
+			Path:     *gateway.NewURITemplate(dbHost),
+			Num:      5,
+			Max:      10,
+		},
+	}, nil
+}
 
 type handlerTest struct {
 	rescode int
@@ -96,7 +103,7 @@ var handlerTestData = []handlerTest{
 	{
 		rescode: http.StatusOK,
 		content: "application/json",
-		apikey:  "apikey2",
+		apikey:  "apikeyNotExist",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "invalid key or path",
@@ -139,6 +146,8 @@ var handlerList = []handlerData{
 }
 
 func TestHandler(t *testing.T) {
+	mock := dbMock{}
+	gateway.DBDriver = mock
 	for _, h := range handlerList {
 		for index, tt := range handlerTestData {
 			// http server for test
@@ -151,7 +160,8 @@ func TestHandler(t *testing.T) {
 
 			// set routing data
 			host := ts.URL[6:]
-			rdb.HSet(ctx, "apikey1", tt.field, host)
+			dbHost = host
+			templatePath = tt.field
 
 			// send request to test server
 			r := httptest.NewRequest(http.MethodGet, tt.request, nil)

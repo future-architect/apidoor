@@ -1,0 +1,27 @@
+{
+  "TableName": "local_api_forwarding",
+  "KeySchema": [
+    {
+      "AttributeName": "api_key",
+      "KeyType": "HASH"
+    },
+    {
+      "AttributeName": "path",
+      "KeyType": "RANGE"
+    }
+  ],
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "api_key",
+      "AttributeType": "S"
+    },
+    {
+      "AttributeName": "path",
+      "AttributeType": "S"
+    }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 1,
+    "WriteCapacityUnits": 1
+  }
+}
