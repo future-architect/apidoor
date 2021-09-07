@@ -40,8 +40,6 @@ func NewDynamoDB() *DynamoDB {
 }
 
 func (dd DynamoDB) GetFields(ctx context.Context, key string) (Fields, error) {
-	var fields []Field
-
 	var forwardings []*APIForwarding
 	err := dd.client.Table(dd.apiForwardingTable).
 		Get("api_key", key).
@@ -54,15 +52,9 @@ func (dd DynamoDB) GetFields(ctx context.Context, key string) (Fields, error) {
 		}
 	}
 
+	var fields []Field
 	for _, forwarding := range forwardings {
-		u := NewURITemplate(forwarding.Path)
-		v := NewURITemplate(forwarding.ForwardURL)
-		fields = append(fields, Field{
-			Template: *u,
-			Path:     *v,
-			Num:      5,
-			Max:      10,
-		})
+		fields = append(fields, forwarding.Field())
 	}
 
 	return fields, nil
