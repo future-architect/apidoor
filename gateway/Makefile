@@ -25,10 +25,10 @@ dynamodb_test:
 	export DB_TYPE="DYNAMO"; \
 	export DYNAMO_TABLE_API_FORWARDING="local_api_forwarding"; \
 	export DYNAMO_ENDPOINT="http://localhost:4566"; \
-    export AWS_REGION=ap-northeast-1; \
-    export AWS_DEFAULT_OUTPUT=text; \
-    export AWS_ACCESS_KEY_ID=xxx; \
-    export AWS_SECRET_ACCESS_KEY=xxx; \
+	export AWS_REGION=ap-northeast-1; \
+	export AWS_DEFAULT_OUTPUT=text; \
+	export AWS_ACCESS_KEY_ID=xxx; \
+	export AWS_SECRET_ACCESS_KEY=xxx; \
 	export LOG_PATH="./testdata/log/log.csv"; \
 	aws dynamodb --endpoint-url http://localhost:4566 create-table --cli-input-json file://testdata/model/local_api_forwarding.json; \
 	go test -race -v ./; \
