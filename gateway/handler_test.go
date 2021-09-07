@@ -2,30 +2,31 @@ package gateway_test
 
 import (
 	"context"
-	"fmt"
 	"gateway"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/guregu/dynamo"
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
-
-	"github.com/go-redis/redis/v8"
 )
 
-var (
-	// redis
-	rdb *redis.Client
-	// dynamo
-	ddb                *dynamo.DB
-	apiForwardingTable string
-)
+var dbHost, templatePath string
 
-var ctx = context.Background()
+type dbMock struct{}
+
+func (dm dbMock) GetFields(ctx context.Context, key string) (gateway.Fields, error) {
+	if key == "apikeyNotExist" {
+		return nil, gateway.ErrUnauthorizedRequest
+	}
+	return gateway.Fields{
+		{
+			Template: *gateway.NewURITemplate(templatePath),
+			Path:     *gateway.NewURITemplate(dbHost),
+			Num:      5,
+			Max:      10,
+		},
+	}, nil
+}
 
 type handlerTest struct {
 	rescode int
@@ -102,7 +103,7 @@ var handlerTestData = []handlerTest{
 	{
 		rescode: http.StatusOK,
 		content: "application/json",
-		apikey:  "apikey2",
+		apikey:  "apikeyNotExist",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "invalid key or path",
@@ -144,27 +145,9 @@ var handlerList = []handlerData{
 	},
 }
 
-func setupDB(t *testing.T, dbType string) {
-	if dbType == "REDIS" {
-		rdb = redis.NewClient(&redis.Options{
-			Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
-			Password: "",
-			DB:       0,
-		})
-	} else if dbType == "DYNAMO" {
-		ddb = dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
-			SharedConfigState: session.SharedConfigEnable,
-			Config:            aws.Config{Endpoint: aws.String(os.Getenv("DYNAMO_ENDPOINT"))},
-		})))
-		apiForwardingTable = os.Getenv("DYNAMO_TABLE_API_FORWARDING")
-	} else {
-		t.Fatalf("invalid db type: %s", dbType)
-	}
-}
-
 func TestHandler(t *testing.T) {
-	dbType := os.Getenv("DB_TYPE")
-	setupDB(t, dbType)
+	mock := dbMock{}
+	gateway.DBDriver = mock
 	for _, h := range handlerList {
 		for index, tt := range handlerTestData {
 			// http server for test
@@ -177,20 +160,8 @@ func TestHandler(t *testing.T) {
 
 			// set routing data
 			host := ts.URL[6:]
-			if dbType == "REDIS" {
-				rdb.HSet(ctx, "apikey1", tt.field, host)
-			} else if dbType == "DYNAMO" {
-				item := gateway.APIForwarding{
-					APIKey:     "apikey1",
-					Path:       tt.field,
-					ForwardURL: host,
-				}
-				err := ddb.Table(apiForwardingTable).
-					Put(item).Run()
-				if err != nil {
-					t.Errorf("put item error: %v", err)
-				}
-			}
+			dbHost = host
+			templatePath = tt.field
 
 			// send request to test server
 			r := httptest.NewRequest(http.MethodGet, tt.request, nil)
