@@ -16,7 +16,9 @@ services:
             - WRITETIMEOUT=20
             - IDLETIMEOUT=5
             - MAXHEADERBYTES=1048576
-            - REDIS_HOST=redis:6379
+            - API_DB_TYPE=REDIS
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
             - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
@@ -42,6 +44,9 @@ services:
             - DATABASE_PASSWORD=password
             - DATABASE_NAME=root
             - DATABASE_SSLMODE=disable
+            - API_DB_TYPE=REDIS
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
     test-server:
         build: ./quickstart
         container_name: test-server

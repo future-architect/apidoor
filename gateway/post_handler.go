@@ -18,7 +18,7 @@ func PostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no authorization", http.StatusBadRequest)
 		return
 	}
-	fields, err := GetFields(r.Context(), apikey)
+	fields, err := DBDriver.GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "invalid key or path", http.StatusNotFound)

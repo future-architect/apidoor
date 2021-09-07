@@ -2,6 +2,7 @@ package gateway_test
 
 import (
 	"context"
+	"fmt"
 	"gateway"
 	"io"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 )
 
 var rdb = redis.NewClient(&redis.Options{
-	Addr:     os.Getenv("REDIS_HOST"),
+	Addr:     fmt.Sprintf("%s:%s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT")),
 	Password: "",
 	DB:       0,
 })
