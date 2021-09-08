@@ -13,6 +13,10 @@ func (err *MyError) Error() string {
 	return fmt.Sprintf("error: %s", err.Message)
 }
 
+var (
+	ErrUnauthorizedRequest = &MyError{Message: "unauthorized request"}
+)
+
 type Field struct {
 	Template URITemplate
 	Path     URITemplate
@@ -29,7 +33,7 @@ func (f Fields) URI(path string) (string, error) {
 			return v.Path.JoinPath(), nil
 		}
 	}
-	return "", &MyError{Message: "unauthorized request"}
+	return "", ErrUnauthorizedRequest
 }
 
 func (f Fields) CheckAPILimit(path string) error {

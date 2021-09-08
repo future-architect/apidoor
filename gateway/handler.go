@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"errors"
 	"log"
 	"net/http"
 )
@@ -20,11 +21,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check if key and requested path are valid
-	fields, err := GetFields(r.Context(), apikey)
+	fields, err := DBDriver.GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, "invalid key or path", http.StatusNotFound)
+		if errors.Is(err, ErrUnauthorizedRequest) {
+			http.Error(w, "invalid key or path", http.StatusNotFound)
+		} else {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
