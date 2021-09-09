@@ -121,34 +121,17 @@ var handlerTestData = []handlerTest{
 	},
 }
 
-type handlerData struct {
-	handler func(http.ResponseWriter, *http.Request)
-	method  string
-}
-
-var handlerList = []handlerData{
-	{
-		handler: gateway.GetHandler,
-		method:  "GET",
-	},
-	{
-		handler: gateway.PostHandler,
-		method:  "POST",
-	},
-	{
-		handler: gateway.PutHandler,
-		method:  "PUT",
-	},
-	{
-		handler: gateway.DeleteHandler,
-		method:  "DELETE",
-	},
+var methods = []string{
+	http.MethodGet,
+	http.MethodDelete,
+	http.MethodPost,
+	http.MethodPut,
 }
 
 func TestHandler(t *testing.T) {
 	mock := dbMock{}
 	gateway.DBDriver = mock
-	for _, h := range handlerList {
+	for _, method := range methods {
 		for index, tt := range handlerTestData {
 			// http server for test
 			message := []byte("response from API server")
@@ -164,30 +147,30 @@ func TestHandler(t *testing.T) {
 			templatePath = tt.field
 
 			// send request to test server
-			r := httptest.NewRequest(http.MethodGet, tt.request, nil)
+			r := httptest.NewRequest(method, tt.request, nil)
 			r.Header.Set("Content-Type", tt.content)
 			if tt.apikey != "" {
 				r.Header.Set("Authorization", tt.apikey)
 			}
 			w := httptest.NewRecorder()
-			h.handler(w, r)
+			gateway.Handler(w, r)
 
 			// check response
 			rw := w.Result()
 			defer rw.Body.Close()
 
 			if rw.StatusCode != tt.outcode {
-				t.Fatalf("method %s, case %d: unexpected status code %d, expected %d", h.method, index, rw.StatusCode, tt.outcode)
+				t.Fatalf("method %s, case %d: unexpected status code %d, expected %d", method, index, rw.StatusCode, tt.outcode)
 			}
 
 			b, err := io.ReadAll(rw.Body)
 			if err != nil {
-				t.Fatalf("method %s, case %d: unexpected body type", h.method, index)
+				t.Fatalf("method %s, case %d: unexpected body type", method, index)
 			}
 
 			trimmed := strings.TrimSpace(string(b))
 			if trimmed != tt.out {
-				t.Fatalf("method %s, case %d: unexpected response: %s, expected: %s", h.method, index, trimmed, tt.out)
+				t.Fatalf("method %s, case %d: unexpected response: %s, expected: %s", method, index, trimmed, tt.out)
 			}
 		}
 	}
