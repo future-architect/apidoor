@@ -15,10 +15,10 @@ import (
 func main() {
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
-		r.Get("/*", gateway.GetHandler)
-		r.Put("/*", gateway.PutHandler)
-		r.Delete("/*", gateway.DeleteHandler)
-		r.Post("/*", gateway.PostHandler)
+		r.Get("/*", gateway.Handler)
+		r.Put("/*", gateway.Handler)
+		r.Delete("/*", gateway.Handler)
+		r.Post("/*", gateway.Handler)
 	})
 
 	rt := GetEnvWithDefault("READTIMEOUT", 5)
