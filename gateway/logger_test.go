@@ -18,8 +18,9 @@ func TestUpdateLog(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// TODO: modify test
 	for i := 0; i < 2; i++ {
-		gateway.UpdateLog("key", "path")
+		gateway.UpdateLog("key", "path", nil)
 	}
 
 	reader := csv.NewReader(file)

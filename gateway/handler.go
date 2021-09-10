@@ -76,5 +76,5 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UpdateLog(apikey, path)
+	UpdateLog(apikey, path, r)
 }
