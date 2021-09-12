@@ -23,11 +23,19 @@ func UpdateLog(key, path string, r *http.Request) {
 		log.Fatal(err.Error())
 	}
 
-	// TODO: allow user to change order
 	// make record
-	record := []string{time.Now().Format(time.RFC3339), key, path}
+	record := []string{}
 	for _, value := range schema {
-		record = append(record, r.Header.Get(value))
+		switch value {
+		case "time":
+			record = append(record, time.Now().Format(time.RFC3339))
+		case "key":
+			record = append(record, key)
+		case "path":
+			record = append(record, path)
+		default:
+			record = append(record, r.Header.Get(value))
+		}
 	}
 
 	// write to log file
