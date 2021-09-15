@@ -27,7 +27,7 @@ func createDBDriver(dbType string) (DB, error) {
 		return NewRedisDB(), nil
 	case "DYNAMO":
 		return NewDynamoDB(), nil
-	case "":
+	case "TEST":
 		log.Print("db driver is not set")
 		return nil, nil
 	default:
