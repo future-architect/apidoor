@@ -16,7 +16,7 @@ services:
             - WRITETIMEOUT=20
             - IDLETIMEOUT=5
             - MAXHEADERBYTES=1048576
-            - API_DB_TYPE=REDIS
+            - DB_TYPE=REDIS
             - REDIS_HOST=redis
             - REDIS_PORT=6379
             - LOG_PATH=/log/log.csv
@@ -50,6 +50,8 @@ services:
     test-server:
         build: ./quickstart
         container_name: test-server
+        ports:
+            - "3333:3333"
         environment:
             - NO_PROXY=gateway
     postgres:

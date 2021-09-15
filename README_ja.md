@@ -24,7 +24,7 @@ Prerequisites:
 
 Flow：
 
-```
+```bash
 # Clone me
 git clone https://github.com/future-architect/apidoor.git
 cd apidoor
@@ -39,12 +39,9 @@ docker-compose build \
 # Launch apidoor services
 docker-compose up -d
 
-# Set your first API routing
-docker exec -it redis-server sh
-> redis-cli
-127.0.0.1:6379> hset key test test-server:3333/welcome
-127.0.0.1:6379> exit
-> exit
+# Set your first API routing through management-api
+curl -X POST -H "Content-Type: application/json" \
+-d '{"api_key": "key", "path": "test", "forward_url": "test-server:3333/welcome"}' localhost:3001/mgmt/api
 
 # Check apidoor works
 curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/test

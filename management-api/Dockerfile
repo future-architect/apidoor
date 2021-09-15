@@ -3,6 +3,7 @@ WORKDIR /management-api
 COPY go.mod go.sum ./
 RUN ["go", "mod", "download"]
 ADD *.go ./
+ADD ./apiredis/*.go apiredis/
 ADD cmd/management-api/* cmd/management-api/
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-s -w -buildid=' -trimpath -o /bin/main cmd/management-api/main.go
 
