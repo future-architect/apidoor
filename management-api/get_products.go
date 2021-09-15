@@ -4,9 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
@@ -17,23 +15,9 @@ import (
 // @Success 200 {object} Products
 // @Router /products [get]
 func GetProducts(w http.ResponseWriter, r *http.Request) {
-	db, err := sqlx.Open(os.Getenv("DATABASE_DRIVER"),
-		"host="+os.Getenv("DATABASE_HOST")+" "+
-			"port="+os.Getenv("DATABASE_PORT")+" "+
-			"user="+os.Getenv("DATABASE_USER")+" "+
-			"password="+os.Getenv("DATABASE_PASSWORD")+" "+
-			"dbname="+os.Getenv("DATABASE_NAME")+" "+
-			"sslmode="+os.Getenv("DATABASE_SSLMODE"))
+	rows, err := DB.Queryx("SELECT * from apiinfo")
 	if err != nil {
-		log.Print("error occurs in database")
-		http.Error(w, "error occurs in database", http.StatusInternalServerError)
-		return
-	}
-	defer db.Close()
-
-	rows, err := db.Queryx("SELECT * from apiinfo")
-	if err != nil {
-		log.Print("error occurs while running query")
+		log.Printf("error occurs while running query %v", err)
 		http.Error(w, "error occurs in database", http.StatusInternalServerError)
 		return
 	}

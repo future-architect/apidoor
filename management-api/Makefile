@@ -14,3 +14,10 @@ test:
 	export REDIS_PORT="6379"; \
 	go test -race -v ./
 
+
+#################
+# Unit Tests    #
+#################
+generate-swagger:
+	swag init -g cmd/management-api/main.go
+

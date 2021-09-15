@@ -2,7 +2,6 @@ package managementapi
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,16 +9,16 @@ import (
 	"net/http"
 )
 
-// PostAPIRouting godoc
-// @Summary Post API routing
-// @Description Post a new API routing
-// @Produce json
-// @Param api_routing body PostAPIRoutingReq true "routing parameters"
+// PostProduct godoc
+// @Summary Get list of products
+// @Description Get list of APIs and its information
+// @produce json
+// @Param product body PostProductReq true "api information"
 // @Success 201 {string} string
 // @Failure 400 {string} error
 // @Failure 500 {string} error
-// @Router /api [post]
-func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
+// @Router /products [post]
+func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
@@ -32,7 +31,7 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
-	var req PostAPIRoutingReq
+	var req PostProductReq
 	err = json.Unmarshal(body, &req)
 	if err != nil {
 		log.Printf("failed to parse json body: %v", err)
@@ -46,30 +45,15 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = ApiDBDriver.PostAPIRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
-		log.Printf("post api routing db error: %v", err)
+	_, err = DB.NamedExecContext(r.Context(),
+		"INSERT INTO apiinfo(name, source, description, thumbnail, swagger_url) VALUES(:name, :source, :description, :thumbnail, :swagger_url)",
+		req)
+	if err != nil {
+		log.Printf("db insert product error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	io.WriteString(w, "Created")
-}
-
-type PostAPIRoutingReq struct {
-	ApiKey     string `json:"api_key"`
-	Path       string `json:"path"`
-	ForwardURL string `json:"forward_url"`
-}
-
-func (pr PostAPIRoutingReq) CheckNoEmptyField() error {
-	if pr.ApiKey == "" {
-		return errors.New("api_key field required")
-	}
-	if pr.Path == "" {
-		return errors.New("path field required")
-	}
-	if pr.ForwardURL == "" {
-		return errors.New("forward_url field required")
-	}
-	return nil
 }

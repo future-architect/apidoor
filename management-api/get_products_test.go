@@ -2,11 +2,12 @@ package managementapi_test
 
 import (
 	"encoding/json"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"reflect"
 	"testing"
 
 	"managementapi"
@@ -35,29 +36,29 @@ func TestGetProducts(t *testing.T) {
 
 	var data = []managementapi.Product{
 		{
-			ID:          3,
 			Name:        "Awesome API",
 			Source:      "Nice Company",
 			Description: "provide fantastic information.",
 			Thumbnail:   "test.com/img/123",
+			SwaggerURL:  "example.com/api/awesome",
 		},
 		{
-			ID:          4,
 			Name:        "Awesome API v2",
 			Source:      "Nice Company",
 			Description: "provide special information.",
 			Thumbnail:   "test.com/img/456",
+			SwaggerURL:  "example.com/api/v2/awesome",
 		},
 	}
 
 	q := `
 	INSERT INTO
-		apiinfo(id, name, source, description, thumbnail)
+		apiinfo(name, source, description, thumbnail, swagger_url)
 	VALUES
 		($1, $2, $3, $4, $5)
 	`
 	for _, d := range data {
-		if _, err := db.Exec(q, d.ID, d.Name, d.Source, d.Description, d.Thumbnail); err != nil {
+		if _, err := db.Exec(q, d.Name, d.Source, d.Description, d.Thumbnail, d.SwaggerURL); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -79,8 +80,8 @@ func TestGetProducts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(data, res.Products) {
-		t.Fatalf("unexpected response: expected %v, get %v", data, res)
+	if diff := cmp.Diff(data, res.Products, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
+		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 
 	// reset database

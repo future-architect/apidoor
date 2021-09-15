@@ -47,6 +47,18 @@ var doc = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
                     }
                 }
             }
@@ -83,6 +95,32 @@ var doc = `{
                         }
                     }
                 }
+            },
+            "post": {
+                "description": "Get list of APIs and its information",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get list of products",
+                "parameters": [
+                    {
+                        "description": "api information",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.PostProductReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
             }
         }
     },
@@ -101,6 +139,26 @@ var doc = `{
                 }
             }
         },
+        "managementapi.PostProductReq": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "swagger_url": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
         "managementapi.Product": {
             "type": "object",
             "properties": {
@@ -114,6 +172,9 @@ var doc = `{
                     "type": "string"
                 },
                 "source": {
+                    "type": "string"
+                },
+                "swagger_url": {
                     "type": "string"
                 },
                 "thumbnail": {
