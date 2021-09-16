@@ -1,37 +1,21 @@
 package gateway
 
 import (
-	"errors"
+	"os"
 	"strings"
 )
 
-func LogPatternParser(pattern string) ([]string, error) {
-	// parse input
-	slice := strings.Split(pattern, "|")
-	if len(slice) != 2 {
-		return []string{}, errors.New("invalid use of separetor")
-	}
-	param, template := slice[0], slice[1]
+var LogPattern []string
 
-	// name of header that user specify dynamically
-	params := strings.Split(param, ",")
+func init() {
+	LogPattern = LogPatternParser()
+}
+
+func LogPatternParser() []string {
+	// check log pattern
+	env := os.Getenv("LOG_PATTERN")
 	// column name of log
-	schema := strings.Split(template, ",")
+	pattern := strings.Split(env, ",")
 
-	// allocate header name to schema
-	usedParamNum := 0
-	for i, v := range schema {
-		if strings.HasPrefix(v, "%") {
-			if len(params) <= usedParamNum {
-				return []string{}, errors.New("the number of parameter does not match")
-			}
-			schema[i] = params[usedParamNum]
-			usedParamNum++
-		}
-	}
-	if usedParamNum != len(params) {
-		return []string{}, errors.New("the number of parameter does not match")
-	}
-
-	return schema, nil
+	return pattern
 }

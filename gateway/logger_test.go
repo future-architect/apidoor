@@ -30,7 +30,13 @@ func TestUpdateLog(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	r.Header.Set("TEST1", "header1")
 	r.Header.Set("TEST2", "header2")
-	os.Setenv("LOG_PATTERN", "TEST1,TEST2|time,key,path,%{x},%{x}")
+	gateway.LogPattern = []string{
+		"time",
+		"key",
+		"path",
+		"TEST1",
+		"TEST2",
+	}
 	for i := 0; i < 2; i++ {
 		gateway.UpdateLog("key", "path", r)
 	}
