@@ -16,7 +16,7 @@ test:
 
 
 #################
-# Unit Tests    #
+# swagger       #
 #################
 generate-swagger:
 	swag init -g cmd/management-api/main.go
