@@ -17,7 +17,7 @@ import (
 // @Success 201 {string} string
 // @Failure 400 {string} error
 // @Failure 500 {string} error
-// @Router /products [post]
+// @Router /product [post]
 func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")

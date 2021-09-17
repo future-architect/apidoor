@@ -7,28 +7,16 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"managementapi"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
 func TestGetProducts(t *testing.T) {
+	db := managementapi.DB
 	// insert data for test
-	db, err := sqlx.Open(os.Getenv("DATABASE_DRIVER"),
-		"host="+os.Getenv("DATABASE_HOST")+" "+
-			"port="+os.Getenv("DATABASE_PORT")+" "+
-			"user="+os.Getenv("DATABASE_USER")+" "+
-			"password="+os.Getenv("DATABASE_PASSWORD")+" "+
-			"dbname="+os.Getenv("DATABASE_NAME")+" "+
-			"sslmode="+os.Getenv("DATABASE_SSLMODE"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
 
 	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
 		t.Fatal(err)
