@@ -136,6 +136,81 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/products/search": {
+            "get": {
+                "description": "Get list of APIs and its information",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "search for products",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "search words for an API name attribute",
+                        "name": "name",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "whether API names are searched by partial match, else searched by exact match",
+                        "name": "is_name_partial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search words for an API source attribute",
+                        "name": "source",
+                        "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "default": true,
+                        "description": "whether API names are searched by partial match, else searched by exact match",
+                        "name": "is_source_partial",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search words for a description attribute by partial match",
+                        "name": "description",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "search words for all attributes",
+                        "name": "keyword",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.Products"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
