@@ -80,22 +80,7 @@ var doc = `{
                 }
             }
         },
-        "/products": {
-            "get": {
-                "description": "Get list of APIs and its information",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Get list of products",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/managementapi.Products"
-                        }
-                    }
-                }
-            },
+        "/product": {
             "post": {
                 "description": "Get list of APIs and its information",
                 "produces": [
@@ -119,6 +104,35 @@ var doc = `{
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "description": "Get list of APIs and its information",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get list of products",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.Products"
+                        }
                     }
                 }
             }
@@ -141,6 +155,13 @@ var doc = `{
         },
         "managementapi.PostProductReq": {
             "type": "object",
+            "required": [
+                "description",
+                "name",
+                "source",
+                "swagger_url",
+                "thumbnail"
+            ],
             "properties": {
                 "description": {
                     "type": "string"
