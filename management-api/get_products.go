@@ -15,7 +15,7 @@ import (
 // @Success 200 {object} Products
 // @Router /products [get]
 func GetProducts(w http.ResponseWriter, r *http.Request) {
-	rows, err := DB.Queryx("SELECT * from apiinfo")
+	rows, err := db.Queryx("SELECT * from apiinfo")
 	if err != nil {
 		log.Printf("error occurs while running query %v", err)
 		http.Error(w, "error occurs in database", http.StatusInternalServerError)

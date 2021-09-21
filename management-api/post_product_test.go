@@ -12,7 +12,6 @@ import (
 )
 
 func TestPostProduct(t *testing.T) {
-	db := managementapi.DB
 	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +62,7 @@ func TestPostProduct(t *testing.T) {
 			name:        "Content-Typeがapplication/json以外の場合は登録できない",
 			contentType: "text/plain",
 			req: managementapi.PostProductReq{
-				Name:        "",
+				Name:        "wrong content-type",
 				Source:      "Company3",
 				Description: "provide fantastic information.",
 				Thumbnail:   "test.com/api.awesome",
@@ -83,7 +82,7 @@ func TestPostProduct(t *testing.T) {
 			body := bytes.NewReader(bodyBytes)
 
 			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/product", body)
-			r.Header.Add("Content-Type", "application/json")
+			r.Header.Add("Content-Type", tt.contentType)
 
 			w := httptest.NewRecorder()
 			managementapi.PostProduct(w, r)

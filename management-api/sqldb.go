@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var DB *sqlx.DB
+var db *sqlx.DB
 
 func init() {
 	dbDriver := os.Getenv("DATABASE_DRIVER")
@@ -20,7 +20,7 @@ func init() {
 		os.Getenv("DATABASE_SSLMODE"))
 
 	var err error
-	if DB, err = sqlx.Open(dbDriver, dbSource); err != nil {
+	if db, err = sqlx.Open(dbDriver, dbSource); err != nil {
 		log.Fatalf("db connection error: %v", err)
 	}
 }

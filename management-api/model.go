@@ -1,6 +1,15 @@
 package managementapi
 
-import "errors"
+import (
+	"gopkg.in/go-playground/validator.v8"
+)
+
+var validate *validator.Validate
+
+func init() {
+	config := &validator.Config{TagName: "validate"}
+	validate = validator.New(config)
+}
 
 type Product struct {
 	ID          int    `json:"id" db:"id"`
@@ -16,28 +25,9 @@ type Products struct {
 }
 
 type PostProductReq struct {
-	Name        string `json:"name" db:"name"`
-	Source      string `json:"source" db:"source"`
-	Description string `json:"description" db:"description"`
-	Thumbnail   string `json:"thumbnail" db:"thumbnail"`
-	SwaggerURL  string `json:"swagger_url" db:"swagger_url"`
-}
-
-func (pp PostProductReq) CheckNoEmptyField() error {
-	if pp.Name == "" {
-		return errors.New("name field required")
-	}
-	if pp.Source == "" {
-		return errors.New("source field required")
-	}
-	if pp.Description == "" {
-		return errors.New("description field required")
-	}
-	if pp.Thumbnail == "" {
-		return errors.New("thumbnail field required")
-	}
-	if pp.SwaggerURL == "" {
-		return errors.New("swagger_url field required")
-	}
-	return nil
+	Name        string `json:"name" db:"name" validate:"required"`
+	Source      string `json:"source" db:"source" validate:"required"`
+	Description string `json:"description" db:"description" validate:"required"`
+	Thumbnail   string `json:"thumbnail" db:"thumbnail" validate:"required"`
+	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required"`
 }
