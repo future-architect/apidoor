@@ -16,6 +16,8 @@ import (
 // @Produce json
 // @Param api_routing body PostAPIRoutingReq true "routing parameters"
 // @Success 201 {string} string
+// @Failure 400 {string} error
+// @Failure 500 {string} error
 // @Router /api [post]
 func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {

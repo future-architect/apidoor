@@ -9,6 +9,25 @@ definitions:
       path:
         type: string
     type: object
+  managementapi.PostProductReq:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      source:
+        type: string
+      swagger_url:
+        type: string
+      thumbnail:
+        type: string
+    required:
+    - description
+    - name
+    - source
+    - swagger_url
+    - thumbnail
+    type: object
   managementapi.Product:
     properties:
       description:
@@ -18,6 +37,8 @@ definitions:
       name:
         type: string
       source:
+        type: string
+      swagger_url:
         type: string
       thumbnail:
         type: string
@@ -52,6 +73,14 @@ paths:
           description: Created
           schema:
             type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Post API routing
   /health:
     get:
@@ -64,6 +93,32 @@ paths:
           schema:
             type: string
       summary: checks if API works
+  /product:
+    post:
+      description: Get list of APIs and its information
+      parameters:
+      - description: api information
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/managementapi.PostProductReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get list of products
   /products:
     get:
       description: Get list of APIs and its information

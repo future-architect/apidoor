@@ -2,62 +2,71 @@ package managementapi_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jmoiron/sqlx"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"reflect"
 	"testing"
 
 	"managementapi"
 
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
+var db *sqlx.DB
+
+func init() {
+	dbDriver := os.Getenv("DATABASE_DRIVER")
+	dbSource := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		os.Getenv("DATABASE_HOST"),
+		os.Getenv("DATABASE_PORT"),
+		os.Getenv("DATABASE_USER"),
+		os.Getenv("DATABASE_PASSWORD"),
+		os.Getenv("DATABASE_NAME"),
+		os.Getenv("DATABASE_SSLMODE"))
+
+	var err error
+	if db, err = sqlx.Open(dbDriver, dbSource); err != nil {
+		log.Fatalf("db connection error: %v", err)
+	}
+}
+
 func TestGetProducts(t *testing.T) {
 	// insert data for test
-	db, err := sqlx.Open(os.Getenv("DATABASE_DRIVER"),
-		"host="+os.Getenv("DATABASE_HOST")+" "+
-			"port="+os.Getenv("DATABASE_PORT")+" "+
-			"user="+os.Getenv("DATABASE_USER")+" "+
-			"password="+os.Getenv("DATABASE_PASSWORD")+" "+
-			"dbname="+os.Getenv("DATABASE_NAME")+" "+
-			"sslmode="+os.Getenv("DATABASE_SSLMODE"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer db.Close()
-
 	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
 		t.Fatal(err)
 	}
 
 	var data = []managementapi.Product{
 		{
-			ID:          3,
 			Name:        "Awesome API",
 			Source:      "Nice Company",
 			Description: "provide fantastic information.",
 			Thumbnail:   "test.com/img/123",
+			SwaggerURL:  "example.com/api/awesome",
 		},
 		{
-			ID:          4,
 			Name:        "Awesome API v2",
 			Source:      "Nice Company",
 			Description: "provide special information.",
 			Thumbnail:   "test.com/img/456",
+			SwaggerURL:  "example.com/api/v2/awesome",
 		},
 	}
 
 	q := `
 	INSERT INTO
-		apiinfo(id, name, source, description, thumbnail)
+		apiinfo(name, source, description, thumbnail, swagger_url)
 	VALUES
 		($1, $2, $3, $4, $5)
 	`
 	for _, d := range data {
-		if _, err := db.Exec(q, d.ID, d.Name, d.Source, d.Description, d.Thumbnail); err != nil {
+		if _, err := db.Exec(q, d.Name, d.Source, d.Description, d.Thumbnail, d.SwaggerURL); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -79,8 +88,8 @@ func TestGetProducts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(data, res.Products) {
-		t.Fatalf("unexpected response: expected %v, get %v", data, res)
+	if diff := cmp.Diff(data, res.Products, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
+		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 
 	// reset database

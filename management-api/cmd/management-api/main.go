@@ -26,6 +26,9 @@ func main() {
 		r.Route("/products", func(r chi.Router) {
 			r.Get("/", managementapi.GetProducts)
 		})
+		r.Route("/product", func(r chi.Router) {
+			r.Post("/", managementapi.PostProduct)
+		})
 	})
 
 	s := &http.Server{
