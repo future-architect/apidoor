@@ -5,17 +5,21 @@ import (
 	"strings"
 )
 
-var LogPattern []string
+var LogPattern []LogElement
 
 func init() {
 	LogPattern = LogPatternParser()
 }
 
-func LogPatternParser() []string {
+func LogPatternParser() []LogElement {
 	// check log pattern
 	env := os.Getenv("LOG_PATTERN")
-	// column name of log
-	pattern := strings.Split(env, ",")
+
+	// get column name of log
+	var pattern []LogElement
+	for _, value := range strings.Split(env, ",") {
+		pattern = append(pattern, LogElement(value))
+	}
 
 	return pattern
 }

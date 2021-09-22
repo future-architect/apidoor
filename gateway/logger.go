@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"time"
 )
 
 func UpdateLog(key, path string, r *http.Request) {
@@ -17,17 +16,8 @@ func UpdateLog(key, path string, r *http.Request) {
 
 	// make record
 	record := []string{}
-	for _, value := range LogPattern {
-		switch value {
-		case "time":
-			record = append(record, time.Now().Format(time.RFC3339))
-		case "key":
-			record = append(record, key)
-		case "path":
-			record = append(record, path)
-		default:
-			record = append(record, r.Header.Get(value))
-		}
+	for _, parsedElement := range LogPattern {
+		record = parsedElement.append(record, key, path, r)
 	}
 
 	// write to log file
