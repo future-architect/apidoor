@@ -1,19 +1,19 @@
 BEGIN;
 INSERT INTO public.apiinfo
-    (id, name, source, description, thumbnail)
+    ( name, source, description, thumbnail, swagger_url)
 VALUES
     (
-        3,
         'Awesome API',
         'Nice Company',
         'provide fantastic information.',
-        'test.com/img/123'
+        'test.com/img/123',
+        'example.com/api/awesome'
     ),
     (
-        4,
         'Awesome API v2',
         'Nice Company',
         'provide special information.',
-        'test.com/img/456'
+        'test.com/img/456',
+        'example.com/api/v2/awesome'
     );
 END;

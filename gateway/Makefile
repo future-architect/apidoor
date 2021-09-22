@@ -7,5 +7,6 @@ test:
 	export WRITETIMEOUT=20; \
 	export IDLETIMEOUT=5; \
 	export MAXHEADERBYTES="1<<20"; \
+	export DB_TYPE="TEST"; \
 	export LOG_PATH="./testdata/log/log.csv"; \
 	go test -race -v ./
