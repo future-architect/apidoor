@@ -5,20 +5,29 @@ import (
 	"strings"
 )
 
-var LogPattern []LogElement
+var LogOptionPattern []LogOption
 
 func init() {
-	LogPattern = LogPatternParser()
+	LogOptionPattern = LogPatternParser()
 }
 
-func LogPatternParser() []LogElement {
+func LogPatternParser() []LogOption {
 	// check log pattern
 	env := os.Getenv("LOG_PATTERN")
 
-	// get column name of log
-	var pattern []LogElement
+	// get column name and set function to write log
+	var pattern []LogOption
 	for _, value := range strings.Split(env, ",") {
-		pattern = append(pattern, LogElement(value))
+		switch value {
+		case "time":
+			pattern = append(pattern, WithTime())
+		case "key":
+			pattern = append(pattern, WithKey())
+		case "path":
+			pattern = append(pattern, WithPath())
+		default:
+			pattern = append(pattern, HeaderElement(value))
+		}
 	}
 
 	return pattern

@@ -16,8 +16,8 @@ func UpdateLog(key, path string, r *http.Request) {
 
 	// make record
 	record := []string{}
-	for _, parsedElement := range LogPattern {
-		record = parsedElement.append(record, key, path, r)
+	for _, logOption := range LogOptionPattern {
+		logOption(&record, key, path, r)
 	}
 
 	// write to log file

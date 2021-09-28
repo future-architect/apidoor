@@ -30,12 +30,12 @@ func TestUpdateLog(t *testing.T) {
 	r, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	r.Header.Set("TEST1", "header1")
 	r.Header.Set("TEST2", "header2")
-	gateway.LogPattern = []gateway.LogElement{
-		"time",
-		"key",
-		"path",
-		"TEST1",
-		"TEST2",
+	gateway.LogOptionPattern = []gateway.LogOption{
+		gateway.WithTime(),
+		gateway.WithKey(),
+		gateway.WithPath(),
+		gateway.HeaderElement("TEST1"),
+		gateway.HeaderElement("TEST2"),
 	}
 	for i := 0; i < 2; i++ {
 		gateway.UpdateLog("key", "path", r)
