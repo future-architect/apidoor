@@ -50,6 +50,19 @@ definitions:
           $ref: '#/definitions/managementapi.Product'
         type: array
     type: object
+  managementapi.SearchProductsResp:
+    properties:
+      count:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer
+      products:
+        items:
+          $ref: '#/definitions/managementapi.Product'
+        type: array
+    type: object
 info:
   contact: {}
   description: This is an API that manages products.
@@ -147,20 +160,12 @@ paths:
         name: target_fields
         type: string
       - default: partial
-        description: pattern match for 'name' field, chosen from 'exact' or 'partial'
+        description: pattern match, chosen from 'exact' or 'partial'
         enum:
         - exact
         - partial
         in: query
-        name: name_pattern_match
-        type: string
-      - default: partial
-        description: pattern match for 'source' field, chosen from 'exact' or 'partial'
-        enum:
-        - exact
-        - partial
-        in: query
-        name: source_pattern_match
+        name: pattern_match
         type: string
       - default: 50
         description: the maximum number of results
@@ -180,7 +185,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/managementapi.Products'
+            $ref: '#/definitions/managementapi.SearchProductsResp'
         "400":
           description: Bad Request
           schema:

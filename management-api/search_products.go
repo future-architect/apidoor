@@ -12,11 +12,10 @@ import (
 // @produce json
 // @Param q query string true "search query words (split words by '.', ex: 'foo.bar')"
 // @Param target_fields query string false "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')" default(all)
-// @Param name_pattern_match query string false "pattern match for 'name' field, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
-// @Param source_pattern_match query string false "pattern match for 'source' field, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
+// @Param pattern_match query string false "pattern match, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
 // @Param offset query int false "the starting point for the result set" default(0)
-// @Success 200 {object} Products
+// @Success 200 {object} SearchProductsResp
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Failure 500 {string} string

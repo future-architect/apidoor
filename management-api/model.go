@@ -40,10 +40,16 @@ type PostProductReq struct {
 }
 
 type SearchProductsReq struct {
-	Name          string `schema:"name" db:"name"`
-	IsNameExact   bool   `schema:"is_name_exact" db:"is_name_exact"`
-	Source        string `schema:"source" db:"source"`
-	IsSourceExact bool   `schema:"is_source_exact" db:"is_source_exact"`
-	Description   string `schema:"description" db:"description"`
-	Keyword       string `schema:"keyword" db:"keyword"`
+	Q            string `schema:"name" validate:"required"`
+	TargetFields string `schema:"target_fields"`
+	PatternMatch string `schema:"pattern_match"`
+	Limit        int    `schema:"limit" validate:"gte=1,lte=100"`
+	Offset       int    `schema:"offset"`
+}
+
+type SearchProductsResp struct {
+	Products []Product `json:"products"`
+	Count    int       `json:"count"`
+	Limit    int       `json:"limit"`
+	Offset   int       `json:"offset"`
 }

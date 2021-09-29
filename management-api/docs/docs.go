@@ -166,19 +166,8 @@ var doc = `{
                         ],
                         "type": "string",
                         "default": "partial",
-                        "description": "pattern match for 'name' field, chosen from 'exact' or 'partial'",
-                        "name": "name_pattern_match",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "exact",
-                            "partial"
-                        ],
-                        "type": "string",
-                        "default": "partial",
-                        "description": "pattern match for 'source' field, chosen from 'exact' or 'partial'",
-                        "name": "source_pattern_match",
+                        "description": "pattern match, chosen from 'exact' or 'partial'",
+                        "name": "pattern_match",
                         "in": "query"
                     },
                     {
@@ -202,7 +191,7 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.Products"
+                            "$ref": "#/definitions/managementapi.SearchProductsResp"
                         }
                     },
                     "400": {
@@ -295,6 +284,26 @@ var doc = `{
         "managementapi.Products": {
             "type": "object",
             "properties": {
+                "products": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/managementapi.Product"
+                    }
+                }
+            }
+        },
+        "managementapi.SearchProductsResp": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                },
                 "products": {
                     "type": "array",
                     "items": {
