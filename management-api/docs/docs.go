@@ -147,40 +147,54 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "search words for an API name attribute",
-                        "name": "name",
-                        "in": "query"
-                    },
-                    {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "whether API names are searched by partial match, else searched by exact match",
-                        "name": "is_name_partial",
-                        "in": "query"
+                        "description": "search query words (split words by '.', ex: 'foo.bar')",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
                     },
                     {
                         "type": "string",
-                        "description": "search words for an API source attribute",
-                        "name": "source",
+                        "default": "all",
+                        "description": "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')",
+                        "name": "target_fields",
                         "in": "query"
                     },
                     {
-                        "type": "boolean",
-                        "default": true,
-                        "description": "whether API names are searched by partial match, else searched by exact match",
-                        "name": "is_source_partial",
-                        "in": "query"
-                    },
-                    {
+                        "enum": [
+                            "exact",
+                            "partial"
+                        ],
                         "type": "string",
-                        "description": "search words for a description attribute by partial match",
-                        "name": "description",
+                        "default": "partial",
+                        "description": "pattern match for 'name' field, chosen from 'exact' or 'partial'",
+                        "name": "name_pattern_match",
                         "in": "query"
                     },
                     {
+                        "enum": [
+                            "exact",
+                            "partial"
+                        ],
                         "type": "string",
-                        "description": "search words for all attributes",
-                        "name": "keyword",
+                        "default": "partial",
+                        "description": "pattern match for 'source' field, chosen from 'exact' or 'partial'",
+                        "name": "source_pattern_match",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 50,
+                        "description": "the maximum number of results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "the starting point for the result set",
+                        "name": "offset",
                         "in": "query"
                     }
                 ],

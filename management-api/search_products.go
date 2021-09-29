@@ -10,12 +10,12 @@ import (
 // @Summary search for products
 // @Description Get list of APIs and its information
 // @produce json
-// @Param name query string false "search words for an API name attribute"
-// @Param is_name_exact query boolean false "whether API names are searched by exact match, else searched by partial match" default(false)
-// @Param source query string false "search words for an API source attribute"
-// @Param is_source_exact query boolean false "whether API names are searched by exact match, else searched by partial match" default(false)
-// @Param description query string false "search words for a description attribute by partial match"
-// @Param keyword query string false "search words for all attributes"
+// @Param q query string true "search query words (split words by '.', ex: 'foo.bar')"
+// @Param target_fields query string false "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')" default(all)
+// @Param name_pattern_match query string false "pattern match for 'name' field, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
+// @Param source_pattern_match query string false "pattern match for 'source' field, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
+// @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
+// @Param offset query int false "the starting point for the result set" default(0)
 // @Success 200 {object} Products
 // @Failure 400 {string} string
 // @Failure 404 {string} string

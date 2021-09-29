@@ -134,34 +134,46 @@ paths:
     get:
       description: Get list of APIs and its information
       parameters:
-      - description: search words for an API name attribute
+      - description: 'search query words (split words by ''.'', ex: ''foo.bar'')'
         in: query
-        name: name
+        name: q
+        required: true
         type: string
-      - default: true
-        description: whether API names are searched by partial match, else searched
-          by exact match
+      - default: all
+        description: 'search target fields. You can choose field(s) from ''all'' (represents
+          searching all fields), ''name'', ''description'', or ''source''. (if there
+          are multiple target fields, split target by ''.'', ex: ''name.source'')'
         in: query
-        name: is_name_partial
-        type: boolean
-      - description: search words for an API source attribute
-        in: query
-        name: source
+        name: target_fields
         type: string
-      - default: true
-        description: whether API names are searched by partial match, else searched
-          by exact match
+      - default: partial
+        description: pattern match for 'name' field, chosen from 'exact' or 'partial'
+        enum:
+        - exact
+        - partial
         in: query
-        name: is_source_partial
-        type: boolean
-      - description: search words for a description attribute by partial match
-        in: query
-        name: description
+        name: name_pattern_match
         type: string
-      - description: search words for all attributes
+      - default: partial
+        description: pattern match for 'source' field, chosen from 'exact' or 'partial'
+        enum:
+        - exact
+        - partial
         in: query
-        name: keyword
+        name: source_pattern_match
         type: string
+      - default: 50
+        description: the maximum number of results
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - default: 0
+        description: the starting point for the result set
+        in: query
+        name: offset
+        type: integer
       produces:
       - application/json
       responses:
