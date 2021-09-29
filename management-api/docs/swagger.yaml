@@ -50,7 +50,7 @@ definitions:
           $ref: '#/definitions/managementapi.Product'
         type: array
     type: object
-  managementapi.SearchProductsResp:
+  managementapi.ResultSet:
     properties:
       count:
         type: integer
@@ -58,6 +58,16 @@ definitions:
         type: integer
       offset:
         type: integer
+    type: object
+  managementapi.SearchProductsMetaData:
+    properties:
+      result_set:
+        $ref: '#/definitions/managementapi.ResultSet'
+    type: object
+  managementapi.SearchProductsResp:
+    properties:
+      metadata:
+        $ref: '#/definitions/managementapi.SearchProductsMetaData'
       products:
         items:
           $ref: '#/definitions/managementapi.Product'

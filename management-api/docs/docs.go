@@ -292,7 +292,7 @@ var doc = `{
                 }
             }
         },
-        "managementapi.SearchProductsResp": {
+        "managementapi.ResultSet": {
             "type": "object",
             "properties": {
                 "count": {
@@ -303,6 +303,22 @@ var doc = `{
                 },
                 "offset": {
                     "type": "integer"
+                }
+            }
+        },
+        "managementapi.SearchProductsMetaData": {
+            "type": "object",
+            "properties": {
+                "result_set": {
+                    "$ref": "#/definitions/managementapi.ResultSet"
+                }
+            }
+        },
+        "managementapi.SearchProductsResp": {
+            "type": "object",
+            "properties": {
+                "metadata": {
+                    "$ref": "#/definitions/managementapi.SearchProductsMetaData"
                 },
                 "products": {
                     "type": "array",

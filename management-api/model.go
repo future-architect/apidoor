@@ -18,6 +18,12 @@ func init() {
 	schemaDecoder = schema.NewDecoder()
 }
 
+type ResultSet struct {
+	Count  int `json:"count"`
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
 type Product struct {
 	ID          int    `json:"id" db:"id"`
 	Name        string `json:"name" db:"name"`
@@ -47,9 +53,11 @@ type SearchProductsReq struct {
 	Offset       int    `schema:"offset"`
 }
 
+type SearchProductsMetaData struct {
+	ResultSet ResultSet `json:"result_set"`
+}
+
 type SearchProductsResp struct {
-	Products []Product `json:"products"`
-	Count    int       `json:"count"`
-	Limit    int       `json:"limit"`
-	Offset   int       `json:"offset"`
+	Products         []Product              `json:"products"`
+	SearchResultInfo SearchProductsMetaData `json:"metadata"`
 }
