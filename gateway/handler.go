@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"errors"
+	"gateway/logger"
 	"log"
 	"net/http"
 )
@@ -76,5 +77,5 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	UpdateLog(apikey, path, r)
+	logger.UpdateLog(apikey, path, r)
 }

@@ -1,4 +1,4 @@
-package gateway
+package logger
 
 import (
 	"encoding/csv"
