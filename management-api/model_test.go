@@ -48,6 +48,23 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 			},
 		},
 		{
+			name: "target_fieldsがallを含めて複数あるとき、all単独のときと同様に展開される",
+			input: managementapi.SearchProductsReq{
+				Q:            "abc",
+				TargetFields: "all.name",
+				PatternMatch: "exact",
+				Limit:        50,
+				Offset:       0,
+			},
+			want: &managementapi.SearchProductsParams{
+				Q:            []string{"abc"},
+				TargetFields: []string{"name", "source", "description"},
+				PatternMatch: "exact",
+				Limit:        50,
+				Offset:       0,
+			},
+		},
+		{
 			name: "未指定時に既定の値が設定される",
 			input: managementapi.SearchProductsReq{
 				Q: "abc",

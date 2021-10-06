@@ -75,7 +75,7 @@ func TestSearchProducts(t *testing.T) {
 		name       string
 		params     managementapi.SearchProductsReq
 		wantStatus int
-		wantResp   *managementapi.SearchProductsResp
+		wantResp   interface{} // *managementapi.SearchProductsResp
 	}{
 		{
 			name: "完全一致の検索ができる",
@@ -84,7 +84,7 @@ func TestSearchProducts(t *testing.T) {
 				PatternMatch: "exact",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: &managementapi.SearchProductsResp{
+			wantResp: managementapi.SearchProductsResp{
 				Products: []managementapi.Product{
 					{
 						Name:        "Awesome API",
@@ -109,7 +109,7 @@ func TestSearchProducts(t *testing.T) {
 				Q: "Awesome API",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: &managementapi.SearchProductsResp{
+			wantResp: managementapi.SearchProductsResp{
 				Products: []managementapi.Product{
 					{
 						Name:        "Awesome API",
@@ -141,7 +141,7 @@ func TestSearchProducts(t *testing.T) {
 				Q: "Search.example%2ecom",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: &managementapi.SearchProductsResp{
+			wantResp: managementapi.SearchProductsResp{
 				Products: []managementapi.Product{
 					{
 						Name:        "Search API",
@@ -167,7 +167,7 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "source.description",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: &managementapi.SearchProductsResp{
+			wantResp: managementapi.SearchProductsResp{
 				Products: []managementapi.Product{
 					{
 						Name:        "Search API",
@@ -194,7 +194,7 @@ func TestSearchProducts(t *testing.T) {
 				Offset:       1,
 			},
 			wantStatus: http.StatusOK,
-			wantResp: &managementapi.SearchProductsResp{
+			wantResp: managementapi.SearchProductsResp{
 				Products: []managementapi.Product{
 					{
 						Name:        "Great API",
@@ -219,7 +219,7 @@ func TestSearchProducts(t *testing.T) {
 				Q: "not exist",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: &managementapi.SearchProductsResp{
+			wantResp: managementapi.SearchProductsResp{
 				Products: []managementapi.Product{},
 				SearchProductsMetaData: managementapi.SearchProductsMetaData{
 					ResultSet: managementapi.ResultSet{
@@ -237,7 +237,7 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name.thumbnail",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp:   nil,
+			wantResp:   "param validation error\n",
 		},
 	}
 
@@ -263,24 +263,37 @@ func TestSearchProducts(t *testing.T) {
 			if rw.StatusCode != tt.wantStatus {
 				t.Errorf("wrong status code: got %d, want %d", rw.StatusCode, tt.wantStatus)
 			}
-			if tt.wantResp == nil {
-				return
-			}
 
 			body, err := io.ReadAll(rw.Body)
 			if err != nil {
 				t.Fatal(err)
 			}
-
-			var res *managementapi.SearchProductsResp
-			if err := json.Unmarshal(body, &res); err != nil {
-				t.Fatal(err)
-			}
-
-			if diff := cmp.Diff(tt.wantResp, res, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
-				t.Errorf("unexpected response: differs=\n%v", diff)
+			switch tt.wantResp.(type) {
+			case managementapi.SearchProductsResp:
+				testCompareBodyAsSearchProductResp(t, tt.wantResp.(managementapi.SearchProductsResp), body)
+			case string:
+				testCompareBodyAsString(t, tt.wantResp.(string), body)
+			default:
+				t.Error("wantResp is neither SearchProductResp nor string")
 			}
 
 		})
+	}
+}
+
+func testCompareBodyAsSearchProductResp(t *testing.T, want managementapi.SearchProductsResp, got []byte) {
+	var respBody managementapi.SearchProductsResp
+	if err := json.Unmarshal(got, &respBody); err != nil {
+		t.Errorf("parse body as search products response error: %v", err)
+		return
+	}
+	if diff := cmp.Diff(want, respBody, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
+		t.Errorf("unexpected response: differs=\n%v", diff)
+	}
+}
+
+func testCompareBodyAsString(t *testing.T, want string, got []byte) {
+	if diff := cmp.Diff(want, string(got)); diff != "" {
+		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 }

@@ -12,7 +12,7 @@ import (
 // @Summary search for products
 // @Description Get list of APIs and its information
 // @produce json
-// @Param q query string true "search query words (split words by '.', ex: 'foo.bar')"
+// @Param q query string true "search query words (split words by '.', ex: 'foo.bar'). If containing multiple words, items which match the all search words return"
 // @Param target_fields query string false "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')" default(all)
 // @Param pattern_match query string false "pattern match, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
