@@ -1,7 +1,10 @@
 package managementapi
 
 import (
+	"fmt"
 	"gopkg.in/go-playground/validator.v8"
+	"net/url"
+	"strings"
 
 	"github.com/gorilla/schema"
 )
@@ -9,6 +12,10 @@ import (
 var (
 	validate      *validator.Validate
 	schemaDecoder *schema.Decoder
+)
+
+const (
+	ResultLimitDefault = 50
 )
 
 func init() {
@@ -46,11 +53,62 @@ type PostProductReq struct {
 }
 
 type SearchProductsReq struct {
-	Q            string `schema:"name" validate:"required"`
+	Q            string `schema:"name"`
 	TargetFields string `schema:"target_fields"`
 	PatternMatch string `schema:"pattern_match"`
-	Limit        int    `schema:"limit" validate:"gte=1,lte=100"`
+	Limit        int    `schema:"limit"`
 	Offset       int    `schema:"offset"`
+}
+
+func (sr SearchProductsReq) CreateParams() (*SearchProductsParams, error) {
+	var err error
+	qSplit := strings.Split(sr.Q, ".")
+	for i, v := range qSplit {
+		if qSplit[i], err = url.QueryUnescape(v); err != nil {
+			return nil, fmt.Errorf("decode string %s error: %w", v, err)
+		}
+	}
+
+	targetSplit := strings.Split(sr.TargetFields, ".")
+	if sr.TargetFields == "" {
+		targetSplit = []string{"all"}
+	}
+	targetFieldExpand := targetSplit
+	for _, v := range targetSplit {
+		if v == "all" {
+			targetFieldExpand = []string{"name", "source", "description"}
+			break
+		}
+	}
+
+	patternMatch := sr.PatternMatch
+	if patternMatch == "" {
+		patternMatch = "partial"
+	}
+
+	limit := sr.Limit
+	if limit == 0 {
+		limit = ResultLimitDefault
+	}
+
+	params := SearchProductsParams{
+		Q:            qSplit,
+		TargetFields: targetFieldExpand,
+		PatternMatch: patternMatch,
+		Limit:        limit,
+		Offset:       sr.Offset,
+	}
+
+	if err = validate.Struct(params); err != nil {
+		return nil, err
+	}
+
+	return &params, nil
+}
+
+type SearchProductsResult struct {
+	Product
+	Count int `db:"count"`
 }
 
 type SearchProductsMetaData struct {
@@ -58,6 +116,14 @@ type SearchProductsMetaData struct {
 }
 
 type SearchProductsResp struct {
-	Products         []Product              `json:"products"`
-	SearchResultInfo SearchProductsMetaData `json:"metadata"`
+	Products               []Product              `json:"products"`
+	SearchProductsMetaData SearchProductsMetaData `json:"metadata"`
+}
+
+type SearchProductsParams struct {
+	Q            []string `validate:"gte=1,dive,ne="`
+	TargetFields []string `validate:"dive,eq=all|eq=name|eq=description|eq=source"`
+	PatternMatch string   `validate:"eq=exact|eq=partial"`
+	Limit        int      `validate:"gte=1,lte=100"`
+	Offset       int      `validate:"gte=0"`
 }

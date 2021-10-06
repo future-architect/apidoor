@@ -2,8 +2,10 @@ package managementapi
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strings"
 )
 
 // SearchProducts godoc
@@ -17,7 +19,6 @@ import (
 // @Param offset query int false "the starting point for the result set" default(0)
 // @Success 200 {object} SearchProductsResp
 // @Failure 400 {string} string
-// @Failure 404 {string} string
 // @Failure 500 {string} string
 // @Router /products/search [get]
 func SearchProducts(w http.ResponseWriter, r *http.Request) {
@@ -34,30 +35,62 @@ func SearchProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := db.NamedQueryContext(r.Context(), `SELECT * FROM apiinfo WHERE 1=1
-AND CASE :name
-	WHEN '' THEN 1=1
-	ELSE CASE :is_name_exact
-		WHEN 'true' THEN name=:name
-		ELSE name LIKE concat('%', cast(:name as text), '%')
-	END
-END
-AND CASE :source
-	WHEN '' THEN 1=1
-	ELSE CASE :is_source_exact
-		WHEN 'true' THEN source=:source
-		ELSE source LIKE concat('%', cast(:source as text), '%')
-	END
-END
-AND CASE :description
-	WHEN '' THEN 1=1
-	ELSE description LIKE concat('%', cast(:description as text), '%')
-END
-AND CASE :keyword
-	WHEN '' THEN 1=1
-	ELSE name || ' ' || source || ' ' || description LIKE concat('%', cast(:keyword as text), '%')
-END
-`, req)
+	params, err := req.CreateParams()
+	if err != nil {
+		log.Printf("validate query param error: %v", err)
+		http.Error(w, "param validation error", http.StatusBadRequest)
+		return
+	}
+
+	/*
+		create SQL statement, such like the following statement:
+			SELECT *, COUNT(*) OVER()
+			FROM (
+				SELECT * FROM apiinfo
+				WHERE name LIKE concat('%', cast(:q1 as text), '%')
+				UNION
+				SELECT * FROM apiinfo
+				WHERE source LIKE concat('%', cast(:q1 as text), '%')
+			) as T1
+			INNER JOIN (
+				SELECT * FROM apiinfo
+				WHERE name LIKE concat('%', cast(:q2 as text), '%')
+				UNION SELECT * FROM apiinfo
+				WHERE source LIKE concat('%', cast(:q2 as text), '%')
+			) as T2
+			on T1.id = T2.id
+			ORDER BY T1.id LIMIT :limit OFFSET :offset
+	*/
+	subQueries := make([]string, len(params.Q))
+	for i := range params.Q {
+		right := ""
+		if params.PatternMatch == "partial" {
+			right = fmt.Sprintf("LIKE concat('%%', cast(:q%d as text), '%%')", i+1)
+		} else {
+			right = fmt.Sprintf("= :q%d", i+1)
+		}
+		subSubQueries := make([]string, len(params.TargetFields))
+		for i, v := range params.TargetFields {
+			subSubQueries[i] = fmt.Sprintf("SELECT * FROM apiinfo WHERE %s %s", v, right)
+		}
+		if i == 0 {
+			subQueries[i] = fmt.Sprintf("FROM ( %s ) as T1", strings.Join(subSubQueries, " UNION "))
+		} else {
+			subQueries[i] = fmt.Sprintf("INNER JOIN ( %s ) as T%d on T1.id = T%d.id",
+				strings.Join(subSubQueries, " UNION "), i+1, i+1)
+		}
+	}
+	query := fmt.Sprintf("SELECT *, COUNT(*) OVER() %s ORDER BY T1.id LIMIT :limit OFFSET :offset",
+		strings.Join(subQueries, " "))
+	targetValues := make(map[string]interface{}, len(params.Q)+2)
+	for i, q := range params.Q {
+		key := fmt.Sprintf("q%d", i+1)
+		targetValues[key] = q
+	}
+	targetValues["limit"] = params.Limit
+	targetValues["offset"] = params.Offset
+
+	rows, err := db.NamedQueryContext(r.Context(), query, targetValues)
 
 	if err != nil {
 		log.Printf("error occurs while running query: %v", err)
@@ -66,8 +99,9 @@ END
 	}
 
 	list := []Product{}
+	count := 0
 	for rows.Next() {
-		var row Product
+		var row SearchProductsResult
 
 		if err := rows.StructScan(&row); err != nil {
 			log.Print("error occurs while reading row")
@@ -75,10 +109,22 @@ END
 			return
 		}
 
-		list = append(list, row)
+		list = append(list, row.Product)
+		count = row.Count
 	}
 
-	res, err := json.Marshal(Products{Products: list})
+	metaData := SearchProductsMetaData{
+		ResultSet: ResultSet{
+			Count:  count,
+			Limit:  params.Limit,
+			Offset: params.Offset,
+		},
+	}
+
+	res, err := json.Marshal(SearchProductsResp{
+		Products:               list,
+		SearchProductsMetaData: metaData,
+	})
 	if err != nil {
 		log.Print("error occurs while reading response")
 		http.Error(w, "error occur in database", http.StatusInternalServerError)
