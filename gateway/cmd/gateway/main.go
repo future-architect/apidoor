@@ -7,8 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"local.packages/gateway"
-
+	"github.com/future-architect/apidoor/gateway"
 	"github.com/go-chi/chi/v5"
 )
 

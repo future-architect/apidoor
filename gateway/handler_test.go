@@ -2,12 +2,13 @@ package gateway_test
 
 import (
 	"context"
-	"gateway"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/future-architect/apidoor/gateway"
 )
 
 var dbHost, templatePath string

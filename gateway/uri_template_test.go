@@ -1,8 +1,9 @@
 package gateway_test
 
 import (
-	"gateway"
 	"testing"
+
+	"github.com/future-architect/apidoor/gateway"
 )
 
 type templatetest struct {
