@@ -1,12 +1,28 @@
 package managementapi
 
 import (
+	"bytes"
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
+	"text/template"
 )
+
+var (
+	//go:embed sql/search_api.sql
+	searchAPISQLTemplateStr string
+	searchAPISQLTemplate    *template.Template
+)
+
+func init() {
+	var err error
+	searchAPISQLTemplate, err = template.New("search API  SQL template").Parse(searchAPISQLTemplateStr)
+	if err != nil {
+		log.Fatalf("create searchAPISQL template %v", err)
+	}
+}
 
 // SearchProducts godoc
 // @Summary search for products
@@ -24,14 +40,14 @@ import (
 func SearchProducts(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Printf("parse param error: %v", err)
-		http.Error(w, "parse param error", http.StatusInternalServerError)
+		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
 	var req SearchProductsReq
 	if err := schemaDecoder.Decode(&req, r.Form); err != nil {
 		log.Printf("parse query param error: %v", err)
-		http.Error(w, "parse query param error", http.StatusInternalServerError)
+		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -42,55 +58,21 @@ func SearchProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/*
-		create SQL statement, such like the following statement:
-			SELECT *, COUNT(*) OVER()
-			FROM (
-				SELECT * FROM apiinfo
-				WHERE name LIKE concat('%', cast(:q1 as text), '%')
-				UNION
-				SELECT * FROM apiinfo
-				WHERE source LIKE concat('%', cast(:q1 as text), '%')
-			) as T1
-			INNER JOIN (
-				SELECT * FROM apiinfo
-				WHERE name LIKE concat('%', cast(:q2 as text), '%')
-				UNION SELECT * FROM apiinfo
-				WHERE source LIKE concat('%', cast(:q2 as text), '%')
-			) as T2
-			on T1.id = T2.id
-			ORDER BY T1.id LIMIT :limit OFFSET :offset
-	*/
-	subQueries := make([]string, len(params.Q))
-	for i := range params.Q {
-		right := ""
-		if params.PatternMatch == "partial" {
-			right = fmt.Sprintf("LIKE concat('%%', cast(:q%d as text), '%%')", i+1)
-		} else {
-			right = fmt.Sprintf("= :q%d", i+1)
-		}
-		subSubQueries := make([]string, len(params.TargetFields))
-		for i, v := range params.TargetFields {
-			subSubQueries[i] = fmt.Sprintf("SELECT * FROM apiinfo WHERE %s %s", v, right)
-		}
-		if i == 0 {
-			subQueries[i] = fmt.Sprintf("FROM ( %s ) as T1", strings.Join(subSubQueries, " UNION "))
-		} else {
-			subQueries[i] = fmt.Sprintf("INNER JOIN ( %s ) as T%d on T1.id = T%d.id",
-				strings.Join(subSubQueries, " UNION "), i+1, i+1)
-		}
+	var query bytes.Buffer
+	if err := searchAPISQLTemplate.Execute(&query, params); err != nil {
+		log.Printf("generate SQL error: %v", err)
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
 	}
-	query := fmt.Sprintf("SELECT *, COUNT(*) OVER() %s ORDER BY T1.id LIMIT :limit OFFSET :offset",
-		strings.Join(subQueries, " "))
 	targetValues := make(map[string]interface{}, len(params.Q)+2)
 	for i, q := range params.Q {
-		key := fmt.Sprintf("q%d", i+1)
+		key := fmt.Sprintf("q%d", i)
 		targetValues[key] = q
 	}
 	targetValues["limit"] = params.Limit
 	targetValues["offset"] = params.Offset
 
-	rows, err := db.NamedQueryContext(r.Context(), query, targetValues)
+	rows, err := db.NamedQueryContext(r.Context(), query.String(), targetValues)
 
 	if err != nil {
 		log.Printf("error occurs while running query: %v", err)
