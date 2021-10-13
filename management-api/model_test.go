@@ -2,7 +2,8 @@ package managementapi_test
 
 import (
 	"github.com/google/go-cmp/cmp"
-	"log"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"gopkg.in/go-playground/validator.v8"
 	"managementapi"
 	"testing"
 )
@@ -12,6 +13,8 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 		name  string
 		input managementapi.SearchProductsReq
 		want  *managementapi.SearchProductsParams
+		// wantErr は期待されるerrorでvalidator.FieldErrorsが返る。validator.FieldErrorは出力に関わるFieldとTagのみ比較する
+		wantErr error
 	}{
 		{
 			name: "パーセントエンコードされたクエリを分割して、デコードできる",
@@ -29,6 +32,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Limit:        50,
 				Offset:       0,
 			},
+			wantErr: nil,
 		},
 		{
 			name: "target_fieldsがallのとき、展開される",
@@ -46,6 +50,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Limit:        50,
 				Offset:       0,
 			},
+			wantErr: nil,
 		},
 		{
 			name: "target_fieldsがallを含めて複数あるとき、all単独のときと同様に展開される",
@@ -63,6 +68,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Limit:        50,
 				Offset:       0,
 			},
+			wantErr: nil,
 		},
 		{
 			name: "未指定時に既定の値が設定される",
@@ -76,6 +82,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Limit:        50,
 				Offset:       0,
 			},
+			wantErr: nil,
 		},
 		{
 			name: "クエリが空",
@@ -86,6 +93,12 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
+			wantErr: validator.ValidationErrors{
+				"SearchProductsParams.Q[0]": &validator.FieldError{
+					Field: "Q[0]",
+					Tag:   "ne",
+				},
+			},
 		},
 		{
 			name: "TargetFieldsに不正な値が含まれている",
@@ -97,6 +110,12 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
+			wantErr: validator.ValidationErrors{
+				"SearchProductsParams.TargetFields[1]": &validator.FieldError{
+					Field: "TargetFields[1]",
+					Tag:   "eq|eq|eq|eq",
+				},
+			},
 		},
 		{
 			name: "PatternMatchが不正な値",
@@ -108,6 +127,12 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
+			wantErr: validator.ValidationErrors{
+				"SearchProductsParams.PatternMatch": &validator.FieldError{
+					Field: "PatternMatch",
+					Tag:   "eq|eq",
+				},
+			},
 		},
 		{
 			name: "Limitが上限を超えている",
@@ -119,6 +144,12 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
+			wantErr: validator.ValidationErrors{
+				"SearchProductsParams.Limit": &validator.FieldError{
+					Field: "Limit",
+					Tag:   "lte",
+				},
+			},
 		},
 	}
 
@@ -128,8 +159,10 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 			if diff := cmp.Diff(tt.want, resp); diff != "" {
 				t.Errorf("retruned struct differ:\n%s", diff)
 			}
-			if err != nil {
-				log.Println(err)
+			if diff := cmp.Diff(tt.wantErr, err,
+				cmpopts.IgnoreFields(validator.FieldError{}, "FieldNamespace", "NameNamespace",
+					"Name", "Kind", "ActualTag", "Type", "Param", "Value")); diff != "" {
+				t.Errorf("returned error differ:\n%s", diff)
 			}
 		})
 	}

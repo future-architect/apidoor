@@ -239,6 +239,23 @@ func TestSearchProducts(t *testing.T) {
 			wantStatus: http.StatusBadRequest,
 			wantResp:   "param validation error\n",
 		},
+		{
+			name: "Qパラメータが未指定、または空文字列",
+			params: managementapi.SearchProductsReq{
+				TargetFields: "name",
+			},
+			wantStatus: http.StatusBadRequest,
+			wantResp:   "param validation error\n",
+		},
+		{
+			name: "Qパラメータに空文字列が含まれている",
+			params: managementapi.SearchProductsReq{
+				Q:            "Awesome..API",
+				TargetFields: "name",
+			},
+			wantStatus: http.StatusBadRequest,
+			wantResp:   "param validation error\n",
+		},
 	}
 
 	defer func() {
