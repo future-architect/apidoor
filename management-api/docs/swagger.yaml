@@ -158,7 +158,7 @@ paths:
       description: Get list of APIs and its information
       parameters:
       - description: 'search query words (split words by ''.'', ex: ''foo.bar'').
-          If q contains multiple words, items which contain the all search words return'
+          If containing multiple words, items which match the all search words return'
         in: query
         name: q
         required: true

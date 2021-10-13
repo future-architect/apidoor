@@ -147,7 +147,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "search query words (split words by '.', ex: 'foo.bar'). If q contains multiple words, items which contain the all search words return",
+                        "description": "search query words (split words by '.', ex: 'foo.bar'). If containing multiple words, items which match the all search words return",
                         "name": "q",
                         "in": "query",
                         "required": true
