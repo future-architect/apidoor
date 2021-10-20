@@ -1,26 +1,28 @@
 package managementapi
 
 import (
-	"fmt"
-	"github.com/jmoiron/sqlx"
+	"context"
 	"log"
 	"os"
 )
 
-var db *sqlx.DB
+var db sqlDB
 
 func init() {
 	dbDriver := os.Getenv("DATABASE_DRIVER")
-	dbSource := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
-		os.Getenv("DATABASE_HOST"),
-		os.Getenv("DATABASE_PORT"),
-		os.Getenv("DATABASE_USER"),
-		os.Getenv("DATABASE_PASSWORD"),
-		os.Getenv("DATABASE_NAME"),
-		os.Getenv("DATABASE_SSLMODE"))
-
 	var err error
-	if db, err = sqlx.Open(dbDriver, dbSource); err != nil {
-		log.Fatalf("db connection error: %v", err)
+	switch dbDriver {
+	case "postgres":
+		if db, err = NewPostgresDB(); err != nil {
+			log.Fatalf("setup postgreSQL failed: %v", err)
+		}
+	default:
+		log.Fatalf("DATABASE_DRIVER is empty or not supported: %s", dbDriver)
 	}
+}
+
+type sqlDB interface {
+	getProducts(ctx context.Context) ([]Product, error)
+	postProducts(ctx context.Context, product *PostProductReq) error
+	searchProducts(ctx context.Context, params *SearchProductsParams) (*SearchProductsResp, error)
 }
