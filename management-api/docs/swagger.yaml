@@ -50,6 +50,29 @@ definitions:
           $ref: '#/definitions/managementapi.Product'
         type: array
     type: object
+  managementapi.ResultSet:
+    properties:
+      count:
+        type: integer
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  managementapi.SearchProductsMetaData:
+    properties:
+      result_set:
+        $ref: '#/definitions/managementapi.ResultSet'
+    type: object
+  managementapi.SearchProductsResp:
+    properties:
+      metadata:
+        $ref: '#/definitions/managementapi.SearchProductsMetaData'
+      products:
+        items:
+          $ref: '#/definitions/managementapi.Product'
+        type: array
+    type: object
 info:
   contact: {}
   description: This is an API that manages products.
@@ -130,4 +153,57 @@ paths:
           schema:
             $ref: '#/definitions/managementapi.Products'
       summary: Get list of products
+  /products/search:
+    get:
+      description: Get list of APIs and its information
+      parameters:
+      - description: 'search query words (split words by ''.'', ex: ''foo.bar'').
+          If containing multiple words, items which match the all search words return'
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: all
+        description: 'search target fields. You can choose field(s) from ''all'' (represents
+          searching all fields), ''name'', ''description'', or ''source''. (if there
+          are multiple target fields, split target by ''.'', ex: ''name.source'')'
+        in: query
+        name: target_fields
+        type: string
+      - default: partial
+        description: pattern match, chosen from 'exact' or 'partial'
+        enum:
+        - exact
+        - partial
+        in: query
+        name: pattern_match
+        type: string
+      - default: 50
+        description: the maximum number of results
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - default: 0
+        description: the starting point for the result set
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/managementapi.SearchProductsResp'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: search for products
 swagger: "2.0"
