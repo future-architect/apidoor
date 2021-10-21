@@ -2,11 +2,12 @@ package dblogger_test
 
 import (
 	"database/sql"
-	"dblogger"
 	"encoding/csv"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/future-architect/apidoor/dblogger"
 
 	_ "github.com/lib/pq"
 )
