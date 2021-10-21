@@ -10,11 +10,10 @@ import (
 	"os"
 	"testing"
 
+	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/jmoiron/sqlx"
-
-	"github.com/future-architect/apidoor/managementapi"
 
 	_ "github.com/lib/pq"
 )

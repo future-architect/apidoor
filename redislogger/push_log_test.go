@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/future-architect/apidoor/redislogger"
-
 	"github.com/go-redis/redis/v8"
 )
 
