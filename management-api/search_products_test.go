@@ -2,15 +2,16 @@ package managementapi_test
 
 import (
 	"encoding/json"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/gorilla/schema"
 	"io"
-	"managementapi"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
+
+	"github.com/future-architect/apidoor/managementapi"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/gorilla/schema"
 )
 
 func TestSearchProducts(t *testing.T) {

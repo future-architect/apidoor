@@ -5,12 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis/v8"
-	"managementapi"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	"github.com/future-architect/apidoor/managementapi"
+	"github.com/go-redis/redis/v8"
 )
 
 func TestPostAPIRouting(t *testing.T) {

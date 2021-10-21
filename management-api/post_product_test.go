@@ -3,12 +3,13 @@ package managementapi_test
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"managementapi"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/future-architect/apidoor/managementapi"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 func TestPostProduct(t *testing.T) {
