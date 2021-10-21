@@ -1,11 +1,12 @@
 package managementapi_test
 
 import (
+	"testing"
+
+	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"gopkg.in/go-playground/validator.v8"
-	"managementapi"
-	"testing"
 )
 
 func TestSearchProductsReq_CreateParams(t *testing.T) {

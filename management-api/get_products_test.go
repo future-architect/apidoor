@@ -3,9 +3,6 @@ package managementapi_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/jmoiron/sqlx"
 	"io"
 	"log"
 	"net/http"
@@ -13,7 +10,10 @@ import (
 	"os"
 	"testing"
 
-	"managementapi"
+	"github.com/future-architect/apidoor/managementapi"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/jmoiron/sqlx"
 
 	_ "github.com/lib/pq"
 )
