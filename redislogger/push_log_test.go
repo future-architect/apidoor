@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/csv"
 	"os"
-	"redislogger"
 	"strconv"
 	"testing"
 	"time"
+
+	"github.com/future-architect/apidoor/redislogger"
 
 	"github.com/go-redis/redis/v8"
 )
