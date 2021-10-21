@@ -2,10 +2,11 @@ package logger_test
 
 import (
 	"encoding/csv"
-	"gateway/logger"
 	"net/http"
 	"os"
 	"testing"
+
+	"github.com/future-architect/apidoor/gateway/logger"
 )
 
 func TestUpdateLog(t *testing.T) {

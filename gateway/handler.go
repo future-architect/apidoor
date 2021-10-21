@@ -2,9 +2,10 @@ package gateway
 
 import (
 	"errors"
-	"gateway/logger"
 	"log"
 	"net/http"
+
+	"github.com/future-architect/apidoor/gateway/logger"
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
