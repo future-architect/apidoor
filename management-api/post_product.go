@@ -37,13 +37,9 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := db.NamedExecContext(r.Context(),
-		"INSERT INTO apiinfo(name, source, description, thumbnail, swagger_url) VALUES(:name, :source, :description, :thumbnail, :swagger_url)",
-		req)
-	if err != nil {
+	if err := db.postProducts(r.Context(), &req); err != nil {
 		log.Printf("db insert product error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
-		return
 	}
 
 	w.WriteHeader(http.StatusCreated)

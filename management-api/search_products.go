@@ -1,28 +1,11 @@
 package managementapi
 
 import (
-	"bytes"
 	_ "embed"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
-	"text/template"
 )
-
-var (
-	//go:embed sql/search_api.sql
-	searchAPISQLTemplateStr string
-	searchAPISQLTemplate    *template.Template
-)
-
-func init() {
-	var err error
-	searchAPISQLTemplate, err = template.New("search API  SQL template").Parse(searchAPISQLTemplateStr)
-	if err != nil {
-		log.Fatalf("create searchAPISQL template %v", err)
-	}
-}
 
 // SearchProducts godoc
 // @Summary search for products
@@ -58,58 +41,17 @@ func SearchProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var query bytes.Buffer
-	if err := searchAPISQLTemplate.Execute(&query, params); err != nil {
-		log.Printf("generate SQL error: %v", err)
+	respBody, err := db.searchProducts(r.Context(), params)
+	if err != nil {
+		log.Printf("search products db error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
-	targetValues := make(map[string]interface{}, len(params.Q)+2)
-	for i, q := range params.Q {
-		key := fmt.Sprintf("q%d", i)
-		targetValues[key] = q
-	}
-	targetValues["limit"] = params.Limit
-	targetValues["offset"] = params.Offset
 
-	rows, err := db.NamedQueryContext(r.Context(), query.String(), targetValues)
-
+	res, err := json.Marshal(respBody)
 	if err != nil {
-		log.Printf("error occurs while running query: %v", err)
-		http.Error(w, "error occurs in database", http.StatusInternalServerError)
-		return
-	}
-
-	list := []Product{}
-	count := 0
-	for rows.Next() {
-		var row SearchProductsResult
-
-		if err := rows.StructScan(&row); err != nil {
-			log.Print("error occurs while reading row")
-			http.Error(w, "error occurs in database", http.StatusInternalServerError)
-			return
-		}
-
-		list = append(list, row.Product)
-		count = row.Count
-	}
-
-	metaData := SearchProductsMetaData{
-		ResultSet: ResultSet{
-			Count:  count,
-			Limit:  params.Limit,
-			Offset: params.Offset,
-		},
-	}
-
-	res, err := json.Marshal(SearchProductsResp{
-		Products:               list,
-		SearchProductsMetaData: metaData,
-	})
-	if err != nil {
-		log.Print("error occurs while reading response")
-		http.Error(w, "error occur in database", http.StatusInternalServerError)
+		log.Printf("create json response error: %v", err)
+		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 

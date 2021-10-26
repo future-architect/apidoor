@@ -15,24 +15,11 @@ import (
 // @Success 200 {object} Products
 // @Router /products [get]
 func GetProducts(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Queryx("SELECT * from apiinfo")
+	list, err := db.getProducts(r.Context())
 	if err != nil {
-		log.Printf("error occurs while running query %v", err)
+		log.Printf("execute get products from db error: %v", err)
 		http.Error(w, "error occurs in database", http.StatusInternalServerError)
 		return
-	}
-
-	var list []Product
-	for rows.Next() {
-		var row Product
-
-		if err := rows.StructScan(&row); err != nil {
-			log.Print("error occurs while reading row")
-			http.Error(w, "error occurs in database", http.StatusInternalServerError)
-			return
-		}
-
-		list = append(list, row)
 	}
 
 	res, err := json.Marshal(Products{Products: list})
