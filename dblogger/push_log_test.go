@@ -12,17 +12,22 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var testdata = struct {
-	date string
-	key  string
-	path string
-}{
-	date: "2021-07-01T14:01:46+09:00",
-	key:  "key",
-	path: "path",
+type testLog = struct {
+	date   string
+	key    string
+	path   string
+	custom string
+}
+
+var testLogData = testLog{
+	date:   "2021-07-01T14:01:46+09:00",
+	key:    "key",
+	path:   "path",
+	custom: `{"key": "value"}`,
 }
 
 func TestPushLog(t *testing.T) {
+	// set up database
 	db, err := sql.Open(os.Getenv("DATABASE_DRIVER"),
 		"host="+os.Getenv("DATABASE_HOST")+" "+
 			"port="+os.Getenv("DATABASE_PORT")+" "+
@@ -34,11 +39,17 @@ func TestPushLog(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if _, err := db.Exec("DELETE FROM apilog WHERE apikey='key' AND apipath='path'"); err != nil {
+
+	// clean up database for test
+	if _, err := db.Exec("DELETE FROM log_list WHERE api_key='key' AND api_path='path'"); err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		db.Exec("DELETE FROM log_list WHERE api_key='key' AND api_path='path'")
+	})
 
-	file, err := os.OpenFile(os.Getenv("LOGPATH"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
+	// open log file
+	file, err := os.OpenFile(os.Getenv("LOG_PATH"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,25 +59,24 @@ func TestPushLog(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// execute PushLog()
 	writer := csv.NewWriter(file)
 	writer.Write([]string{
-		testdata.date,
-		testdata.key,
-		testdata.path,
+		testLogData.date,
+		testLogData.key,
+		testLogData.path,
+		testLogData.custom,
 	})
 	writer.Flush()
 	dblogger.PushLog()
 
-	row := struct {
-		date string
-		key  string
-		path string
-	}{}
-	if err := db.QueryRow("SELECT * FROM apilog WHERE apikey='key' AND apipath='path'").Scan(&row.date, &row.key, &row.path); err != nil {
+	// check if log is written to database correctly
+	row := testLog{}
+	if err := db.QueryRow("SELECT * FROM log_list WHERE api_key='key'").Scan(&row.date, &row.key, &row.path, &row.custom); err != nil {
 		t.Fatal(err)
 	}
 
-	t1, err := time.Parse(time.RFC3339, testdata.date)
+	t1, err := time.Parse(time.RFC3339, testLogData.date)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,13 +87,11 @@ func TestPushLog(t *testing.T) {
 
 	if !t1.Equal(t2) {
 		t.Fatalf("unexpected date %s, expected %s", t1.String(), t2.String())
-	} else if row.key != testdata.key {
-		t.Fatalf("unexpected key %s, expected %s", row.key, testdata.key)
-	} else if row.path != testdata.path {
-		t.Fatalf("unexpected path %s, expected %s", row.path, testdata.path)
-	}
-
-	if _, err := db.Exec("DELETE FROM apilog WHERE apikey='key' AND apipath='path'"); err != nil {
-		t.Fatal(err)
+	} else if row.key != testLogData.key {
+		t.Fatalf("unexpected key %s, expected %s", row.key, testLogData.key)
+	} else if row.path != testLogData.path {
+		t.Fatalf("unexpected path %s, expected %s", row.path, testLogData.path)
+	} else if row.custom != testLogData.custom {
+		t.Fatalf("unexpected custom data %s, expected %s", row.custom, testLogData.custom)
 	}
 }
