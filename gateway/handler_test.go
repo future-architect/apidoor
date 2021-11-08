@@ -1,28 +1,28 @@
-package gateway_test
+package gateway
 
 import (
 	"context"
+	"github.com/future-architect/apidoor/gateway/logger"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
-
-	"github.com/future-architect/apidoor/gateway"
 )
 
 var dbHost, templatePath string
 
 type dbMock struct{}
 
-func (dm dbMock) GetFields(ctx context.Context, key string) (gateway.Fields, error) {
+func (dm dbMock) GetFields(_ context.Context, key string) (Fields, error) {
 	if key == "apikeyNotExist" {
-		return nil, gateway.ErrUnauthorizedRequest
+		return nil, ErrUnauthorizedRequest
 	}
-	return gateway.Fields{
+	return Fields{
 		{
-			Template: *gateway.NewURITemplate(templatePath),
-			Path:     *gateway.NewURITemplate(dbHost),
+			Template: *NewURITemplate(templatePath),
+			Path:     *NewURITemplate(dbHost),
 			Num:      5,
 			Max:      10,
 		},
@@ -30,95 +30,95 @@ func (dm dbMock) GetFields(ctx context.Context, key string) (gateway.Fields, err
 }
 
 type handlerTest struct {
-	rescode int
+	resCode int
 	content string
 	apikey  string
 	field   string
 	request string
 	out     string
-	outcode int
+	outCode int
 }
 
 var handlerTestData = []handlerTest{
 	// valid request using parameter
 	{
-		rescode: http.StatusOK,
+		resCode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "response from API server",
-		outcode: http.StatusOK,
+		outCode: http.StatusOK,
 	},
 	// valid request not using parameter
 	{
-		rescode: http.StatusOK,
+		resCode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
 		field:   "/test",
 		request: "/test",
 		out:     "response from API server",
-		outcode: http.StatusOK,
+		outCode: http.StatusOK,
 	},
 	// client error
 	{
-		rescode: http.StatusBadRequest,
+		resCode: http.StatusBadRequest,
 		content: "application/json",
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "client error",
-		outcode: http.StatusBadRequest,
+		outCode: http.StatusBadRequest,
 	},
 	// server error
 	{
-		rescode: http.StatusInternalServerError,
+		resCode: http.StatusInternalServerError,
 		content: "application/json",
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "server error",
-		outcode: http.StatusInternalServerError,
+		outCode: http.StatusInternalServerError,
 	},
 	// invalid Content-Type
 	{
-		rescode: http.StatusOK,
+		resCode: http.StatusOK,
 		content: "text/html",
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "unexpected request content",
-		outcode: http.StatusBadRequest,
+		outCode: http.StatusBadRequest,
 	},
 	// no authorization header
 	{
-		rescode: http.StatusOK,
+		resCode: http.StatusOK,
 		content: "application/json",
 		apikey:  "",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "no authorization",
-		outcode: http.StatusBadRequest,
+		outCode: http.StatusBadRequest,
 	},
 	// unauthorized request (invalid key)
 	{
-		rescode: http.StatusOK,
+		resCode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikeyNotExist",
 		field:   "/test/{test}",
 		request: "/test/hoge",
 		out:     "invalid key or path",
-		outcode: http.StatusNotFound,
+		outCode: http.StatusNotFound,
 	},
 	// unauthorized request (invalid URL)
 	{
-		rescode: http.StatusOK,
+		resCode: http.StatusOK,
 		content: "application/json",
 		apikey:  "apikey1",
 		field:   "/test/{test}",
 		request: "/t/hoge",
 		out:     "invalid key or path",
-		outcode: http.StatusNotFound,
+		outCode: http.StatusNotFound,
 	},
 }
 
@@ -131,16 +131,22 @@ var methods = []string{
 
 func TestHandler(t *testing.T) {
 	mock := dbMock{}
-	gateway.DBDriver = mock
+	dbDriver = mock
+
+	handler := DefaultHandler{
+		Appender: logger.DefaultAppender{
+			Writer: os.Stdout,
+		},
+	}
+
 	for _, method := range methods {
 		for index, tt := range handlerTestData {
 			// http server for test
 			message := []byte("response from API server")
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(tt.rescode)
+				w.WriteHeader(tt.resCode)
 				w.Write(message)
 			}))
-			defer ts.Close()
 
 			// set routing data
 			host := ts.URL[6:]
@@ -154,14 +160,13 @@ func TestHandler(t *testing.T) {
 				r.Header.Set("Authorization", tt.apikey)
 			}
 			w := httptest.NewRecorder()
-			gateway.Handler(w, r)
+			handler.Handle(w, r)
 
 			// check response
 			rw := w.Result()
-			defer rw.Body.Close()
 
-			if rw.StatusCode != tt.outcode {
-				t.Fatalf("method %s, case %d: unexpected status code %d, expected %d", method, index, rw.StatusCode, tt.outcode)
+			if rw.StatusCode != tt.outCode {
+				t.Fatalf("method %s, case %d: unexpected status code %d, expected %d", method, index, rw.StatusCode, tt.outCode)
 			}
 
 			b, err := io.ReadAll(rw.Body)
@@ -173,6 +178,10 @@ func TestHandler(t *testing.T) {
 			if trimmed != tt.out {
 				t.Fatalf("method %s, case %d: unexpected response: %s, expected: %s", method, index, trimmed, tt.out)
 			}
+
+			// loopの中なのでdeferは使えない
+			ts.Close()
+			rw.Body.Close()
 		}
 	}
 }
