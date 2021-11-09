@@ -5,6 +5,8 @@ import (
 	"fmt"
 )
 
+var ErrUnauthorizedRequest = &MyError{Message: "unauthorized request"}
+
 type MyError struct {
 	Message string `json:"message"`
 }
@@ -12,10 +14,6 @@ type MyError struct {
 func (err *MyError) Error() string {
 	return fmt.Sprintf("error: %s", err.Message)
 }
-
-var (
-	ErrUnauthorizedRequest = &MyError{Message: "unauthorized request"}
-)
 
 type Field struct {
 	Template URITemplate

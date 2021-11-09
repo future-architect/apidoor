@@ -1,58 +1,48 @@
 package main
 
 import (
+	"encoding/csv"
+	"github.com/future-architect/apidoor/gateway"
+	"github.com/future-architect/apidoor/gateway/logger"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
-	"time"
-
-	"github.com/future-architect/apidoor/gateway"
-	"github.com/go-chi/chi/v5"
 )
 
 func main() {
+
+	// open log file
+	file, err := os.OpenFile(os.Getenv("LOG_PATH"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0200)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer file.Close()
+
+	// write to log file
+	writer := csv.NewWriter(file)
+	defer writer.Flush()
+
+	h := gateway.DefaultHandler{
+		Appender: logger.CSVAppender{
+			Writer: writer,
+		},
+	}
+
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
-		r.Get("/*", gateway.Handler)
-		r.Put("/*", gateway.Handler)
-		r.Delete("/*", gateway.Handler)
-		r.Post("/*", gateway.Handler)
+		r.Get("/*", h.Handle)
+		r.Put("/*", h.Handle)
+		r.Delete("/*", h.Handle)
+		r.Post("/*", h.Handle)
 	})
 
-	rt := GetEnvWithDefault("READTIMEOUT", 5)
-	rht := GetEnvWithDefault("READHEADERTIMEOUT", 5)
-	wt := GetEnvWithDefault("WRITETIMEOUT", 20)
-	it := GetEnvWithDefault("IDLETIMEOUT", 5)
-	mhb := GetEnvWithDefault("MAXHEADERBYTES", 1<<20)
-
 	s := &http.Server{
-		Addr:              ":3000",
-		Handler:           r,
-		ReadTimeout:       time.Duration(rt) * time.Second,
-		ReadHeaderTimeout: time.Duration(rht) * time.Second,
-		WriteTimeout:      time.Duration(wt) * time.Second,
-		IdleTimeout:       time.Duration(it) * time.Second,
-		MaxHeaderBytes:    mhb,
+		Addr:    ":3000",
+		Handler: r,
 	}
 
 	if err := s.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
-}
-
-func GetEnvWithDefault(env string, def int) int {
-	if def <= 0 {
-		log.Fatal("default value should be positive")
-	}
-
-	n, err := strconv.Atoi(os.Getenv(env))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if n <= 0 {
-		n = def
-	}
-
-	return n
 }

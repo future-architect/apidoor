@@ -10,6 +10,21 @@ import (
 	"os"
 )
 
+type DynamoAPIForwarding struct {
+	APIKey     string `dynamo:"api_key"`
+	Path       string `dynamo:"path"`
+	ForwardURL string `dynamo:"forward_url"`
+}
+
+func (af DynamoAPIForwarding) Field() Field {
+	return Field{
+		Template: *NewURITemplate(af.Path),
+		Path:     *NewURITemplate(af.ForwardURL),
+		Num:      5,
+		Max:      10,
+	}
+}
+
 type DynamoDB struct {
 	client             *dynamo.DB
 	apiForwardingTable string
@@ -22,13 +37,7 @@ func NewDynamoDB() *DynamoDB {
 	}
 
 	dbEndpoint := os.Getenv("DYNAMO_ENDPOINT")
-	//region := os.Getenv("AWS_REGION")
-
-	if dbEndpoint == "" {
-		// TODO: 本番環境向けの設定
-		log.Fatal("missing DYNAMO_TABLE_API_FORWARDING env")
-		return nil
-	} else {
+	if dbEndpoint != "" {
 		return &DynamoDB{
 			client: dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
 				SharedConfigState: session.SharedConfigEnable,
@@ -37,13 +46,19 @@ func NewDynamoDB() *DynamoDB {
 			apiForwardingTable: apiForwardingTable,
 		}
 	}
+
+	return &DynamoDB{
+		client:             dynamo.New(session.Must(session.NewSession())),
+		apiForwardingTable: apiForwardingTable,
+	}
+
 }
 
 func (dd DynamoDB) GetFields(ctx context.Context, key string) (Fields, error) {
-	var forwardings []*APIForwarding
+	var resp []*DynamoAPIForwarding
 	err := dd.client.Table(dd.apiForwardingTable).
 		Get("api_key", key).
-		AllWithContext(ctx, &forwardings)
+		AllWithContext(ctx, &resp)
 	if err != nil {
 		if err == dynamo.ErrNotFound {
 			return nil, ErrUnauthorizedRequest
@@ -52,8 +67,8 @@ func (dd DynamoDB) GetFields(ctx context.Context, key string) (Fields, error) {
 		}
 	}
 
-	var fields []Field
-	for _, forwarding := range forwardings {
+	fields := make([]Field, 0, len(resp))
+	for _, forwarding := range resp {
 		fields = append(fields, forwarding.Field())
 	}
 

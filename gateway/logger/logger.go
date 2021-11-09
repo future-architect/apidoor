@@ -2,26 +2,39 @@ package logger
 
 import (
 	"encoding/csv"
-	"log"
+	"io"
 	"net/http"
-	"os"
+	"strings"
 )
 
-func UpdateLog(key, path string, r *http.Request) {
-	// open log file
-	file, err := os.OpenFile(os.Getenv("LOG_PATH"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0200)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+type Appender interface {
+	Do(key, path string, r *http.Request) error
+}
 
-	// make record
-	record := []string{}
-	for _, logOption := range LogOptionPattern {
+type DefaultAppender struct {
+	Writer io.Writer
+}
+
+func (a DefaultAppender) Do(key, path string, r *http.Request) error {
+	record := make([]string, 0, len(logOptionPattern))
+	for _, logOption := range logOptionPattern {
 		logOption(&record, key, path, r)
 	}
 
-	// write to log file
-	writer := csv.NewWriter(file)
-	writer.Write(record)
-	writer.Flush()
+	// デフォルトはカンマ区切り
+	_, err := a.Writer.Write([]byte(strings.Join(record, ",")))
+
+	return err
+}
+
+type CSVAppender struct {
+	Writer *csv.Writer
+}
+
+func (a CSVAppender) Do(key, path string, r *http.Request) error {
+	record := make([]string, 0, len(logOptionPattern))
+	for _, logOption := range logOptionPattern {
+		logOption(&record, key, path, r)
+	}
+	return a.Writer.Write(record)
 }

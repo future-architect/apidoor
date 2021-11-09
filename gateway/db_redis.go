@@ -14,6 +14,15 @@ type RedisDB struct {
 func NewRedisDB() *RedisDB {
 	host := os.Getenv("REDIS_HOST")
 	port := os.Getenv("REDIS_PORT")
+
+	if host == "" {
+		host = "localhost"
+	}
+
+	if port == "" {
+		port = "6379"
+	}
+
 	addr := fmt.Sprintf("%s:%s", host, port)
 	return &RedisDB{
 		client: redis.NewClient(&redis.Options{

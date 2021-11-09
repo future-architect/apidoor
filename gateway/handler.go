@@ -2,13 +2,18 @@ package gateway
 
 import (
 	"errors"
+	"io"
 	"log"
 	"net/http"
 
 	"github.com/future-architect/apidoor/gateway/logger"
 )
 
-func Handler(w http.ResponseWriter, r *http.Request) {
+type DefaultHandler struct {
+	Appender logger.Appender
+}
+
+func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// check header
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
@@ -23,7 +28,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fields, err := DBDriver.GetFields(r.Context(), apikey)
+	fields, err := dbDriver.GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
 		if errors.Is(err, ErrUnauthorizedRequest) {
@@ -53,9 +58,10 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	method := r.Method
 	query := r.URL.RawQuery
 
-	if method == http.MethodGet || method == http.MethodDelete {
+	if method == http.MethodGet || method == http.MethodHead || method == http.MethodDelete || method == http.MethodOptions {
 		req, err = http.NewRequest(method, "http://"+path+"?"+query, nil)
 	} else {
+		// Post, Put, Patchなど
 		req, err = http.NewRequest(http.MethodPost, "http://"+path, r.Body)
 	}
 	if err != nil {
@@ -63,7 +69,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "couldn't make request", http.StatusInternalServerError)
 		return
 	}
-	SetRequestHeader(r, req)
+	setRequestHeader(r, req)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -74,9 +80,39 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	defer res.Body.Close()
 
 	// return response and write log
-	if err := ResposeChecker(&w, res); err != nil {
+	if err := copyResponse(&w, res); err != nil {
 		return
 	}
 
-	logger.UpdateLog(apikey, path, r)
+	if err := h.Appender.Do(apikey, path, r); err != nil {
+		log.Printf("[ERROR] appender write err: %v\n", err)
+	}
+}
+
+func setRequestHeader(src, dist *http.Request) {
+	dist.Header = src.Header
+	dist.Header.Del("Authorization")
+	dist.Header.Del("Connection")
+	dist.Header.Del("Cookie")
+}
+
+func copyResponse(w *http.ResponseWriter, res *http.Response) error {
+	switch code := res.StatusCode; {
+	case 400 <= code && code <= 499:
+		log.Printf("client error: %v, status code: %d", res.Body, code)
+		http.Error(*w, "client error", code)
+		return errors.New("client error")
+	case 500 <= code && code <= 599:
+		log.Printf("server error: %v, status code: %d", res.Body, code)
+		http.Error(*w, "server error", code)
+		return errors.New("server error")
+	}
+
+	if _, err := io.Copy(*w, res.Body); err != nil {
+		log.Printf("error occur while writing response: %s", err.Error())
+		http.Error(*w, "error occur while writing response", http.StatusInternalServerError)
+		return errors.New("error occur while writing response")
+	}
+
+	return nil
 }
