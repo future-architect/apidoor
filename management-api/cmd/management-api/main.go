@@ -4,8 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"local.packages/managementapi"
-
+	"github.com/future-architect/apidoor/managementapi"
 	"github.com/go-chi/chi/v5"
 )
 

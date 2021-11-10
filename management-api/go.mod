@@ -1,4 +1,4 @@
-module managementapi
+module github.com/future-architect/apidoor/managementapi
 
 go 1.16
 
@@ -12,7 +12,4 @@ require (
 	github.com/swaggo/swag v1.7.1
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 	gopkg.in/go-playground/validator.v8 v8.18.2
-	local.packages/managementapi v0.0.0
 )
-
-replace local.packages/managementapi => ./

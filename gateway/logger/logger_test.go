@@ -1,48 +1,35 @@
-package logger_test
+package logger
 
 import (
+	"bytes"
 	"encoding/csv"
-	"gateway/logger"
 	"net/http"
-	"os"
 	"testing"
 )
 
 func TestUpdateLog(t *testing.T) {
-	// open file
-	file, err := os.OpenFile(os.Getenv("LOG_PATH"), os.O_RDWR|os.O_CREATE, 0600)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer file.Close()
 
-	if err := file.Truncate(0); err != nil {
-		t.Fatal(err)
-	}
-
-	// save current environment variable
-	tmp := os.Getenv("LOG_PATTERN")
-	t.Cleanup(func() {
-		os.Setenv("LOG_PATTERN", tmp)
-	})
-
-	// run test
 	r, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	r.Header.Set("TEST1", "header1")
 	r.Header.Set("TEST2", "header2")
-	logger.LogOptionPattern = []logger.LogOption{
-		logger.WithTime(),
-		logger.WithKey(),
-		logger.WithPath(),
-		logger.HeaderElement("TEST1"),
-		logger.HeaderElement("TEST2"),
+	logOptionPattern = []LogOption{
+		WithTime(),
+		WithKey(),
+		WithPath(),
+		HeaderElement("TEST1"),
+		HeaderElement("TEST2"),
+	}
+
+	buffer := &bytes.Buffer{}
+	appender := DefaultAppender{
+		Writer: buffer,
 	}
 	for i := 0; i < 2; i++ {
-		logger.UpdateLog("key", "path", r)
+		appender.Do("key", "path", r)
 	}
 
 	// check if log is valid
-	reader := csv.NewReader(file)
+	reader := csv.NewReader(buffer)
 	recordNum := 0
 
 	for {

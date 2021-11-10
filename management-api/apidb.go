@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"managementapi/apiredis"
 	"os"
+
+	"github.com/future-architect/apidoor/managementapi/apiredis"
 )
 
 var ApiDBDriver APIDB

@@ -2,8 +2,9 @@ package gateway_test
 
 import (
 	"errors"
-	"gateway"
 	"testing"
+
+	"github.com/future-architect/apidoor/gateway"
 )
 
 type fieldsURITest struct {
