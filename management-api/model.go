@@ -133,5 +133,4 @@ type PostUserReq struct {
 	EmailAddress string `json:"email_address" validate:"required,email"`
 	Password     string `json:"password" validate:"required,printascii"`
 	Name         string `json:"name"`
-	Belongings   string `json:"belongings"`
 }
