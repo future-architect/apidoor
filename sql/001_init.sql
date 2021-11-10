@@ -1,6 +1,6 @@
+BEGIN;
 CREATE EXTENSION pgcrypto;
 
-BEGIN;
 CREATE TABLE IF NOT EXISTS public.apiinfo
 (
     id serial primary key ,
@@ -24,8 +24,7 @@ CREATE TABLE IF NOT EXISTS public.user
     email_address TEXT not null,
     login_password_hash TEXT not null,  /* pgcryptoのcrypt関数を使用 */
     name TEXT,
-    belongings VARCHAR(2),
-    is_admin boolean not null default 0,
+    is_admin VARCHAR(2) not null,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 )
