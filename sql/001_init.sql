@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.user
     email_address TEXT not null,
     login_password_hash TEXT not null,  /* pgcryptoのcrypt関数を使用 */
     name TEXT,
-    is_admin VARCHAR(2) not null,
+    permission_flag VARCHAR(2) not null,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 )
