@@ -30,19 +30,17 @@ definitions:
     type: object
   managementapi.PostUserReq:
     properties:
-      belongings:
+      account_id:
         type: string
       email_address:
-        type: string
-      id:
         type: string
       name:
         type: string
       password:
         type: string
     required:
+    - account_id
     - email_address
-    - id
     - password
     type: object
   managementapi.Product:
@@ -227,7 +225,7 @@ paths:
     post:
       description: Create a user
       parameters:
-      - description: api information
+      - description: user description
         in: body
         name: product
         required: true

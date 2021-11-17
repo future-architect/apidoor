@@ -218,7 +218,7 @@ var doc = `{
                 "summary": "Create a user",
                 "parameters": [
                     {
-                        "description": "api information",
+                        "description": "user description",
                         "name": "product",
                         "in": "body",
                         "required": true,
@@ -295,18 +295,15 @@ var doc = `{
         "managementapi.PostUserReq": {
             "type": "object",
             "required": [
+                "account_id",
                 "email_address",
-                "id",
                 "password"
             ],
             "properties": {
-                "belongings": {
+                "account_id": {
                     "type": "string"
                 },
                 "email_address": {
-                    "type": "string"
-                },
-                "id": {
                     "type": "string"
                 },
                 "name": {
