@@ -28,6 +28,21 @@ definitions:
     - swagger_url
     - thumbnail
     type: object
+  managementapi.PostUserReq:
+    properties:
+      account_id:
+        type: string
+      email_address:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    required:
+    - account_id
+    - email_address
+    - password
+    type: object
   managementapi.Product:
     properties:
       description:
@@ -206,4 +221,30 @@ paths:
           schema:
             type: string
       summary: search for products
+  /users:
+    post:
+      description: Create a user
+      parameters:
+      - description: user description
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/managementapi.PostUserReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Create a user
 swagger: "2.0"

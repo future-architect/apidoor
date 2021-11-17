@@ -208,6 +208,46 @@ var doc = `{
                     }
                 }
             }
+        },
+        "/users": {
+            "post": {
+                "description": "Create a user",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Create a user",
+                "parameters": [
+                    {
+                        "description": "user description",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.PostUserReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -248,6 +288,28 @@ var doc = `{
                     "type": "string"
                 },
                 "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
+        "managementapi.PostUserReq": {
+            "type": "object",
+            "required": [
+                "account_id",
+                "email_address",
+                "password"
+            ],
+            "properties": {
+                "account_id": {
+                    "type": "string"
+                },
+                "email_address": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "password": {
                     "type": "string"
                 }
             }
