@@ -2,7 +2,6 @@ package managementapi
 
 import (
 	"fmt"
-	"gopkg.in/go-playground/validator.v8"
 	"net/url"
 	"strings"
 
@@ -10,7 +9,6 @@ import (
 )
 
 var (
-	validate      *validator.Validate
 	schemaDecoder *schema.Decoder
 )
 
@@ -19,8 +17,6 @@ const (
 )
 
 func init() {
-	config := &validator.Config{TagName: "validate"}
-	validate = validator.New(config)
 
 	schemaDecoder = schema.NewDecoder()
 }
