@@ -79,6 +79,7 @@ func TestPostProduct(t *testing.T) {
 			bodyBytes, err := json.Marshal(tt.req)
 			if err != nil {
 				t.Errorf("create request body error: %v", err)
+				return
 			}
 			body := bytes.NewReader(bodyBytes)
 

@@ -129,8 +129,19 @@ type SearchProductsParams struct {
 }
 
 type PostUserReq struct {
-	ID           string `json:"id" validate:"required,printascii"`
-	EmailAddress string `json:"email_address" validate:"required,email"`
-	Password     string `json:"password" validate:"required,printascii"`
-	Name         string `json:"name"`
+	AccountID    string `json:"account_id" db:"account_id" validate:"required,printascii"`
+	EmailAddress string `json:"email_address" db:"email_address" validate:"required,email"`
+	Password     string `json:"password" db:"password" validate:"required,printascii"`
+	Name         string `json:"name" db:"name"`
+}
+
+type User struct {
+	ID                string `json:"id" db:"id"`
+	AccountID         string `json:"account_id" db:"account_id"`
+	EmailAddress      string `json:"email_address" db:"email_address"`
+	LoginPasswordHash string `json:"login_password_hash" db:"login_password_hash"`
+	Name              string `json:"name" db:"name"`
+	PermissionFlag    string `json:"permission_flag" db:"permission_flag"`
+	CreatedAt         string `json:"created_at" db:"created_at"`
+	UpdatedAt         string `json:"updated_at" db:"updated_at"`
 }

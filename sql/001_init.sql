@@ -1,5 +1,5 @@
 BEGIN;
-CREATE EXTENSION pgcrypto;
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS public.apiinfo
 (
@@ -17,14 +17,14 @@ WITH (
 COMMENT ON TABLE public.apiinfo
     IS 'Store information of products(API).';
 
-CREATE TABLE IF NOT EXISTS public.user
+CREATE TABLE IF NOT EXISTS public.apiuser
 (
     id serial primary key ,
     account_id VARCHAR(32) not null unique,
     email_address TEXT not null,
     login_password_hash TEXT not null,  /* pgcryptoのcrypt関数を使用 */
     name TEXT,
-    permission_flag VARCHAR(2) not null,
+    permission_flag VARCHAR(2) not null default 0,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 )
@@ -32,7 +32,7 @@ WITH (
     OIDS = FALSE
 );
 
-COMMENT ON TABLE public.user
+COMMENT ON TABLE public.apiuser
     IS 'Store management-api users.';
 
 CREATE TABLE IF NOT EXISTS public.log_list

@@ -10,6 +10,12 @@ VALUES
         'example.com/api/awesome'
     ),
     (
+        'Awesome API',
+        'Nice Company',
+        'provide fantastic information.',
+        'test.com/img/123',
+    ),
+    (
         'Awesome API v2',
         'Nice Company',
         'provide special information.',

@@ -130,3 +130,15 @@ func (sd sqlDB) searchProducts(ctx context.Context, params *SearchProductsParams
 		SearchProductsMetaData: metaData,
 	}, nil
 }
+
+func (sd sqlDB) postUser(ctx context.Context, user *PostUserReq) error {
+	_, err := sd.driver.NamedExecContext(ctx,
+		`INSERT INTO apiuser(account_id, email_address, login_password_hash, name, created_at, updated_at)
+				VALUES(:account_id, :email_address, crypt(:password, gen_salt('bf')),
+			    :name, current_timestamp, current_timestamp)`,
+		user)
+	if err != nil {
+		return fmt.Errorf("sql execution error: %w", err)
+	}
+	return nil
+}
