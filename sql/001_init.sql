@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS public.apiuser
     email_address TEXT not null,
     login_password_hash TEXT not null,  /* pgcryptoのcrypt関数を使用 */
     name TEXT,
-    permission_flag VARCHAR(2) not null default 0,
+    permission_flag VARCHAR(2) not null default '00',
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 )
@@ -37,6 +37,7 @@ COMMENT ON TABLE public.apiuser
 
 CREATE TABLE IF NOT EXISTS public.log_list
 (
+    id serial primary key ,
     run_date timestamp with time zone NOT NULL,
     api_key text NOT NULL,
     api_path text NOT NULL,
