@@ -4,10 +4,14 @@ import (
 	"testing"
 
 	"github.com/future-architect/apidoor/managementapi"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"gopkg.in/go-playground/validator.v8"
 )
+
+type validateErrorInfo struct {
+	field string
+	tag   string
+}
 
 func TestSearchProductsReq_CreateParams(t *testing.T) {
 	tests := []struct {
@@ -15,7 +19,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 		input managementapi.SearchProductsReq
 		want  *managementapi.SearchProductsParams
 		// wantErr は期待されるerrorでvalidator.FieldErrorsが返る。validator.FieldErrorは出力に関わるFieldとTagのみ比較する
-		wantErr error
+		wantErr []validateErrorInfo
 	}{
 		{
 			name: "パーセントエンコードされたクエリを分割して、デコードできる",
@@ -94,10 +98,10 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.Q[0]": &validator.FieldError{
-					Field: "Q[0]",
-					Tag:   "ne",
+			wantErr: []validateErrorInfo{
+				{
+					field: "Q[0]",
+					tag:   "ne",
 				},
 			},
 		},
@@ -111,10 +115,10 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.TargetFields[1]": &validator.FieldError{
-					Field: "TargetFields[1]",
-					Tag:   "eq|eq|eq|eq",
+			wantErr: []validateErrorInfo{
+				{
+					field: "TargetFields[1]",
+					tag:   "eq=all|eq=name|eq=description|eq=source",
 				},
 			},
 		},
@@ -128,10 +132,10 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.PatternMatch": &validator.FieldError{
-					Field: "PatternMatch",
-					Tag:   "eq|eq",
+			wantErr: []validateErrorInfo{
+				{
+					field: "PatternMatch",
+					tag:   "eq=exact|eq=partial",
 				},
 			},
 		},
@@ -145,10 +149,10 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.Limit": &validator.FieldError{
-					Field: "Limit",
-					Tag:   "lte",
+			wantErr: []validateErrorInfo{
+				{
+					field: "Limit",
+					tag:   "lte",
 				},
 			},
 		},
@@ -160,11 +164,31 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 			if diff := cmp.Diff(tt.want, resp); diff != "" {
 				t.Errorf("retruned struct differ:\n%s", diff)
 			}
-			if diff := cmp.Diff(tt.wantErr, err,
-				cmpopts.IgnoreFields(validator.FieldError{}, "FieldNamespace", "NameNamespace",
-					"Name", "Kind", "ActualTag", "Type", "Param", "Value")); diff != "" {
-				t.Errorf("returned error differ:\n%s", diff)
-			}
+
+			testValidateErrorMatch(t, tt.wantErr, err)
 		})
 	}
+}
+
+func testValidateErrorMatch(t *testing.T, want []validateErrorInfo, got error) {
+	gotErr, ok := got.(validator.ValidationErrors)
+	if !ok {
+		t.Errorf("return error is not validator.ValidationErrors, got: %v", got)
+		return
+	}
+
+	if len(want) != len(gotErr) {
+		t.Errorf("the number of errors is not equal: want=%d, got=%d", len(want), len(gotErr))
+		return
+	}
+
+	for i := range want {
+		if want[i].field != gotErr[i].Field() {
+			t.Errorf("field name is not match: want=%s, got=%s", want[i].field, gotErr[i].Field())
+		}
+		if want[i].tag != gotErr[i].Tag() {
+			t.Errorf("tag name is not match: want=%s, got=%s", want[i].tag, gotErr[i].Tag())
+		}
+	}
+
 }
