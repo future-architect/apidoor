@@ -1,31 +1,26 @@
 # API Gateway
 
 ## 用途
-管理しているAPIへのリクエストをプロキシするゲートウェイです。
 
-## 環境
+Web APIへのリクエストをフォワードするゲートウェイサービスを構築するためのライブラリです。Goでは動的にデータソースを入れ替えることができないため、mainパッケージ内で静的にプラグインを切り替える思想で設計されています。
 
-以下の環境で動作を確認しています
--
-- Ubuntu 20.04.2
-- go 1.16.4
-- redis-server 6.2.3 (redis使用の場合)
-- localstack 0.12.17 (dynamoDB使用の場合)
+### cmd/localredisgateway
 
-## 準備
-以下の環境変数の設定が必要です。
-- `LOG_PATH`
-    - ログファイル(CSV形式)の出力先パス(ex. ./log.csv)
-- `DB_TYPE`
-    - 使用するDB。`REDIS`または`DYNAMO`。
+localhost内で起動することを目的に組み合わせられたエントリーポイントです。データソースにはRedisを利用します。
 
-以下は使用するDBに応じて設定
+#### 環境変数の設定
 
-redisの場合
-- `REDIS_HOST`
-    - redisのホストアドレス(ex. localhost)
-- `REDIS_PORT`
-    - redisのlistenポート(ex. 6379)
+* [ ] LOG_PATH
+    - ログファイル(CSV形式)の出力先パス
+    - デフォルト: ./log.csv
+* [ ] REDIS_HOST
+    - redisのホストアドレス
+    - デフォルト: localhost
+* [ ] REDIS_PORT
+    - redisのlistenポート
+    - デフォルト: 6379
+
+### cmd/localdynamogateway
 
 dynamoDBの場合
 - `DYNAMO_TABLE_API_FORWARDING`

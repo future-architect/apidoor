@@ -27,11 +27,11 @@ type Fields []Field
 func (f Fields) URI(path string) (string, error) {
 	u := NewURITemplate(path)
 	for _, v := range f {
-		if _, ok := u.TemplateMatch(v.Template); ok {
+		if _, ok := u.Match(v.Template); ok {
 			return v.Path.JoinPath(), nil
 		}
 	}
-	return "", ErrUnauthorizedRequest
+	return "", ErrUnauthorizedRequest // Not found path
 }
 
 func (f Fields) CheckAPILimit(path string) error {

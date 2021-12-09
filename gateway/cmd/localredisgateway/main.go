@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/csv"
 	"github.com/future-architect/apidoor/gateway"
+	"github.com/future-architect/apidoor/gateway/datasource/redis"
 	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/go-chi/chi/v5"
 	"log"
@@ -10,10 +11,16 @@ import (
 	"os"
 )
 
+// gateway entry point @localhost
 func main() {
 
+	logPath := os.Getenv("LOG_PATH")
+	if len(logPath) == 0 {
+		logPath = "./log.csv"
+	}
+
 	// open log file
-	file, err := os.OpenFile(os.Getenv("LOG_PATH"), os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0200)
+	file, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0200)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -27,6 +34,7 @@ func main() {
 		Appender: logger.CSVAppender{
 			Writer: writer,
 		},
+		DataSource: redis.New(),
 	}
 
 	r := chi.NewRouter()
