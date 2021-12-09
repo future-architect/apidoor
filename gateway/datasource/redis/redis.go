@@ -1,17 +1,18 @@
-package gateway
+package redis
 
 import (
 	"context"
 	"fmt"
+	"github.com/future-architect/apidoor/gateway"
 	"github.com/go-redis/redis/v8"
 	"os"
 )
 
-type RedisDB struct {
+type DataSource struct {
 	client *redis.Client
 }
 
-func NewRedisDB() *RedisDB {
+func New() *DataSource {
 	host := os.Getenv("REDIS_HOST")
 	port := os.Getenv("REDIS_PORT")
 
@@ -23,23 +24,22 @@ func NewRedisDB() *RedisDB {
 		port = "6379"
 	}
 
-	addr := fmt.Sprintf("%s:%s", host, port)
-	return &RedisDB{
+	return &DataSource{
 		client: redis.NewClient(&redis.Options{
-			Addr:     addr,
+			Addr:     fmt.Sprintf("%s:%s", host, port),
 			Password: "",
 			DB:       0,
 		}),
 	}
 }
 
-func (rd RedisDB) GetFields(ctx context.Context, key string) (Fields, error) {
-	var fields []Field
+func (rd DataSource) GetFields(ctx context.Context, key string) (gateway.Fields, error) {
+	var fields []gateway.Field
 
 	for _, hk := range rd.client.HKeys(ctx, key).Val() {
-		u := NewURITemplate(hk)
-		v := NewURITemplate(rd.client.HGet(ctx, key, hk).Val())
-		fields = append(fields, Field{
+		u := gateway.NewURITemplate(hk)
+		v := gateway.NewURITemplate(rd.client.HGet(ctx, key, hk).Val())
+		fields = append(fields, gateway.Field{
 			Template: *u,
 			Path:     *v,
 			Num:      5,  // TODO
@@ -48,7 +48,7 @@ func (rd RedisDB) GetFields(ctx context.Context, key string) (Fields, error) {
 	}
 
 	if len(fields) == 0 {
-		return nil, ErrUnauthorizedRequest
+		return nil, gateway.ErrUnauthorizedRequest
 	}
 
 	return fields, nil

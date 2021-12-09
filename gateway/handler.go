@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"errors"
+	"github.com/future-architect/apidoor/gateway/datasource"
 	"io"
 	"log"
 	"net/http"
@@ -10,7 +11,8 @@ import (
 )
 
 type DefaultHandler struct {
-	Appender logger.Appender
+	Appender   logger.Appender
+	DataSource datasource.DataSource
 }
 
 func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
@@ -24,11 +26,11 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	apikey := r.Header.Get("Authorization")
 	if apikey == "" {
 		log.Print("No authorization key")
-		http.Error(w, "no authorization", http.StatusBadRequest)
+		http.Error(w, "no authorization request header", http.StatusBadRequest)
 		return
 	}
 
-	fields, err := dbDriver.GetFields(r.Context(), apikey)
+	fields, err := h.DataSource.GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
 		if errors.Is(err, ErrUnauthorizedRequest) {
