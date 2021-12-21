@@ -23,9 +23,10 @@ type address struct {
 
 func TestValidator(t *testing.T) {
 	tests := []struct {
-		name    string
-		input   user
-		wantErr *managementapi.ValidationErrors
+		name       string
+		input      user
+		wantErr    *managementapi.ValidationErrors
+		wantErrMsg string
 	}{
 		{
 			name: "required field is empty",
@@ -42,6 +43,9 @@ func TestValidator(t *testing.T) {
 					Message:        `required field, but got empty`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: last_name, constraint type: required, message: required field, but got empty,
+]`,
 		},
 		{
 			name: "value violates enum constraint",
@@ -60,6 +64,9 @@ func TestValidator(t *testing.T) {
 					Message:        `input value is C, but it must be one of the following values: [A B O AB]`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: blood_type, constraint type: enum, message: input value is C, but it must be one of the following values: [A B O AB],
+]`,
 		},
 		{
 			name: "value violates lte constraint",
@@ -79,6 +86,9 @@ func TestValidator(t *testing.T) {
 					Message:        `input value is 200, but it must be less than or equal to 130`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: age, constraint type: lte, message: input value is 200, but it must be less than or equal to 130,
+]`,
 		},
 		{
 			name: "value violates gte_length constraint",
@@ -97,6 +107,9 @@ func TestValidator(t *testing.T) {
 					Message:        `input array length is 0, but it must be greater than or equal to 1`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: favorite_numbers, constraint type: length_gte, message: input array length is 0, but it must be greater than or equal to 1,
+]`,
 		},
 		{
 			name: "value in slice violates gte constraint",
@@ -115,6 +128,9 @@ func TestValidator(t *testing.T) {
 					Message:        `input value is 0, but it must be greater than or equal to 1`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: favorite_numbers[1], constraint type: gte, message: input value is 0, but it must be greater than or equal to 1,
+]`,
 		},
 		{
 			name: "email field's value does not satisfy email format",
@@ -133,6 +149,9 @@ func TestValidator(t *testing.T) {
 					Message:        `input value, foo.@example.com, does not satisfy the format, email`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: email, constraint type: email, message: input value, foo.@example.com, does not satisfy the format, email,
+]`,
 		},
 		{
 			name: "email field's value does not satisfy email format",
@@ -151,9 +170,11 @@ func TestValidator(t *testing.T) {
 					Message:        `input value, foo.@example.com, does not satisfy the format, email`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: email, constraint type: email, message: input value, foo.@example.com, does not satisfy the format, email,
+]`,
 		},
 		{
-			//
 			name: "validation of sub-struct fails",
 			input: user{
 				FirstName:       "foo",
@@ -168,12 +189,54 @@ func TestValidator(t *testing.T) {
 			},
 			wantErr: &managementapi.ValidationErrors{
 				{
-					Field:          "city",
+					Field:          "addresses[0].city",
 					ConstraintType: "required",
 					Got:            "",
 					Message:        `required field, but got empty`,
 				},
 			},
+			wantErrMsg: `1 input validation(s) failed: [
+    field: addresses[0].city, constraint type: required, message: required field, but got empty,
+]`,
+		},
+		{
+			name: "multiple errors occur",
+			input: user{
+				FirstName:       "foo",
+				BloodType:       "A",
+				FavoriteNumbers: []int{2, 1, -2},
+				Addresses: []address{
+					{
+						Country: "Japan",
+					},
+				},
+			},
+			wantErr: &managementapi.ValidationErrors{
+				{
+					Field:          "last_name",
+					ConstraintType: "required",
+					Got:            "",
+					Message:        `required field, but got empty`,
+				},
+				{
+					Field:          "favorite_numbers[2]",
+					ConstraintType: "gte",
+					Gte:            "1",
+					Got:            -2,
+					Message:        `input value is -2, but it must be greater than or equal to 1`,
+				},
+				{
+					Field:          "addresses[0].city",
+					ConstraintType: "required",
+					Got:            "",
+					Message:        `required field, but got empty`,
+				},
+			},
+			wantErrMsg: `3 input validation(s) failed: [
+    field: last_name, constraint type: required, message: required field, but got empty,
+    field: favorite_numbers[2], constraint type: gte, message: input value is -2, but it must be greater than or equal to 1,
+    field: addresses[0].city, constraint type: required, message: required field, but got empty,
+]`,
 		},
 		{
 			name: "no validation error occurs",
@@ -189,7 +252,8 @@ func TestValidator(t *testing.T) {
 					},
 				},
 			},
-			wantErr: nil,
+			wantErr:    nil,
+			wantErrMsg: "",
 		},
 	}
 
@@ -210,6 +274,10 @@ func TestValidator(t *testing.T) {
 
 			if diff := cmp.Diff(*tt.wantErr, err); diff != "" {
 				t.Errorf("error differs,\n%v", diff)
+			}
+
+			if tt.wantErrMsg != err.Error() {
+				t.Errorf("error message differs,\nwant: %v,\ngot: %v", tt.wantErrMsg, err.Error())
 			}
 		})
 	}

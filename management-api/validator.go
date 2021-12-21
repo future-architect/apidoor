@@ -41,6 +41,8 @@ type BadRequestResp struct {
 	InputValidations *ValidationErrors `json:"input_validations,omitempty"`
 }
 
+type fieldError validator.FieldError
+
 type ValidationError struct {
 	Field          string      `json:"field"`
 	ConstraintType string      `json:"constraint_type"`
@@ -51,10 +53,10 @@ type ValidationError struct {
 	Got            interface{} `json:"got,omitempty"`
 }
 
-func NewValidationError(fieldErr validator.FieldError) *ValidationError {
+func NewValidationError(fieldErr fieldError) *ValidationError {
 	ve := &ValidationError{}
 
-	ve.Field = fieldErr.Field()
+	ve.Field = trimFirstNameSpace(fieldErr.Namespace())
 
 	ve.ConstraintType = generateConstraintType(fieldErr)
 
@@ -69,7 +71,7 @@ func (ve ValidationError) Error() string {
 	return fmt.Sprintf("field: %s, constraint type: %s, message: %s", ve.Field, ve.ConstraintType, ve.Message)
 }
 
-func (ve *ValidationError) updateAttributes(fieldErr validator.FieldError) {
+func (ve *ValidationError) updateAttributes(fieldErr fieldError) {
 	if ve.ConstraintType == "enum" {
 		matches := enumTagSubPattern.FindAllStringSubmatch(fieldErr.Tag(), -1)
 		ve.Enum = make([]string, len(matches))
@@ -115,13 +117,23 @@ func (ve *ValidationError) updateMessage() {
 	ve.Message = msg
 }
 
+// trimFirstNameSpace trims the first element in nameSpace
+// ex. User.address.city -> address.city
+func trimFirstNameSpace(nameSpace string) string {
+	nameSpaceList := strings.Split(nameSpace, ".")
+	if len(nameSpaceList) < 2 {
+		return nameSpace
+	}
+
+	return strings.Join(nameSpaceList[1:], ".")
+}
+
 func generateConstraintType(fieldErr validator.FieldError) string {
 	// enum pattern, ex.) "eq=exact|eq=partial"
 	if enumTagPattern.MatchString(fieldErr.Tag()) {
 		return "enum"
 	}
 
-	fmt.Println(fieldErr.Kind())
 	if fieldErr.Kind() == reflect.Slice || fieldErr.Kind() == reflect.Map {
 		if fieldErr.Tag() == "gte" {
 			return "length_gte"
@@ -131,11 +143,6 @@ func generateConstraintType(fieldErr validator.FieldError) string {
 	}
 
 	return fieldErr.Tag()
-}
-
-// ValidationErrorCustom allows for overriding output error message
-type ValidationErrorCustom interface {
-	customValidationError(fieldError validator.FieldError) (*ValidationError, bool)
 }
 
 type ValidationErrors []*ValidationError
@@ -150,22 +157,10 @@ func (ves ValidationErrors) Error() string {
 	return ret
 }
 
-func NewValidationErrors(target interface{}, fieldErrs validator.ValidationErrors) ValidationErrors {
+func NewValidationErrors(fieldErrs validator.ValidationErrors) ValidationErrors {
 	valErrs := ValidationErrors{}
-	useCustomValidationError := false
-	customErrorGenerator, ok := target.(ValidationErrorCustom)
-	if ok {
-		useCustomValidationError = true
-	}
 
 	for _, v := range fieldErrs {
-		if useCustomValidationError {
-			customErr, ok := customErrorGenerator.customValidationError(v)
-			if ok {
-				valErrs = append(valErrs, customErr)
-				continue
-			}
-		}
 		valErr := NewValidationError(v)
 		valErrs = append(valErrs, valErr)
 	}
@@ -182,7 +177,7 @@ func ValidateStruct(target interface{}) error {
 	}
 	fieldErrs := err.(validator.ValidationErrors)
 
-	valErrors := NewValidationErrors(target, fieldErrs)
+	valErrors := NewValidationErrors(fieldErrs)
 
 	return valErrors
 }
