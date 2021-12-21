@@ -40,6 +40,9 @@ type sqlDB struct {
 
 func NewSqlDB() (*sqlDB, error) {
 	dbDriver := os.Getenv("DATABASE_DRIVER")
+	if dbDriver == "" {
+		dbDriver = "postgres"
+	}
 	dbSource := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DATABASE_HOST"),
 		os.Getenv("DATABASE_PORT"),

@@ -26,6 +26,8 @@ type APIDB interface {
 func createDBDriver(dbType string) (APIDB, error) {
 	if dbType == "REDIS" {
 		return apiredis.NewRedisDB(), nil
+	} else if dbType == "" {
+		return apiredis.NewRedisDB(), nil
 	} else {
 		return nil, fmt.Errorf("unsupported DB type: %s", dbType)
 	}
