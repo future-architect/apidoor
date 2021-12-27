@@ -22,7 +22,7 @@ func (a DefaultAppender) Do(key, path string, r *http.Request) error {
 	}
 
 	// デフォルトはカンマ区切り
-	_, err := a.Writer.Write([]byte(strings.Join(record, ",")))
+	_, err := a.Writer.Write([]byte(strings.Join(record, ",") + "\n"))
 
 	return err
 }

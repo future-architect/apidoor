@@ -1,4 +1,4 @@
-package gateway
+package model
 
 import (
 	"errors"
@@ -16,10 +16,11 @@ func (err *MyError) Error() string {
 }
 
 type Field struct {
-	Template URITemplate
-	Path     URITemplate
-	Num      int
-	Max      interface{}
+	Template      URITemplate
+	Path          URITemplate
+	ForwardSchema string
+	Num           int
+	Max           interface{}
 }
 
 type Fields []Field
@@ -28,7 +29,10 @@ func (f Fields) URI(path string) (string, error) {
 	u := NewURITemplate(path)
 	for _, v := range f {
 		if _, ok := u.Match(v.Template); ok {
-			return v.Path.JoinPath(), nil
+			if v.ForwardSchema == "" {
+				return v.Path.JoinPath(), nil
+			}
+			return v.ForwardSchema + "://" + v.Path.JoinPath(), nil
 		}
 	}
 	return "", ErrUnauthorizedRequest // Not found path

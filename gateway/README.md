@@ -35,3 +35,12 @@ dynamoDBの場合
 ## 実行
 
 [Getting Started](../README_ja.md)を参照ください。
+
+## Data model
+
+| name        | type   | memo | example                         |
+|-------------|--------|------|---------------------------------|
+| api_key     | string |      | key                             |
+| path        | string |      | test                            |
+| forward_url | string |      | http://test-server:3333/welcome |
+

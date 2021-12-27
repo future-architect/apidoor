@@ -3,11 +3,11 @@ package gateway
 import (
 	"errors"
 	"github.com/future-architect/apidoor/gateway/datasource"
+	"github.com/future-architect/apidoor/gateway/logger"
+	"github.com/future-architect/apidoor/gateway/model"
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/future-architect/apidoor/gateway/logger"
 )
 
 type DefaultHandler struct {
@@ -33,7 +33,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	fields, err := h.DataSource.GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
-		if errors.Is(err, ErrUnauthorizedRequest) {
+		if errors.Is(err, model.ErrUnauthorizedRequest) {
 			http.Error(w, "invalid key or path", http.StatusNotFound)
 		} else {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -55,16 +55,18 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// make and send request to destination
 	var req *http.Request
 	method := r.Method
 	query := r.URL.RawQuery
 
 	if method == http.MethodGet || method == http.MethodHead || method == http.MethodDelete || method == http.MethodOptions {
-		req, err = http.NewRequest(method, "http://"+path+"?"+query, nil)
+		if query != "" {
+			path = path + "?" + query
+		}
+		req, err = http.NewRequest(method, path, nil)
 	} else {
 		// Post, Put, Patchなど
-		req, err = http.NewRequest(http.MethodPost, "http://"+path, r.Body)
+		req, err = http.NewRequest(http.MethodPost, path, r.Body)
 	}
 	if err != nil {
 		log.Print(err.Error())

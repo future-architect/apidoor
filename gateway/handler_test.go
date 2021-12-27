@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"github.com/future-architect/apidoor/gateway/logger"
+	"github.com/future-architect/apidoor/gateway/model"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -15,16 +16,17 @@ var dbHost, templatePath string
 
 type dbMock struct{}
 
-func (dm dbMock) GetFields(_ context.Context, key string) (Fields, error) {
+func (dm dbMock) GetFields(_ context.Context, key string) (model.Fields, error) {
 	if key == "apikeyNotExist" {
-		return nil, ErrUnauthorizedRequest
+		return nil, model.ErrUnauthorizedRequest
 	}
-	return Fields{
+	return model.Fields{
 		{
-			Template: *NewURITemplate(templatePath),
-			Path:     *NewURITemplate(dbHost),
-			Num:      5,
-			Max:      10,
+			ForwardSchema: "http",
+			Template:      model.NewURITemplate(templatePath),
+			Path:          model.NewURITemplate(dbHost),
+			Num:           5,
+			Max:           10,
 		},
 	}, nil
 }
@@ -39,6 +41,7 @@ var methods = []string{
 func TestHandle(t *testing.T) {
 
 	type tests struct {
+		name    string
 		resCode int
 		content string
 		apikey  string
@@ -49,8 +52,8 @@ func TestHandle(t *testing.T) {
 	}
 
 	var cases = []tests{
-		// valid request using parameter
 		{
+			name:    "valid request using parameter",
 			resCode: http.StatusOK,
 			content: "application/json",
 			apikey:  "apikey1",
@@ -59,8 +62,8 @@ func TestHandle(t *testing.T) {
 			out:     "response from API server",
 			outCode: http.StatusOK,
 		},
-		// valid request not using parameter
 		{
+			name:    "valid request not using parameter",
 			resCode: http.StatusOK,
 			content: "application/json",
 			apikey:  "apikey1",
@@ -69,8 +72,8 @@ func TestHandle(t *testing.T) {
 			out:     "response from API server",
 			outCode: http.StatusOK,
 		},
-		// client error
 		{
+			name:    "client error",
 			resCode: http.StatusBadRequest,
 			content: "application/json",
 			apikey:  "apikey1",
@@ -79,8 +82,8 @@ func TestHandle(t *testing.T) {
 			out:     "client error",
 			outCode: http.StatusBadRequest,
 		},
-		// server error
 		{
+			name:    "server error",
 			resCode: http.StatusInternalServerError,
 			content: "application/json",
 			apikey:  "apikey1",
@@ -89,8 +92,8 @@ func TestHandle(t *testing.T) {
 			out:     "server error",
 			outCode: http.StatusInternalServerError,
 		},
-		// invalid Content-Type
 		{
+			name:    "invalid Content-Type",
 			resCode: http.StatusOK,
 			content: "text/html",
 			apikey:  "apikey1",
@@ -99,18 +102,18 @@ func TestHandle(t *testing.T) {
 			out:     "unexpected request content",
 			outCode: http.StatusBadRequest,
 		},
-		// no authorization header
 		{
+			name:    "no authorization header",
 			resCode: http.StatusOK,
 			content: "application/json",
 			apikey:  "",
 			field:   "/test/{test}",
 			request: "/test/hoge",
-			out:     "no authorization",
+			out:     "no authorization request header",
 			outCode: http.StatusBadRequest,
 		},
-		// unauthorized request (invalid key)
 		{
+			name:    "unauthorized request (invalid key)",
 			resCode: http.StatusOK,
 			content: "application/json",
 			apikey:  "apikeyNotExist",
@@ -119,8 +122,8 @@ func TestHandle(t *testing.T) {
 			out:     "invalid key or path",
 			outCode: http.StatusNotFound,
 		},
-		// unauthorized request (invalid URL)
 		{
+			name:    "unauthorized request (invalid URL)",
 			resCode: http.StatusOK,
 			content: "application/json",
 			apikey:  "apikey1",
@@ -131,7 +134,7 @@ func TestHandle(t *testing.T) {
 		},
 	}
 
-	handler := DefaultHandler{
+	h := DefaultHandler{
 		Appender: logger.DefaultAppender{
 			Writer: os.Stdout,
 		},
@@ -139,12 +142,12 @@ func TestHandle(t *testing.T) {
 	}
 
 	for _, method := range methods {
-		for index, tt := range cases {
+		for _, tt := range cases {
+
 			// http server for test
-			message := []byte("response from API server")
 			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				w.WriteHeader(tt.resCode)
-				w.Write(message)
+				w.Write([]byte("response from API server"))
 			}))
 
 			// set routing data
@@ -159,23 +162,23 @@ func TestHandle(t *testing.T) {
 				r.Header.Set("Authorization", tt.apikey)
 			}
 			w := httptest.NewRecorder()
-			handler.Handle(w, r)
+			h.Handle(w, r)
 
 			// check response
 			rw := w.Result()
 
-			if rw.StatusCode != tt.outCode {
-				t.Fatalf("method %s, case %d: unexpected status code %d, expected %d", method, index, rw.StatusCode, tt.outCode)
-			}
-
 			b, err := io.ReadAll(rw.Body)
 			if err != nil {
-				t.Fatalf("method %s, case %d: unexpected body type", method, index)
+				t.Fatalf("method:%s, case:%s: unexpected body type", method, tt.name)
+			}
+
+			if rw.StatusCode != tt.outCode {
+				t.Fatalf("method:%s, case:%s: unexpected status code %d, expected %d, body:%s", method, tt.name, rw.StatusCode, tt.outCode, b)
 			}
 
 			trimmed := strings.TrimSpace(string(b))
 			if trimmed != tt.out {
-				t.Fatalf("method %s, case %d: unexpected response: %s, expected: %s", method, index, trimmed, tt.out)
+				t.Fatalf("method:%s, case:%s: unexpected response: %s, expected: %s", method, tt.name, trimmed, tt.out)
 			}
 
 			// loopの中なのでdeferは使えない

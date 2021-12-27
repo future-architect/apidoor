@@ -9,3 +9,6 @@ test:
 	export MAXHEADERBYTES="1<<20"; \
 	export LOG_PATH="./testdata/log/log.csv"; \
 	go test -race -v ./
+
+run:
+	go run cmd/localredisgateway/main.go
