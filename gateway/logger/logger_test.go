@@ -32,6 +32,8 @@ func TestUpdateLog(t *testing.T) {
 	reader := csv.NewReader(buffer)
 	recordNum := 0
 
+	t.Log(buffer.String())
+
 	for {
 		line, err := reader.Read()
 		if err != nil {

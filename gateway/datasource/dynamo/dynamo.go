@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/future-architect/apidoor/gateway"
+	"github.com/future-architect/apidoor/gateway/model"
 	"github.com/guregu/dynamo"
 	"log"
 	"os"
@@ -17,10 +17,10 @@ type APIForwarding struct {
 	ForwardURL string `dynamo:"forward_url"`
 }
 
-func (af APIForwarding) Field() gateway.Field {
-	return gateway.Field{
-		Template: *gateway.NewURITemplate(af.Path),
-		Path:     *gateway.NewURITemplate(af.ForwardURL),
+func (af APIForwarding) Field() model.Field {
+	return model.Field{
+		Template: model.NewURITemplate(af.Path),
+		Path:     model.NewURITemplate(af.ForwardURL),
 		Num:      5,
 		Max:      10,
 	}
@@ -55,19 +55,19 @@ func New() *DataSource {
 
 }
 
-func (dd DataSource) GetFields(ctx context.Context, key string) (gateway.Fields, error) {
+func (dd DataSource) GetFields(ctx context.Context, key string) (model.Fields, error) {
 	var resp []*APIForwarding
 	err := dd.client.Table(dd.apiForwardingTable).
 		Get("api_key", key).
 		AllWithContext(ctx, &resp)
 	if err != nil {
 		if err == dynamo.ErrNotFound {
-			return nil, gateway.ErrUnauthorizedRequest
+			return nil, model.ErrUnauthorizedRequest
 		}
-		return nil, &gateway.MyError{Message: fmt.Sprintf("internal server error: %v", err)}
+		return nil, &model.MyError{Message: fmt.Sprintf("internal server error: %v", err)}
 	}
 
-	fields := make([]gateway.Field, 0, len(resp))
+	fields := make([]model.Field, 0, len(resp))
 	for _, forwarding := range resp {
 		fields = append(fields, forwarding.Field())
 	}

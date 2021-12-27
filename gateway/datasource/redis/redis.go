@@ -3,9 +3,10 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/future-architect/apidoor/gateway"
+	"github.com/future-architect/apidoor/gateway/model"
 	"github.com/go-redis/redis/v8"
 	"os"
+	"strings"
 )
 
 type DataSource struct {
@@ -33,22 +34,39 @@ func New() *DataSource {
 	}
 }
 
-func (rd DataSource) GetFields(ctx context.Context, key string) (gateway.Fields, error) {
-	var fields []gateway.Field
+func (rd DataSource) GetFields(ctx context.Context, key string) (model.Fields, error) {
+	var fields []model.Field
 
 	for _, hk := range rd.client.HKeys(ctx, key).Val() {
-		u := gateway.NewURITemplate(hk)
-		v := gateway.NewURITemplate(rd.client.HGet(ctx, key, hk).Val())
-		fields = append(fields, gateway.Field{
-			Template: *u,
-			Path:     *v,
-			Num:      5,  // TODO
-			Max:      10, // TODO
+
+		pathValue := rd.client.HGet(ctx, key, hk).Val()
+
+		var schema string
+		if strings.HasPrefix(pathValue, "http://") {
+			schema = "http"
+			pathValue = strings.Replace(pathValue, "http://", "", 1)
+			fmt.Println("Redis After:", pathValue)
+		} else if strings.HasPrefix(pathValue, "https://") {
+			schema = "https"
+			pathValue = strings.Replace(pathValue, "https://", "", 1)
+		} else {
+			// スキーマが存在しない(tcpなどのスキーマは非対応)
+			schema = "http"
+		}
+
+		fmt.Printf("%+v\n", model.NewURITemplate(pathValue))
+
+		fields = append(fields, model.Field{
+			Template:      model.NewURITemplate(hk),
+			ForwardSchema: schema,
+			Path:          model.NewURITemplate(pathValue),
+			Num:           5,  // TODO
+			Max:           10, // TODO
 		})
 	}
 
 	if len(fields) == 0 {
-		return nil, gateway.ErrUnauthorizedRequest
+		return nil, model.ErrUnauthorizedRequest
 	}
 
 	return fields, nil

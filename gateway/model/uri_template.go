@@ -1,4 +1,4 @@
-package gateway
+package model
 
 import (
 	"errors"
@@ -15,16 +15,17 @@ type URITemplate struct {
 	path []block
 }
 
-func NewURITemplate(path string) *URITemplate {
+func NewURITemplate(path string) URITemplate {
 	if len(path) == 0 {
 		panic("empty path")
 	} else if len(path) == 1 {
-		return &URITemplate{}
+		return URITemplate{}
 	}
 
-	u := &URITemplate{}
-	slice := strings.Split(strings.Trim(path, "/"), "/")
-	for _, v := range slice {
+	pathItems := strings.Split(strings.Trim(path, "/"), "/")
+	blocks := make([]block, 0, len(pathItems))
+
+	for _, v := range pathItems {
 		isParam := strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}")
 		var value string
 		if isParam {
@@ -32,13 +33,15 @@ func NewURITemplate(path string) *URITemplate {
 		} else {
 			value = v
 		}
-		u.path = append(u.path, block{
+		blocks = append(blocks, block{
 			value:   value,
 			isParam: isParam,
 		})
 	}
 
-	return u
+	return URITemplate{
+		path: blocks,
+	}
 }
 
 func (u *URITemplate) Match(t URITemplate) (map[string]string, bool) {
