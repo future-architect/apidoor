@@ -30,18 +30,18 @@ git clone https://github.com/future-architect/apidoor.git
 cd apidoor
 
 # Build all services
-docker-compose build \
+docker compose build \
   --build-arg http_proxy=${YOUR_PROXY} \
   --build-arg https_proxy=${YOUR_PROXY} \
   --build-arg proxy=${YOUR_PROXY} \
   --build-arg https-proxy=${YOUR_PROXY}
 
 # Launch apidoor services
-docker-compose up -d
+docker compose up -d
 
 # Set your first API routing through management-api
 curl -X POST -H "Content-Type: application/json" \
--d '{"api_key": "key", "path": "test", "forward_url": "test-server:3333/welcome"}' localhost:3001/mgmt/api
+-d '{"api_key": "key", "path": "test", "forward_url": "http://test-server:3333/welcome"}' localhost:3001/mgmt/api
 
 # Check apidoor works
 curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/test

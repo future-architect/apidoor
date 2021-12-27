@@ -1,3 +1,5 @@
+github.com/Songmu/flextime v0.1.0 h1:sss5IALl84LbvU/cS5D1cKNd5ffT94N2BZwC+esgAJI=
+github.com/Songmu/flextime v0.1.0/go.mod h1:ofUSZ/qj7f1BfQQ6rEH4ovewJ0SZmLOjBF1xa8iE87Q=
 github.com/aws/aws-sdk-go v1.38.0/go.mod h1:hcU610XS61/+aQV88ixoOzUoG7v3b31pl2zKMmprdro=
 github.com/aws/aws-sdk-go v1.40.37 h1:I+Q6cLctkFyMMrKukcDnj+i2kjrQ37LGiOM6xmsxC48=
 github.com/aws/aws-sdk-go v1.40.37/go.mod h1:585smgzpB/KqRA+K3y/NL/oYRqQvpNJYvLm+LY1U59Q=

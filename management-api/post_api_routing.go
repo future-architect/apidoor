@@ -32,9 +32,9 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
+
 	var req PostAPIRoutingReq
-	err = json.Unmarshal(body, &req)
-	if err != nil {
+	if err = json.Unmarshal(body, &req); err != nil {
 		log.Printf("failed to parse json body: %v", err)
 		http.Error(w, "failed to parse json body", http.StatusBadRequest)
 		return
@@ -46,7 +46,7 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = ApiDBDriver.PostAPIRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
+	if err = ApiDBDriver.PostRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
 		log.Printf("post api routing db error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}
