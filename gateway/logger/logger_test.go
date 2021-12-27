@@ -2,12 +2,18 @@ package logger
 
 import (
 	"bytes"
-	"encoding/csv"
 	"net/http"
+	"strings"
 	"testing"
+	"time"
+
+	"github.com/Songmu/flextime"
 )
 
 func TestUpdateLog(t *testing.T) {
+
+	restore := flextime.Set(time.Date(2021, time.December, 27, 17, 1, 41, 0, time.UTC))
+	defer restore()
 
 	r, _ := http.NewRequest(http.MethodGet, "http://example.com", nil)
 	r.Header.Set("TEST1", "header1")
@@ -28,33 +34,13 @@ func TestUpdateLog(t *testing.T) {
 		appender.Do("key", "path", r)
 	}
 
-	// check if log is valid
-	reader := csv.NewReader(buffer)
-	recordNum := 0
+	want := `2021-12-27T17:01:41Z,key,path,header1,header2
+2021-12-27T17:01:41Z,key,path,header1,header2
+`
+	want = strings.ReplaceAll(want, "\r\n", "\n")
 
-	t.Log(buffer.String())
-
-	for {
-		line, err := reader.Read()
-		if err != nil {
-			if err.Error() == "EOF" {
-				break
-			}
-			t.Fatal(err)
-		}
-		if line[1] != "key" {
-			t.Fatalf("unexpected log %s, expected 'key'", line[1])
-		} else if line[2] != "path" {
-			t.Fatalf("unexpected log %s, expected 'path'", line[2])
-		} else if line[3] != "header1" {
-			t.Fatalf("unexpected log %s, expected 'header1'", line[3])
-		} else if line[4] != "header2" {
-			t.Fatalf("unexpected log %s, expected 'header2'", line[4])
-		}
-		recordNum++
+	if out := buffer.String(); out != want {
+		t.Fatalf("result:\n%s\nwant:\n%s", out, want)
 	}
 
-	if recordNum != 2 {
-		t.Fatalf("unexpected number of log %d, expected 2", recordNum)
-	}
 }

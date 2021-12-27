@@ -3,6 +3,7 @@ module github.com/future-architect/apidoor/gateway
 go 1.16
 
 require (
+	github.com/Songmu/flextime v0.1.0 // indirect
 	github.com/aws/aws-sdk-go v1.40.37
 	github.com/cenkalti/backoff v2.2.1+incompatible // indirect
 	github.com/go-chi/chi/v5 v5.0.3

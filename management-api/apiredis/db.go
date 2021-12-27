@@ -24,7 +24,7 @@ func NewRedisDB() *RedisDB {
 	}
 }
 
-func (rd RedisDB) PostAPIRouting(ctx context.Context, apikey, path, forwardURL string) error {
+func (rd RedisDB) PostRouting(ctx context.Context, apikey, path, forwardURL string) error {
 	err := rd.client.HSet(ctx, apikey, path, forwardURL).Err()
 	return err
 }

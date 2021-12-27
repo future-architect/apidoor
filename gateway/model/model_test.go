@@ -6,66 +6,28 @@ import (
 )
 
 func TestFields(t *testing.T) {
-	type fieldsURITest struct {
+
+	cases := []struct {
+		name   string
 		input  string
 		output string
 		err    error
-	}
-
-	type fieldsCheckAPILimitTest struct {
-		input string
-		err   error
-	}
-
-	cases := []fieldsURITest{
-		// valid path
+	}{
 		{
+			name:   "valid path",
 			input:  "/normal",
 			output: "normal/dist",
 			err:    nil,
 		},
-		// invalid path
 		{
+			name:   "invalid path",
 			input:  "/invalid",
 			output: "",
 			err:    &MyError{Message: "unauthorized request"},
 		},
 	}
 
-	var checkAPILimitTestData = []fieldsCheckAPILimitTest{
-		// valid request
-		{
-			input: "normal",
-			err:   nil,
-		},
-		// limit exceeded
-		{
-			input: "exceeded",
-			err:   errors.New("limit exceeded"),
-		},
-		// valid request
-		{
-			input: "unlimited",
-			err:   nil,
-		},
-		// invalid type in limit
-		{
-			input: "error/type",
-			err:   errors.New("unexpected limit value"),
-		},
-		// invalid value in limit
-		{
-			input: "error/value",
-			err:   errors.New("unexpected limit value"),
-		},
-		// invalid path
-		{
-			input: "invalid",
-			err:   nil,
-		},
-	}
-
-	var fieldsSample = Fields{
+	fieldsSample := Fields{
 		{
 			Template: NewURITemplate("/normal"),
 			Path:     NewURITemplate("/normal/dist"),
@@ -98,37 +60,74 @@ func TestFields(t *testing.T) {
 		},
 	}
 
-	for i, tt := range cases {
+	for _, tt := range cases {
 		path, err := fieldsSample.URI(tt.input)
 
 		if tt.output != path {
-			t.Fatalf("case %d: unexpected result %s, want %s", i, path, tt.output)
+			t.Fatalf("case %s: unexpected result %s, want %s", tt.name, path, tt.output)
 		}
 		if tt.err == nil && err != nil {
-			t.Fatalf("case %d: unexpected error %s, want nil", i, err.Error())
+			t.Fatalf("case %s: unexpected error %s, want nil", tt.name, err.Error())
 		}
 		if tt.err != nil && err == nil {
-			t.Fatalf("case %d: unexpected error nil, want %s", i, tt.err.Error())
+			t.Fatalf("case %s: unexpected error nil, want %s", tt.name, tt.err.Error())
 		}
 		if tt.err != nil && err != nil {
 			if tt.err.Error() != err.Error() {
-				t.Fatalf("case %d: unexpected error %s, want %s", i, err.Error(), tt.err.Error())
+				t.Fatalf("case %s: unexpected error %s, want %s", tt.name, err.Error(), tt.err.Error())
 			}
 		}
 	}
 
-	for i, tt := range checkAPILimitTestData {
+	checkAPILimitTestData := []struct {
+		name  string
+		input string
+		err   error
+	}{
+		{
+			name:  "valid request",
+			input: "normal",
+			err:   nil,
+		},
+		{
+			name:  "limit exceeded",
+			input: "exceeded",
+			err:   errors.New("limit exceeded"),
+		},
+		{
+			name:  "valid request",
+			input: "unlimited",
+			err:   nil,
+		},
+		{
+			name:  "invalid type in limit",
+			input: "error/type",
+			err:   errors.New("unexpected limit value"),
+		},
+		{
+			name:  "invalid value in limit",
+			input: "error/value",
+			err:   errors.New("unexpected limit value"),
+		},
+		{
+			name:  "invalid path",
+			input: "invalid",
+			err:   nil,
+		},
+	}
+
+	for _, tt := range checkAPILimitTestData {
 		err := fieldsSample.CheckAPILimit(tt.input)
 
 		if tt.err == nil && err != nil {
-			t.Fatalf("case %d: unexpected error %s, want nil", i, err.Error())
+			t.Fatalf("case %s: unexpected error %s, want nil", tt.name, err.Error())
 		}
 		if tt.err != nil && err == nil {
-			t.Fatalf("case %d: unexpected error nil, want %s", i, tt.err.Error())
+			t.Fatalf("case %s: unexpected error nil, want %s", tt.name, tt.err.Error())
 		}
 		if tt.err != nil && err != nil {
 			if tt.err.Error() != err.Error() {
-				t.Fatalf("case %d: unexpected error %s, want %s", i, err.Error(), tt.err.Error())
+				t.Fatalf("case %s: unexpected error %s, want %s", tt.name, err.Error(), tt.err.Error())
 			}
 		}
 	}

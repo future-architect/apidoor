@@ -12,3 +12,6 @@ test:
 
 run:
 	go run cmd/localredisgateway/main.go
+
+test:
+	go test ./...

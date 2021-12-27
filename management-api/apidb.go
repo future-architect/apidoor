@@ -20,7 +20,7 @@ func init() {
 }
 
 type APIDB interface {
-	PostAPIRouting(ctx context.Context, apiKey, path, forwardURL string) error
+	PostRouting(ctx context.Context, apiKey, path, forwardURL string) error
 }
 
 func createDBDriver(dbType string) (APIDB, error) {

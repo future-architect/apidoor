@@ -40,7 +40,7 @@ var methods = []string{
 
 func TestHandle(t *testing.T) {
 
-	type tests struct {
+	cases := []struct {
 		name    string
 		resCode int
 		content string
@@ -49,9 +49,7 @@ func TestHandle(t *testing.T) {
 		request string
 		out     string
 		outCode int
-	}
-
-	var cases = []tests{
+	}{
 		{
 			name:    "valid request using parameter",
 			resCode: http.StatusOK,

@@ -5,10 +5,11 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"log"
 	"os"
 	"text/template"
+
+	"github.com/jmoiron/sqlx"
 )
 
 var db *sqlDB
@@ -105,11 +106,10 @@ func (sd sqlDB) searchProducts(ctx context.Context, params *SearchProductsParams
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	list := []Product{}
+	var list []Product
 	count := 0
 	for rows.Next() {
 		var row SearchProductsResult
-
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
 		}

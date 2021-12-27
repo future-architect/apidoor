@@ -6,14 +6,12 @@ import (
 )
 
 func TestURITemplate(t *testing.T) {
-	type params struct {
+	cases := []struct {
 		reqPath  string
 		template string
 		params   []string
 		isMatch  bool
-	}
-
-	cases := []params{
+	}{
 		{
 			reqPath:  "/a/b/c",
 			template: "/a/b/c",
