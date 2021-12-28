@@ -165,6 +165,12 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				t.Errorf("retruned struct differ:\n%s", diff)
 			}
 
+			if err == nil {
+				if tt.wantErr != nil {
+					t.Errorf("returned error is nil, but expected error is not nil: %v", tt.wantErr)
+				}
+				return
+			}
 			testValidateErrorMatch(t, tt.wantErr, err)
 		})
 	}
