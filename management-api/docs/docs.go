@@ -237,7 +237,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
                         }
                     },
                     "500": {
@@ -251,6 +251,20 @@ var doc = `{
         }
     },
     "definitions": {
+        "managementapi.BadRequestResp": {
+            "type": "object",
+            "properties": {
+                "input_validations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/managementapi.ValidationError"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
         "managementapi.PostAPIRoutingReq": {
             "type": "object",
             "properties": {
@@ -381,6 +395,35 @@ var doc = `{
                     "items": {
                         "$ref": "#/definitions/managementapi.Product"
                     }
+                }
+            }
+        },
+        "managementapi.ValidationError": {
+            "type": "object",
+            "properties": {
+                "constraint_type": {
+                    "type": "string"
+                },
+                "enum": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "field": {
+                    "type": "string"
+                },
+                "got": {
+                    "type": "object"
+                },
+                "gte": {
+                    "type": "string"
+                },
+                "lte": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         }

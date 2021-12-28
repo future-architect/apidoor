@@ -1,8 +1,10 @@
 package managementapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
@@ -36,9 +38,29 @@ func init() {
 	})
 }
 
+// BadRequestResp is used for a body of 4xx response
 type BadRequestResp struct {
 	Message          string            `json:"message"`
 	InputValidations *ValidationErrors `json:"input_validations,omitempty"`
+}
+
+func NewBadRequestResp(msg string) BadRequestResp {
+	return BadRequestResp{
+		Message: msg,
+	}
+}
+
+func (br BadRequestResp) writeResp(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusBadRequest)
+	resp, err := json.Marshal(br)
+	if err != nil {
+		return fmt.Errorf("response to json error: %w", err)
+	}
+	if _, err = w.Write(resp); err != nil {
+		return fmt.Errorf("write resoponse body error: %w", err)
+	}
+	return nil
 }
 
 type fieldError validator.FieldError
@@ -155,6 +177,14 @@ func (ves ValidationErrors) Error() string {
 	ret += "]"
 
 	return ret
+}
+
+func (ves *ValidationErrors) toBadRequestResp() *BadRequestResp {
+	resp := BadRequestResp{
+		Message:          "input validation error",
+		InputValidations: ves,
+	}
+	return &resp
 }
 
 func NewValidationErrors(fieldErrs validator.ValidationErrors) ValidationErrors {

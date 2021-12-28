@@ -6,6 +6,8 @@ import (
 	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -18,10 +20,11 @@ func TestPostUser(t *testing.T) {
 	}
 
 	tests := []struct {
-		name           string
-		contentType    string
-		req            managementapi.PostUserReq
-		wantHttpStatus int
+		name                string
+		contentType         string
+		req                 managementapi.PostUserReq
+		wantHttpStatus      int
+		wantBadRequestError *managementapi.BadRequestResp
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
 		wantRecords []managementapi.User
 	}{
@@ -34,7 +37,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "full name",
 			},
-			wantHttpStatus: http.StatusCreated,
+			wantHttpStatus:      http.StatusCreated,
+			wantBadRequestError: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user",
@@ -53,7 +57,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "p@ss12Word",
 				Name:         "full name",
 			},
-			wantHttpStatus: http.StatusCreated,
+			wantHttpStatus:      http.StatusCreated,
+			wantBadRequestError: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user1",
@@ -72,7 +77,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "",
 			},
-			wantHttpStatus: http.StatusCreated,
+			wantHttpStatus:      http.StatusCreated,
+			wantBadRequestError: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user2",
@@ -92,7 +98,18 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestError: &managementapi.BadRequestResp{
+				Message: "input validation error",
+				InputValidations: &managementapi.ValidationErrors{
+					{
+						Field:          "account_id",
+						ConstraintType: "required",
+						Message:        "required field, but got empty",
+						Got:            "",
+					},
+				},
+			},
+			wantRecords: []managementapi.User{},
 		},
 		{
 			name:        "account_idにprintable ascii以外の文字が含まれていたとき、登録できない",
@@ -104,7 +121,18 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestError: &managementapi.BadRequestResp{
+				Message: "input validation error",
+				InputValidations: &managementapi.ValidationErrors{
+					{
+						Field:          "account_id",
+						ConstraintType: "printascii",
+						Message:        "input value, userユーザー, does not satisfy the format, printascii",
+						Got:            "userユーザー",
+					},
+				},
+			},
+			wantRecords: []managementapi.User{},
 		},
 		{
 			name:        "email_addressの文字列がメールアドレスとして不正であるとき、登録できない",
@@ -116,7 +144,18 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestError: &managementapi.BadRequestResp{
+				Message: "input validation error",
+				InputValidations: &managementapi.ValidationErrors{
+					{
+						Field:          "email_address",
+						ConstraintType: "email",
+						Message:        "input value, test05.@example.com, does not satisfy the format, email",
+						Got:            "test05.@example.com",
+					},
+				},
+			},
+			wantRecords: []managementapi.User{},
 		},
 		{
 			name:        "Content-Typeがapplication/json以外であるとき、登録できない",
@@ -128,7 +167,10 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestError: &managementapi.BadRequestResp{
+				Message: `unexpected request Content-Type, it must be "application/json"`,
+			},
+			wantRecords: []managementapi.User{},
 		},
 	}
 
@@ -152,6 +194,10 @@ func TestPostUser(t *testing.T) {
 				t.Errorf("wrong http status code: got %d, want %d", rw.StatusCode, tt.wantHttpStatus)
 			}
 
+			if rw.StatusCode == http.StatusBadRequest {
+				testBadRequestResponse(t, tt.wantBadRequestError, rw.Body)
+				return
+			}
 			if rw.StatusCode != http.StatusCreated {
 				return
 			}
@@ -193,6 +239,27 @@ func TestPostUser(t *testing.T) {
 
 	if _, err := db.Exec("DELETE FROM apiuser"); err != nil {
 		t.Fatal(err)
+	}
+
+}
+
+func testBadRequestResponse(t *testing.T, want *managementapi.BadRequestResp, body io.ReadCloser) {
+	buf := new(bytes.Buffer)
+	defer body.Close()
+	if _, err := io.Copy(buf, body); err != nil {
+		t.Errorf("reading body failed: %v", err)
+		return
+	}
+
+	log.Println(buf)
+	var gotBody managementapi.BadRequestResp
+	if err := json.Unmarshal(buf.Bytes(), &gotBody); err != nil {
+		t.Errorf("parsing body as bad request failed: %v", err)
+		return
+	}
+
+	if diff := cmp.Diff(gotBody, *want); diff != "" {
+		t.Errorf("bad request response differs:\n%v", diff)
 	}
 
 }
