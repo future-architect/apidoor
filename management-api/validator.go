@@ -38,19 +38,19 @@ func init() {
 	})
 }
 
-// BadRequestResp is used for a body of 4xx response
-type BadRequestResp struct {
+// ValidationFailures is used for a body of 4xx response
+type ValidationFailures struct {
 	Message          string            `json:"message"`
 	InputValidations *ValidationErrors `json:"input_validations,omitempty"`
 }
 
-func NewBadRequestResp(msg string) BadRequestResp {
-	return BadRequestResp{
+func NewValidationFailures(msg string) ValidationFailures {
+	return ValidationFailures{
 		Message: msg,
 	}
 }
 
-func (br BadRequestResp) writeResp(w http.ResponseWriter) error {
+func (br ValidationFailures) writeResp(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusBadRequest)
 	resp, err := json.Marshal(br)
@@ -179,8 +179,8 @@ func (ves ValidationErrors) Error() string {
 	return ret
 }
 
-func (ves *ValidationErrors) toBadRequestResp() *BadRequestResp {
-	resp := BadRequestResp{
+func (ves *ValidationErrors) toValidationFailures() *ValidationFailures {
+	resp := ValidationFailures{
 		Message:          "input validation error",
 		InputValidations: ves,
 	}

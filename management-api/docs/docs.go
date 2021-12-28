@@ -237,7 +237,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                            "$ref": "#/definitions/managementapi.ValidationFailures"
                         }
                     },
                     "500": {
@@ -251,22 +251,13 @@ var doc = `{
         }
     },
     "definitions": {
-        "managementapi.BadRequestResp": {
-            "type": "object",
-            "properties": {
-                "input_validations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/managementapi.ValidationError"
-                    }
-                },
-                "message": {
-                    "type": "string"
-                }
-            }
-        },
         "managementapi.PostAPIRoutingReq": {
             "type": "object",
+            "required": [
+                "api_key",
+                "forward_url",
+                "path"
+            ],
             "properties": {
                 "api_key": {
                     "type": "string"
@@ -421,6 +412,23 @@ var doc = `{
                 },
                 "lte": {
                     "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "ne": {
+                    "type": "string"
+                }
+            }
+        },
+        "managementapi.ValidationFailures": {
+            "type": "object",
+            "properties": {
+                "input_validations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/managementapi.ValidationError"
+                    }
                 },
                 "message": {
                     "type": "string"

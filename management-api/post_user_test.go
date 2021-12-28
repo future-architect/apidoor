@@ -7,7 +7,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -20,11 +19,11 @@ func TestPostUser(t *testing.T) {
 	}
 
 	tests := []struct {
-		name                string
-		contentType         string
-		req                 managementapi.PostUserReq
-		wantHttpStatus      int
-		wantBadRequestError *managementapi.BadRequestResp
+		name                   string
+		contentType            string
+		req                    managementapi.PostUserReq
+		wantHttpStatus         int
+		wantValidationFailures *managementapi.ValidationFailures
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
 		wantRecords []managementapi.User
 	}{
@@ -37,8 +36,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "full name",
 			},
-			wantHttpStatus:      http.StatusCreated,
-			wantBadRequestError: nil,
+			wantHttpStatus:         http.StatusCreated,
+			wantValidationFailures: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user",
@@ -57,8 +56,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "p@ss12Word",
 				Name:         "full name",
 			},
-			wantHttpStatus:      http.StatusCreated,
-			wantBadRequestError: nil,
+			wantHttpStatus:         http.StatusCreated,
+			wantValidationFailures: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user1",
@@ -77,8 +76,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "",
 			},
-			wantHttpStatus:      http.StatusCreated,
-			wantBadRequestError: nil,
+			wantHttpStatus:         http.StatusCreated,
+			wantValidationFailures: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user2",
@@ -98,7 +97,7 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantBadRequestError: &managementapi.BadRequestResp{
+			wantValidationFailures: &managementapi.ValidationFailures{
 				Message: "input validation error",
 				InputValidations: &managementapi.ValidationErrors{
 					{
@@ -121,7 +120,7 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantBadRequestError: &managementapi.BadRequestResp{
+			wantValidationFailures: &managementapi.ValidationFailures{
 				Message: "input validation error",
 				InputValidations: &managementapi.ValidationErrors{
 					{
@@ -144,7 +143,7 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantBadRequestError: &managementapi.BadRequestResp{
+			wantValidationFailures: &managementapi.ValidationFailures{
 				Message: "input validation error",
 				InputValidations: &managementapi.ValidationErrors{
 					{
@@ -167,7 +166,7 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantBadRequestError: &managementapi.BadRequestResp{
+			wantValidationFailures: &managementapi.ValidationFailures{
 				Message: `unexpected request Content-Type, it must be "application/json"`,
 			},
 			wantRecords: []managementapi.User{},
@@ -195,7 +194,7 @@ func TestPostUser(t *testing.T) {
 			}
 
 			if rw.StatusCode == http.StatusBadRequest {
-				testBadRequestResponse(t, tt.wantBadRequestError, rw.Body)
+				testValidationFailures(t, tt.wantValidationFailures, rw.Body)
 				return
 			}
 			if rw.StatusCode != http.StatusCreated {
@@ -243,7 +242,7 @@ func TestPostUser(t *testing.T) {
 
 }
 
-func testBadRequestResponse(t *testing.T, want *managementapi.BadRequestResp, body io.ReadCloser) {
+func testValidationFailures(t *testing.T, want *managementapi.ValidationFailures, body io.ReadCloser) {
 	buf := new(bytes.Buffer)
 	defer body.Close()
 	if _, err := io.Copy(buf, body); err != nil {
@@ -251,8 +250,7 @@ func testBadRequestResponse(t *testing.T, want *managementapi.BadRequestResp, bo
 		return
 	}
 
-	log.Println(buf)
-	var gotBody managementapi.BadRequestResp
+	var gotBody managementapi.ValidationFailures
 	if err := json.Unmarshal(buf.Bytes(), &gotBody); err != nil {
 		t.Errorf("parsing body as bad request failed: %v", err)
 		return
