@@ -44,20 +44,23 @@ type PostProductReq struct {
 	Name        string `json:"name" db:"name" validate:"required"`
 	Source      string `json:"source" db:"source" validate:"required"`
 	Description string `json:"description" db:"description" validate:"required"`
-	Thumbnail   string `json:"thumbnail" db:"thumbnail" validate:"required"`
-	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required"`
+	Thumbnail   string `json:"thumbnail" db:"thumbnail" validate:"required,url"`
+	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required,url"`
 }
 
 type SearchProductsReq struct {
-	Q            string `schema:"name"`
-	TargetFields string `schema:"target_fields"`
-	PatternMatch string `schema:"pattern_match"`
-	Limit        int    `schema:"limit"`
-	Offset       int    `schema:"offset"`
+	Q            string `json:"q" schema:"name" validate:"required,url_encoded"`
+	TargetFields string `json:"target_fields" schema:"target_fields"`
+	PatternMatch string `json:"pattern_match" schema:"pattern_match"`
+	Limit        int    `json:"limit" schema:"limit"`
+	Offset       int    `json:"offset" schema:"offset"`
 }
 
 func (sr SearchProductsReq) CreateParams() (*SearchProductsParams, error) {
 	var err error
+	if err = ValidateStruct(sr); err != nil {
+		return nil, err
+	}
 	qSplit := strings.Split(sr.Q, ".")
 	for i, v := range qSplit {
 		if qSplit[i], err = url.QueryUnescape(v); err != nil {
@@ -95,7 +98,7 @@ func (sr SearchProductsReq) CreateParams() (*SearchProductsParams, error) {
 		Offset:       sr.Offset,
 	}
 
-	if err = validate.Struct(params); err != nil {
+	if err = ValidateStruct(params); err != nil {
 		return nil, err
 	}
 
@@ -117,11 +120,11 @@ type SearchProductsResp struct {
 }
 
 type SearchProductsParams struct {
-	Q            []string `validate:"gte=1,dive,ne="`
-	TargetFields []string `validate:"dive,eq=all|eq=name|eq=description|eq=source"`
-	PatternMatch string   `validate:"eq=exact|eq=partial"`
-	Limit        int      `validate:"gte=1,lte=100"`
-	Offset       int      `validate:"gte=0"`
+	Q            []string `json:"q" validate:"gte=1,dive,ne="`
+	TargetFields []string `json:"target_fields" validate:"dive,eq=all|eq=name|eq=description|eq=source"`
+	PatternMatch string   `json:"pattern_match" validate:"eq=exact|eq=partial"`
+	Limit        int      `json:"limit" validate:"gte=1,lte=100"`
+	Offset       int      `json:"offset" validate:"gte=0"`
 }
 
 type PostUserReq struct {

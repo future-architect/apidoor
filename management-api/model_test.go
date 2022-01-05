@@ -4,14 +4,8 @@ import (
 	"testing"
 
 	"github.com/future-architect/apidoor/managementapi"
-	"github.com/go-playground/validator/v10"
 	"github.com/google/go-cmp/cmp"
 )
-
-type validateErrorInfo struct {
-	field string
-	tag   string
-}
 
 func TestSearchProductsReq_CreateParams(t *testing.T) {
 	tests := []struct {
@@ -19,7 +13,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 		input managementapi.SearchProductsReq
 		want  *managementapi.SearchProductsParams
 		// wantErr は期待されるerrorでvalidator.FieldErrorsが返る。validator.FieldErrorは出力に関わるFieldとTagのみ比較する
-		wantErr []validateErrorInfo
+		wantErr managementapi.ValidationErrors
 	}{
 		{
 			name: "パーセントエンコードされたクエリを分割して、デコードできる",
@@ -98,10 +92,42 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: []validateErrorInfo{
+			wantErr: managementapi.ValidationErrors{
 				{
-					field: "Q[0]",
-					tag:   "ne",
+					Field:          "q",
+					ConstraintType: "required",
+					Message:        "required field, but got empty",
+					Got:            "",
+				},
+			},
+		},
+		{
+			name: "クエリに検索語に空文字列がある",
+			input: managementapi.SearchProductsReq{
+				Q: "abc.",
+			},
+			want: nil,
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "q[1]",
+					ConstraintType: "ne",
+					Message:        "input value is , but it must be not equal to ",
+					Got:            "",
+				},
+			},
+		},
+		{
+			name: "クエリがURL encodedとして不正",
+			input: managementapi.SearchProductsReq{
+				Q: "a%g3bc",
+			},
+			want: nil,
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "q",
+					ConstraintType: "url_encoded",
+					Message:        "input value, a%g3bc, does not satisfy the format, url_encoded",
+					Got:            "a%g3bc",
 				},
 			},
 		},
@@ -115,10 +141,13 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: []validateErrorInfo{
+			wantErr: managementapi.ValidationErrors{
 				{
-					field: "TargetFields[1]",
-					tag:   "eq=all|eq=name|eq=description|eq=source",
+					Field:          "target_fields[1]",
+					ConstraintType: "enum",
+					Message:        "input value is wrong, but it must be one of the following values: [all name description source]",
+					Enum:           []string{"all", "name", "description", "source"},
+					Got:            "wrong",
 				},
 			},
 		},
@@ -132,10 +161,13 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: []validateErrorInfo{
+			wantErr: managementapi.ValidationErrors{
 				{
-					field: "PatternMatch",
-					tag:   "eq=exact|eq=partial",
+					Field:          "pattern_match",
+					ConstraintType: "enum",
+					Message:        "input value is wrong, but it must be one of the following values: [exact partial]",
+					Enum:           []string{"exact", "partial"},
+					Got:            "wrong",
 				},
 			},
 		},
@@ -149,10 +181,13 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: []validateErrorInfo{
+			wantErr: managementapi.ValidationErrors{
 				{
-					field: "Limit",
-					tag:   "lte",
+					Field:          "limit",
+					ConstraintType: "lte",
+					Message:        "input value is 101, but it must be less than or equal to 100",
+					Lte:            "100",
+					Got:            101,
 				},
 			},
 		},
@@ -171,30 +206,20 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				}
 				return
 			}
-			testValidateErrorMatch(t, tt.wantErr, err)
+			testValidateErrors(t, tt.wantErr, err)
 		})
 	}
 }
 
-func testValidateErrorMatch(t *testing.T, want []validateErrorInfo, got error) {
-	gotErr, ok := got.(validator.ValidationErrors)
+func testValidateErrors(t *testing.T, want managementapi.ValidationErrors, got error) {
+	gotErr, ok := got.(managementapi.ValidationErrors)
 	if !ok {
 		t.Errorf("return error is not validator.ValidationErrors, got: %v", got)
 		return
 	}
 
-	if len(want) != len(gotErr) {
-		t.Errorf("the number of errors is not equal: want=%d, got=%d", len(want), len(gotErr))
-		return
-	}
-
-	for i := range want {
-		if want[i].field != gotErr[i].Field() {
-			t.Errorf("field name is not match: want=%s, got=%s", want[i].field, gotErr[i].Field())
-		}
-		if want[i].tag != gotErr[i].Tag() {
-			t.Errorf("tag name is not match: want=%s, got=%s", want[i].tag, gotErr[i].Tag())
-		}
+	if diff := cmp.Diff(want, gotErr); diff != "" {
+		t.Errorf("ValidationErrors differ:\n%v", diff)
 	}
 
 }

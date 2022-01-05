@@ -2,10 +2,8 @@ package managementapi
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -16,37 +14,46 @@ import (
 // @Produce json
 // @Param api_routing body PostAPIRoutingReq true "routing parameters"
 // @Success 201 {string} string
-// @Failure 400 {string} error
+// @Failure 400 {string} ValidationFailures
 // @Failure 500 {string} error
 // @Router /api [post]
 func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
-		http.Error(w, "unexpected request content", http.StatusBadRequest)
-		return
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("read body error: %v", err)
-		http.Error(w, "server error", http.StatusInternalServerError)
+		resp := NewValidationFailures(`unexpected request Content-Type, it must be "application/json"`)
+		if err := resp.writeResp(w); err != nil {
+			log.Printf("write bad request response failed: %v", err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
 	var req PostAPIRoutingReq
-	if err = json.Unmarshal(body, &req); err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("failed to parse json body: %v", err)
-		http.Error(w, "failed to parse json body", http.StatusBadRequest)
+		resp := NewValidationFailures("failed to parse body as json")
+		if err := resp.writeResp(w); err != nil {
+			log.Printf("write bad request response failed: %v", err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
-	if err = req.CheckNoEmptyField(); err != nil {
-		log.Printf("invalid body: %v", err)
-		http.Error(w, fmt.Sprintf("invalid body: %v", err), http.StatusBadRequest)
+	if err := ValidateStruct(req); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			log.Printf("input validation failed:\n%v", err)
+			if err = ve.toValidationFailures().writeResp(w); err != nil {
+				log.Printf("write bad request response failed: %v", err)
+				http.Error(w, "server error", http.StatusInternalServerError)
+			}
+		} else {
+			log.Printf("invalid body: %v", err)
+			http.Error(w, fmt.Sprintf("invalid body"), http.StatusBadRequest)
+		}
 		return
 	}
 
-	if err = ApiDBDriver.PostRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
+	if err := ApiDBDriver.PostRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
 		log.Printf("post api routing db error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}
@@ -56,20 +63,7 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 }
 
 type PostAPIRoutingReq struct {
-	ApiKey     string `json:"api_key"`
-	Path       string `json:"path"`
-	ForwardURL string `json:"forward_url"`
-}
-
-func (pr PostAPIRoutingReq) CheckNoEmptyField() error {
-	if pr.ApiKey == "" {
-		return errors.New("api_key field required")
-	}
-	if pr.Path == "" {
-		return errors.New("path field required")
-	}
-	if pr.ForwardURL == "" {
-		return errors.New("forward_url field required")
-	}
-	return nil
+	ApiKey     string `json:"api_key" validate:"required"`
+	Path       string `json:"path" validate:"required"`
+	ForwardURL string `json:"forward_url" validate:"required,url"`
 }

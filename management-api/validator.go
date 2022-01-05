@@ -71,6 +71,7 @@ type ValidationError struct {
 	Message        string      `json:"message"`
 	Lte            string      `json:"lte,omitempty"`
 	Gte            string      `json:"gte,omitempty"`
+	Ne             string      `json:"ne,omitempty"`
 	Enum           []string    `json:"enum,omitempty"`
 	Got            interface{} `json:"got,omitempty"`
 }
@@ -107,6 +108,9 @@ func (ve *ValidationError) updateAttributes(fieldErr fieldError) {
 	if ve.ConstraintType == "gte" || ve.ConstraintType == "length_gte" {
 		ve.Gte = fieldErr.Param()
 	}
+	if ve.ConstraintType == "ne" || ve.ConstraintType == "length_ne" {
+		ve.Ne = fieldErr.Param()
+	}
 
 	if fieldErr.Kind() == reflect.Slice || fieldErr.Kind() == reflect.Map {
 		ve.Got = reflect.ValueOf(fieldErr.Value()).Len()
@@ -128,10 +132,14 @@ func (ve *ValidationError) updateMessage() {
 		msg = fmt.Sprintf("input value is %v, but it must be greater than or equal to %v", ve.Got, ve.Gte)
 	case "lte":
 		msg = fmt.Sprintf("input value is %v, but it must be less than or equal to %v", ve.Got, ve.Lte)
+	case "ne":
+		msg = fmt.Sprintf("input value is %v, but it must be not equal to %v", ve.Got, ve.Ne)
 	case "length_gte":
 		msg = fmt.Sprintf("input array length is %v, but it must be greater than or equal to %v", ve.Got, ve.Gte)
 	case "length_lte":
 		msg = fmt.Sprintf("input array length is %v, but it must be less than or equal to %v", ve.Got, ve.Lte)
+	case "length_ne":
+		msg = fmt.Sprintf("input array length is %v, but it must be not equal to %v", ve.Got, ve.Ne)
 	default:
 		msg = fmt.Sprintf("input value, %s, does not satisfy the format, %s", ve.Got, ve.ConstraintType)
 	}
@@ -161,6 +169,8 @@ func generateConstraintType(fieldErr validator.FieldError) string {
 			return "length_gte"
 		} else if fieldErr.Tag() == "lte" {
 			return "length_lte"
+		} else if fieldErr.Tag() == "ne" {
+			return "length_ne"
 		}
 	}
 

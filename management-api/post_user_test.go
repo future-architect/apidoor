@@ -18,6 +18,8 @@ func TestPostUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	hashRegex := regexp.MustCompile(`\$2a\$\w+\$[ -~]+`)
+
 	tests := []struct {
 		name                   string
 		contentType            string
@@ -189,12 +191,19 @@ func TestPostUser(t *testing.T) {
 			managementapi.PostUser(w, r)
 
 			rw := w.Result()
+			defer rw.Body.Close()
+
 			if rw.StatusCode != tt.wantHttpStatus {
 				t.Errorf("wrong http status code: got %d, want %d", rw.StatusCode, tt.wantHttpStatus)
 			}
 
+			resp, err := io.ReadAll(rw.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if rw.StatusCode == http.StatusBadRequest {
-				testValidationFailures(t, tt.wantValidationFailures, rw.Body)
+				testValidationFailures(t, tt.wantValidationFailures, resp)
 				return
 			}
 			if rw.StatusCode != http.StatusCreated {
@@ -226,7 +235,6 @@ func TestPostUser(t *testing.T) {
 			}
 
 			// checking that passwords are stored in a hash
-			hashRegex := regexp.MustCompile("\\$2a\\$\\w+\\$[\\w.]+")
 			for _, v := range list {
 				if !hashRegex.Match([]byte(v.LoginPasswordHash)) {
 					t.Errorf("password hash format is wrong, got: %s", v.LoginPasswordHash)
@@ -242,17 +250,10 @@ func TestPostUser(t *testing.T) {
 
 }
 
-func testValidationFailures(t *testing.T, want *managementapi.ValidationFailures, body io.ReadCloser) {
-	buf := new(bytes.Buffer)
-	defer body.Close()
-	if _, err := io.Copy(buf, body); err != nil {
-		t.Errorf("reading body failed: %v", err)
-		return
-	}
-
+func testValidationFailures(t *testing.T, want *managementapi.ValidationFailures, got []byte) {
 	var gotBody managementapi.ValidationFailures
-	if err := json.Unmarshal(buf.Bytes(), &gotBody); err != nil {
-		t.Errorf("parsing body as bad request failed: %v", err)
+	if err := json.Unmarshal(got, &gotBody); err != nil {
+		t.Errorf("parsing body as ValidationFailures failed: %v", err)
 		return
 	}
 
