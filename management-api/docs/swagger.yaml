@@ -1,5 +1,14 @@
 basePath: /mgmt
 definitions:
+  managementapi.BadRequestResp:
+    properties:
+      message:
+        type: string
+      validation_errors:
+        items:
+          $ref: '#/definitions/managementapi.ValidationError'
+        type: array
+    type: object
   managementapi.PostAPIRoutingReq:
     properties:
       api_key:
@@ -102,8 +111,7 @@ definitions:
         type: array
       field:
         type: string
-      got:
-        type: object
+      got: {}
       gte:
         type: string
       lte:
@@ -111,15 +119,6 @@ definitions:
       message:
         type: string
       ne:
-        type: string
-    type: object
-  managementapi.ValidationFailures:
-    properties:
-      input_validations:
-        items:
-          $ref: '#/definitions/managementapi.ValidationError'
-        type: array
-      message:
         type: string
     type: object
 info:
@@ -148,7 +147,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -185,7 +184,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -249,7 +248,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -275,7 +274,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/managementapi.ValidationFailures'
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:

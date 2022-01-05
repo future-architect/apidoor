@@ -21,11 +21,11 @@ func TestPostUser(t *testing.T) {
 	hashRegex := regexp.MustCompile(`\$2a\$\w+\$[ -~]+`)
 
 	tests := []struct {
-		name                   string
-		contentType            string
-		req                    managementapi.PostUserReq
-		wantHttpStatus         int
-		wantValidationFailures *managementapi.ValidationFailures
+		name               string
+		contentType        string
+		req                managementapi.PostUserReq
+		wantHttpStatus     int
+		wantBadRequestResp *managementapi.BadRequestResp
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
 		wantRecords []managementapi.User
 	}{
@@ -38,8 +38,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "full name",
 			},
-			wantHttpStatus:         http.StatusCreated,
-			wantValidationFailures: nil,
+			wantHttpStatus:     http.StatusCreated,
+			wantBadRequestResp: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user",
@@ -58,8 +58,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "p@ss12Word",
 				Name:         "full name",
 			},
-			wantHttpStatus:         http.StatusCreated,
-			wantValidationFailures: nil,
+			wantHttpStatus:     http.StatusCreated,
+			wantBadRequestResp: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user1",
@@ -78,8 +78,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "",
 			},
-			wantHttpStatus:         http.StatusCreated,
-			wantValidationFailures: nil,
+			wantHttpStatus:     http.StatusCreated,
+			wantBadRequestResp: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user2",
@@ -99,9 +99,9 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantValidationFailures: &managementapi.ValidationFailures{
+			wantBadRequestResp: &managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "account_id",
 						ConstraintType: "required",
@@ -122,9 +122,9 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantValidationFailures: &managementapi.ValidationFailures{
+			wantBadRequestResp: &managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "account_id",
 						ConstraintType: "printascii",
@@ -145,9 +145,9 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantValidationFailures: &managementapi.ValidationFailures{
+			wantBadRequestResp: &managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "email_address",
 						ConstraintType: "email",
@@ -168,7 +168,7 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantValidationFailures: &managementapi.ValidationFailures{
+			wantBadRequestResp: &managementapi.BadRequestResp{
 				Message: `unexpected request Content-Type, it must be "application/json"`,
 			},
 			wantRecords: []managementapi.User{},
@@ -203,7 +203,7 @@ func TestPostUser(t *testing.T) {
 			}
 
 			if rw.StatusCode == http.StatusBadRequest {
-				testValidationFailures(t, tt.wantValidationFailures, resp)
+				testBadRequestResp(t, tt.wantBadRequestResp, resp)
 				return
 			}
 			if rw.StatusCode != http.StatusCreated {
@@ -250,10 +250,10 @@ func TestPostUser(t *testing.T) {
 
 }
 
-func testValidationFailures(t *testing.T, want *managementapi.ValidationFailures, got []byte) {
-	var gotBody managementapi.ValidationFailures
+func testBadRequestResp(t *testing.T, want *managementapi.BadRequestResp, got []byte) {
+	var gotBody managementapi.BadRequestResp
 	if err := json.Unmarshal(got, &gotBody); err != nil {
-		t.Errorf("parsing body as ValidationFailures failed: %v", err)
+		t.Errorf("parsing body as BadRequestResp failed: %v", err)
 		return
 	}
 

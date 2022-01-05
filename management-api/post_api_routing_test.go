@@ -62,9 +62,9 @@ func TestPostAPIRouting(t *testing.T) {
 			checkHgetArgs: []string{targetKey, "test2"},
 			checkHgetResp: "",
 			httpStatus:    http.StatusBadRequest,
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "api_key",
 						ConstraintType: "required",
@@ -82,9 +82,9 @@ func TestPostAPIRouting(t *testing.T) {
 			checkHgetArgs: []string{targetKey, "test3"},
 			checkHgetResp: "",
 			httpStatus:    http.StatusBadRequest,
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "forward_url",
 						ConstraintType: "url",
@@ -135,9 +135,9 @@ func TestPostAPIRouting(t *testing.T) {
 				if tt.wantResp != string(resp) {
 					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
 				}
-			case managementapi.ValidationFailures:
-				want := tt.wantResp.(managementapi.ValidationFailures)
-				testValidationFailures(t, &want, resp)
+			case managementapi.BadRequestResp:
+				want := tt.wantResp.(managementapi.BadRequestResp)
+				testBadRequestResp(t, &want, resp)
 			default:
 				t.Errorf("type of wantResp is not unsupported")
 			}

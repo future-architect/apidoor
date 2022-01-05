@@ -61,9 +61,9 @@ func TestPostProduct(t *testing.T) {
 			},
 			wantHttpStatus: http.StatusBadRequest,
 			wantRecords:    []managementapi.Product{},
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "name",
 						ConstraintType: "required",
@@ -85,7 +85,7 @@ func TestPostProduct(t *testing.T) {
 			},
 			wantHttpStatus: http.StatusBadRequest,
 			wantRecords:    []managementapi.Product{},
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: `unexpected request Content-Type, it must be "application/json"`,
 			},
 		},
@@ -143,9 +143,9 @@ func TestPostProduct(t *testing.T) {
 				if tt.wantResp != string(resp) {
 					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
 				}
-			case managementapi.ValidationFailures:
-				want := tt.wantResp.(managementapi.ValidationFailures)
-				testValidationFailures(t, &want, resp)
+			case managementapi.BadRequestResp:
+				want := tt.wantResp.(managementapi.BadRequestResp)
+				testBadRequestResp(t, &want, resp)
 			default:
 				t.Errorf("type of wantResp is not unsupported")
 			}

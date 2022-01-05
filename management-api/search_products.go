@@ -17,7 +17,7 @@ import (
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
 // @Param offset query int false "the starting point for the result set" default(0)
 // @Success 200 {object} SearchProductsResp
-// @Failure 400 {string} ValidationFailures
+// @Failure 400 {object} BadRequestResp
 // @Failure 500 {string} string
 // @Router /products/search [get]
 func SearchProducts(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,7 @@ func SearchProducts(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if ve, ok := err.(ValidationErrors); ok {
 			log.Printf("input validation failed:\n%v", err)
-			if err = ve.toValidationFailures().writeResp(w); err != nil {
+			if err = ve.toBadRequestResp().writeResp(w); err != nil {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}

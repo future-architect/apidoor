@@ -238,9 +238,9 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name.thumbnail",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "target_fields[1]",
 						ConstraintType: "enum",
@@ -257,9 +257,9 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "q",
 						ConstraintType: "required",
@@ -276,9 +276,9 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp: managementapi.ValidationFailures{
+			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
-				InputValidations: &managementapi.ValidationErrors{
+				ValidationErrors: &managementapi.ValidationErrors{
 					{
 						Field:          "q[1]",
 						ConstraintType: "ne",
@@ -320,9 +320,9 @@ func TestSearchProducts(t *testing.T) {
 			switch tt.wantResp.(type) {
 			case managementapi.SearchProductsResp:
 				testCompareBodyAsSearchProductResp(t, tt.wantResp.(managementapi.SearchProductsResp), body)
-			case managementapi.ValidationFailures:
-				want := tt.wantResp.(managementapi.ValidationFailures)
-				testValidationFailures(t, &want, body)
+			case managementapi.BadRequestResp:
+				want := tt.wantResp.(managementapi.BadRequestResp)
+				testBadRequestResp(t, &want, body)
 			case string:
 				testCompareBodyAsString(t, tt.wantResp.(string), body)
 			default:

@@ -51,7 +51,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
                         }
                     },
                     "500": {
@@ -108,7 +108,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
                         }
                     },
                     "500": {
@@ -197,7 +197,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
                         }
                     },
                     "500": {
@@ -237,7 +237,7 @@ var doc = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.ValidationFailures"
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
                         }
                     },
                     "500": {
@@ -251,6 +251,20 @@ var doc = `{
         }
     },
     "definitions": {
+        "managementapi.BadRequestResp": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "validation_errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/managementapi.ValidationError"
+                    }
+                }
+            }
+        },
         "managementapi.PostAPIRoutingReq": {
             "type": "object",
             "required": [
@@ -404,9 +418,7 @@ var doc = `{
                 "field": {
                     "type": "string"
                 },
-                "got": {
-                    "type": "object"
-                },
+                "got": {},
                 "gte": {
                     "type": "string"
                 },
@@ -417,20 +429,6 @@ var doc = `{
                     "type": "string"
                 },
                 "ne": {
-                    "type": "string"
-                }
-            }
-        },
-        "managementapi.ValidationFailures": {
-            "type": "object",
-            "properties": {
-                "input_validations": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/managementapi.ValidationError"
-                    }
-                },
-                "message": {
                     "type": "string"
                 }
             }
@@ -489,5 +487,5 @@ func (s *s) ReadDoc() string {
 }
 
 func init() {
-	swag.Register(swag.Name, &s{})
+	swag.Register("swagger", &s{})
 }
