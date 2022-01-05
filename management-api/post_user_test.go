@@ -6,6 +6,7 @@ import (
 	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -17,11 +18,14 @@ func TestPostUser(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	hashRegex := regexp.MustCompile(`\$2a\$\w+\$[ -~]+`)
+
 	tests := []struct {
-		name           string
-		contentType    string
-		req            managementapi.PostUserReq
-		wantHttpStatus int
+		name               string
+		contentType        string
+		req                managementapi.PostUserReq
+		wantHttpStatus     int
+		wantBadRequestResp *managementapi.BadRequestResp
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
 		wantRecords []managementapi.User
 	}{
@@ -34,7 +38,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "full name",
 			},
-			wantHttpStatus: http.StatusCreated,
+			wantHttpStatus:     http.StatusCreated,
+			wantBadRequestResp: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user",
@@ -53,7 +58,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "p@ss12Word",
 				Name:         "full name",
 			},
-			wantHttpStatus: http.StatusCreated,
+			wantHttpStatus:     http.StatusCreated,
+			wantBadRequestResp: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user1",
@@ -72,7 +78,8 @@ func TestPostUser(t *testing.T) {
 				Password:     "password",
 				Name:         "",
 			},
-			wantHttpStatus: http.StatusCreated,
+			wantHttpStatus:     http.StatusCreated,
+			wantBadRequestResp: nil,
 			wantRecords: []managementapi.User{
 				{
 					AccountID:      "user2",
@@ -92,7 +99,18 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestResp: &managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "account_id",
+						ConstraintType: "required",
+						Message:        "required field, but got empty",
+						Got:            "",
+					},
+				},
+			},
+			wantRecords: []managementapi.User{},
 		},
 		{
 			name:        "account_idにprintable ascii以外の文字が含まれていたとき、登録できない",
@@ -104,7 +122,18 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestResp: &managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "account_id",
+						ConstraintType: "printascii",
+						Message:        "input value, userユーザー, does not satisfy the format, printascii",
+						Got:            "userユーザー",
+					},
+				},
+			},
+			wantRecords: []managementapi.User{},
 		},
 		{
 			name:        "email_addressの文字列がメールアドレスとして不正であるとき、登録できない",
@@ -116,7 +145,18 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestResp: &managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "email_address",
+						ConstraintType: "email",
+						Message:        "input value, test05.@example.com, does not satisfy the format, email",
+						Got:            "test05.@example.com",
+					},
+				},
+			},
+			wantRecords: []managementapi.User{},
 		},
 		{
 			name:        "Content-Typeがapplication/json以外であるとき、登録できない",
@@ -128,7 +168,10 @@ func TestPostUser(t *testing.T) {
 				Name:         "full name",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.User{},
+			wantBadRequestResp: &managementapi.BadRequestResp{
+				Message: `unexpected request Content-Type, it must be "application/json"`,
+			},
+			wantRecords: []managementapi.User{},
 		},
 	}
 
@@ -148,10 +191,21 @@ func TestPostUser(t *testing.T) {
 			managementapi.PostUser(w, r)
 
 			rw := w.Result()
+			defer rw.Body.Close()
+
 			if rw.StatusCode != tt.wantHttpStatus {
 				t.Errorf("wrong http status code: got %d, want %d", rw.StatusCode, tt.wantHttpStatus)
 			}
 
+			resp, err := io.ReadAll(rw.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if rw.StatusCode == http.StatusBadRequest {
+				testBadRequestResp(t, tt.wantBadRequestResp, resp)
+				return
+			}
 			if rw.StatusCode != http.StatusCreated {
 				return
 			}
@@ -181,7 +235,6 @@ func TestPostUser(t *testing.T) {
 			}
 
 			// checking that passwords are stored in a hash
-			hashRegex := regexp.MustCompile("\\$2a\\$\\w+\\$[\\w.]+")
 			for _, v := range list {
 				if !hashRegex.Match([]byte(v.LoginPasswordHash)) {
 					t.Errorf("password hash format is wrong, got: %s", v.LoginPasswordHash)
@@ -193,6 +246,19 @@ func TestPostUser(t *testing.T) {
 
 	if _, err := db.Exec("DELETE FROM apiuser"); err != nil {
 		t.Fatal(err)
+	}
+
+}
+
+func testBadRequestResp(t *testing.T, want *managementapi.BadRequestResp, got []byte) {
+	var gotBody managementapi.BadRequestResp
+	if err := json.Unmarshal(got, &gotBody); err != nil {
+		t.Errorf("parsing body as BadRequestResp failed: %v", err)
+		return
+	}
+
+	if diff := cmp.Diff(gotBody, *want); diff != "" {
+		t.Errorf("bad request response differs:\n%v", diff)
 	}
 
 }

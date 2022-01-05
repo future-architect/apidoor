@@ -1,5 +1,14 @@
 basePath: /mgmt
 definitions:
+  managementapi.BadRequestResp:
+    properties:
+      message:
+        type: string
+      validation_errors:
+        items:
+          $ref: '#/definitions/managementapi.ValidationError'
+        type: array
+    type: object
   managementapi.PostAPIRoutingReq:
     properties:
       api_key:
@@ -8,6 +17,10 @@ definitions:
         type: string
       path:
         type: string
+    required:
+    - api_key
+    - forward_url
+    - path
     type: object
   managementapi.PostProductReq:
     properties:
@@ -88,6 +101,26 @@ definitions:
           $ref: '#/definitions/managementapi.Product'
         type: array
     type: object
+  managementapi.ValidationError:
+    properties:
+      constraint_type:
+        type: string
+      enum:
+        items:
+          type: string
+        type: array
+      field:
+        type: string
+      got: {}
+      gte:
+        type: string
+      lte:
+        type: string
+      message:
+        type: string
+      ne:
+        type: string
+    type: object
 info:
   contact: {}
   description: This is an API that manages products.
@@ -114,7 +147,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -151,7 +184,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -215,7 +248,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -241,7 +274,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            type: string
+            $ref: '#/definitions/managementapi.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:

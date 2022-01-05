@@ -14,26 +14,42 @@ import (
 // @produce json
 // @Param product body PostProductReq true "api information"
 // @Success 201 {string} string
-// @Failure 400 {string} error
+// @Failure 400 {object} BadRequestResp
 // @Failure 500 {string} error
 // @Router /product [post]
 func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
-		http.Error(w, "unexpected request content", http.StatusBadRequest)
+		resp := NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
+		if err := resp.writeResp(w); err != nil {
+			log.Printf("write bad request response failed: %v", err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
 	var req PostProductReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("failed to parse json body: %v", err)
-		http.Error(w, "failed to parse json body", http.StatusBadRequest)
+		resp := NewBadRequestResp("failed to parse body as json")
+		if err := resp.writeResp(w); err != nil {
+			log.Printf("write bad request response failed: %v", err)
+			http.Error(w, "server error", http.StatusInternalServerError)
+		}
 		return
 	}
 
-	if err := validate.Struct(req); err != nil {
-		log.Printf("invalid body: %v", err)
-		http.Error(w, fmt.Sprintf("invalid body"), http.StatusBadRequest)
+	if err := ValidateStruct(req); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			log.Printf("input validation failed:\n%v", err)
+			if err = ve.toBadRequestResp().writeResp(w); err != nil {
+				log.Printf("write bad request response failed: %v", err)
+				http.Error(w, "server error", http.StatusInternalServerError)
+			}
+		} else {
+			log.Printf("invalid body: %v", err)
+			http.Error(w, fmt.Sprintf("invalid body"), http.StatusBadRequest)
+		}
 		return
 	}
 

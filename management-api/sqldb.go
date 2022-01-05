@@ -40,6 +40,9 @@ type sqlDB struct {
 
 func NewSqlDB() (*sqlDB, error) {
 	dbDriver := os.Getenv("DATABASE_DRIVER")
+	if dbDriver == "" {
+		dbDriver = "postgres"
+	}
 	dbSource := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		os.Getenv("DATABASE_HOST"),
 		os.Getenv("DATABASE_PORT"),
@@ -58,7 +61,7 @@ func NewSqlDB() (*sqlDB, error) {
 }
 
 func (sd sqlDB) getProducts(ctx context.Context) ([]Product, error) {
-	rows, err := sd.driver.Queryx("SELECT * from apiinfo")
+	rows, err := sd.driver.QueryxContext(ctx, "SELECT * from apiinfo")
 	if err != nil {
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
@@ -106,7 +109,7 @@ func (sd sqlDB) searchProducts(ctx context.Context, params *SearchProductsParams
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	var list []Product
+	list := make([]Product, 0)
 	count := 0
 	for rows.Next() {
 		var row SearchProductsResult

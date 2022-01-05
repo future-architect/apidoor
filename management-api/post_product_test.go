@@ -3,6 +3,7 @@ package managementapi_test
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -24,6 +25,7 @@ func TestPostProduct(t *testing.T) {
 		wantHttpStatus int
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
 		wantRecords []managementapi.Product
+		wantResp    interface{}
 	}{
 		{
 			name:        "productを登録できる",
@@ -32,8 +34,8 @@ func TestPostProduct(t *testing.T) {
 				Name:        "Awesome API",
 				Source:      "Company1",
 				Description: "provide fantastic information.",
-				Thumbnail:   "test.com/api.awesome",
-				SwaggerURL:  "example.com/api/awesome",
+				Thumbnail:   "http://example.com/api.awesome",
+				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusCreated,
 			wantRecords: []managementapi.Product{
@@ -41,10 +43,11 @@ func TestPostProduct(t *testing.T) {
 					Name:        "Awesome API",
 					Source:      "Company1",
 					Description: "provide fantastic information.",
-					Thumbnail:   "test.com/api.awesome",
-					SwaggerURL:  "example.com/api/awesome",
+					Thumbnail:   "http://example.com/api.awesome",
+					SwaggerURL:  "http://example.com/api/awesome",
 				},
 			},
+			wantResp: "Created",
 		},
 		{
 			name:        "Fieldに空文字列がある場合は登録できない",
@@ -53,11 +56,22 @@ func TestPostProduct(t *testing.T) {
 				Name:        "",
 				Source:      "Company2",
 				Description: "provide fantastic information.",
-				Thumbnail:   "test.com/api.awesome",
-				SwaggerURL:  "example.com/api/awesome",
+				Thumbnail:   "http://example.com/api.awesome",
+				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusBadRequest,
 			wantRecords:    []managementapi.Product{},
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "name",
+						ConstraintType: "required",
+						Message:        "required field, but got empty",
+						Got:            "",
+					},
+				},
+			},
 		},
 		{
 			name:        "Content-Typeがapplication/json以外の場合は登録できない",
@@ -66,11 +80,14 @@ func TestPostProduct(t *testing.T) {
 				Name:        "wrong content-type",
 				Source:      "Company3",
 				Description: "provide fantastic information.",
-				Thumbnail:   "test.com/api.awesome",
-				SwaggerURL:  "example.com/api/awesome",
+				Thumbnail:   "http://example.com/api.awesome",
+				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusBadRequest,
 			wantRecords:    []managementapi.Product{},
+			wantResp: managementapi.BadRequestResp{
+				Message: `unexpected request Content-Type, it must be "application/json"`,
+			},
 		},
 	}
 
@@ -90,6 +107,12 @@ func TestPostProduct(t *testing.T) {
 			managementapi.PostProduct(w, r)
 
 			rw := w.Result()
+
+			resp, err := io.ReadAll(rw.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
 			if rw.StatusCode != tt.wantHttpStatus {
 				t.Errorf("wrong http status code: got %d, want %d", rw.StatusCode, tt.wantHttpStatus)
 			}
@@ -114,6 +137,17 @@ func TestPostProduct(t *testing.T) {
 
 			if diff := cmp.Diff(tt.wantRecords, list, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
 				t.Errorf("db get products responce differs:\n %v", diff)
+			}
+			switch tt.wantResp.(type) {
+			case string:
+				if tt.wantResp != string(resp) {
+					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
+				}
+			case managementapi.BadRequestResp:
+				want := tt.wantResp.(managementapi.BadRequestResp)
+				testBadRequestResp(t, &want, resp)
+			default:
+				t.Errorf("type of wantResp is not unsupported")
 			}
 		})
 	}

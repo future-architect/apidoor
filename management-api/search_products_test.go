@@ -238,7 +238,18 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name.thumbnail",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp:   "param validation error\n",
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "target_fields[1]",
+						ConstraintType: "enum",
+						Message:        "input value is thumbnail, but it must be one of the following values: [all name description source]",
+						Enum:           []string{"all", "name", "description", "source"},
+						Got:            "thumbnail",
+					},
+				},
+			},
 		},
 		{
 			name: "Qパラメータが未指定、または空文字列",
@@ -246,7 +257,17 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp:   "param validation error\n",
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "q",
+						ConstraintType: "required",
+						Message:        "required field, but got empty",
+						Got:            "",
+					},
+				},
+			},
 		},
 		{
 			name: "Qパラメータに空文字列が含まれている",
@@ -255,7 +276,17 @@ func TestSearchProducts(t *testing.T) {
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp:   "param validation error\n",
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "q[1]",
+						ConstraintType: "ne",
+						Message:        "input value is , but it must be not equal to ",
+						Got:            "",
+					},
+				},
+			},
 		},
 	}
 
@@ -271,7 +302,7 @@ func TestSearchProducts(t *testing.T) {
 			if err := encoder.Encode(tt.params, form); err != nil {
 				t.Fatalf("encode params error: %v", err)
 			}
-			r := httptest.NewRequest(http.MethodGet, "localhost:3000/prouct/search?"+form.Encode(), nil)
+			r := httptest.NewRequest(http.MethodGet, "localhost:3000/products/search?"+form.Encode(), nil)
 			w := httptest.NewRecorder()
 			managementapi.SearchProducts(w, r)
 
@@ -289,6 +320,9 @@ func TestSearchProducts(t *testing.T) {
 			switch tt.wantResp.(type) {
 			case managementapi.SearchProductsResp:
 				testCompareBodyAsSearchProductResp(t, tt.wantResp.(managementapi.SearchProductsResp), body)
+			case managementapi.BadRequestResp:
+				want := tt.wantResp.(managementapi.BadRequestResp)
+				testBadRequestResp(t, &want, body)
 			case string:
 				testCompareBodyAsString(t, tt.wantResp.(string), body)
 			default:

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -41,24 +42,57 @@ func TestPostAPIRouting(t *testing.T) {
 		checkHgetArgs []string
 		checkHgetResp string
 		httpStatus    int
+		wantResp      interface{}
 	}{
 		{
 			name:          "[正常系] 正しくルーティングを登録できる",
 			apiKey:        targetKey,
 			path:          "test",
-			forwardURL:    "localhost:3000/test",
+			forwardURL:    "http://localhost/test",
 			checkHgetArgs: []string{targetKey, "test"},
-			checkHgetResp: "localhost:3000/test",
+			checkHgetResp: "http://localhost/test",
 			httpStatus:    http.StatusCreated,
+			wantResp:      "Created",
 		},
 		{
 			name:          "[異常系] 空文字列のパラメータがある場合、ルーティングを登録しない",
-			apiKey:        targetKey,
+			apiKey:        "",
 			path:          "test2",
-			forwardURL:    "",
+			forwardURL:    "http://localhost/test",
 			checkHgetArgs: []string{targetKey, "test2"},
 			checkHgetResp: "",
 			httpStatus:    http.StatusBadRequest,
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "api_key",
+						ConstraintType: "required",
+						Message:        "required field, but got empty",
+						Got:            "",
+					},
+				},
+			},
+		},
+		{
+			name:          "[異常系] forward_urlがURL schemeを満たしていないとき、ルーティングを登録しない",
+			apiKey:        targetKey,
+			path:          "test3",
+			forwardURL:    "wrong_url",
+			checkHgetArgs: []string{targetKey, "test3"},
+			checkHgetResp: "",
+			httpStatus:    http.StatusBadRequest,
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "forward_url",
+						ConstraintType: "url",
+						Message:        "input value, wrong_url, does not satisfy the format, url",
+						Got:            "wrong_url",
+					},
+				},
+			},
 		},
 	}
 
@@ -89,6 +123,23 @@ func TestPostAPIRouting(t *testing.T) {
 			val := redisClient.HGet(ctx, tt.checkHgetArgs[0], tt.checkHgetArgs[1]).Val()
 			if val != tt.checkHgetResp {
 				t.Errorf("Hget responce is wrong: want %s, got %s", tt.checkHgetResp, val)
+			}
+
+			resp, err := io.ReadAll(rw.Body)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			switch tt.wantResp.(type) {
+			case string:
+				if tt.wantResp != string(resp) {
+					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
+				}
+			case managementapi.BadRequestResp:
+				want := tt.wantResp.(managementapi.BadRequestResp)
+				testBadRequestResp(t, &want, resp)
+			default:
+				t.Errorf("type of wantResp is not unsupported")
 			}
 		})
 	}

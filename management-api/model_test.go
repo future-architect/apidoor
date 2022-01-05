@@ -5,8 +5,6 @@ import (
 
 	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
-	"gopkg.in/go-playground/validator.v8"
 )
 
 func TestSearchProductsReq_CreateParams(t *testing.T) {
@@ -15,7 +13,7 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 		input managementapi.SearchProductsReq
 		want  *managementapi.SearchProductsParams
 		// wantErr は期待されるerrorでvalidator.FieldErrorsが返る。validator.FieldErrorは出力に関わるFieldとTagのみ比較する
-		wantErr error
+		wantErr managementapi.ValidationErrors
 	}{
 		{
 			name: "パーセントエンコードされたクエリを分割して、デコードできる",
@@ -94,10 +92,42 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.Q[0]": &validator.FieldError{
-					Field: "Q[0]",
-					Tag:   "ne",
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "q",
+					ConstraintType: "required",
+					Message:        "required field, but got empty",
+					Got:            "",
+				},
+			},
+		},
+		{
+			name: "クエリに検索語に空文字列がある",
+			input: managementapi.SearchProductsReq{
+				Q: "abc.",
+			},
+			want: nil,
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "q[1]",
+					ConstraintType: "ne",
+					Message:        "input value is , but it must be not equal to ",
+					Got:            "",
+				},
+			},
+		},
+		{
+			name: "クエリがURL encodedとして不正",
+			input: managementapi.SearchProductsReq{
+				Q: "a%g3bc",
+			},
+			want: nil,
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "q",
+					ConstraintType: "url_encoded",
+					Message:        "input value, a%g3bc, does not satisfy the format, url_encoded",
+					Got:            "a%g3bc",
 				},
 			},
 		},
@@ -111,10 +141,13 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.TargetFields[1]": &validator.FieldError{
-					Field: "TargetFields[1]",
-					Tag:   "eq|eq|eq|eq",
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "target_fields[1]",
+					ConstraintType: "enum",
+					Message:        "input value is wrong, but it must be one of the following values: [all name description source]",
+					Enum:           []string{"all", "name", "description", "source"},
+					Got:            "wrong",
 				},
 			},
 		},
@@ -128,10 +161,13 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.PatternMatch": &validator.FieldError{
-					Field: "PatternMatch",
-					Tag:   "eq|eq",
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "pattern_match",
+					ConstraintType: "enum",
+					Message:        "input value is wrong, but it must be one of the following values: [exact partial]",
+					Enum:           []string{"exact", "partial"},
+					Got:            "wrong",
 				},
 			},
 		},
@@ -145,10 +181,13 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: validator.ValidationErrors{
-				"SearchProductsParams.Limit": &validator.FieldError{
-					Field: "Limit",
-					Tag:   "lte",
+			wantErr: managementapi.ValidationErrors{
+				{
+					Field:          "limit",
+					ConstraintType: "lte",
+					Message:        "input value is 101, but it must be less than or equal to 100",
+					Lte:            "100",
+					Got:            101,
 				},
 			},
 		},
@@ -160,11 +199,27 @@ func TestSearchProductsReq_CreateParams(t *testing.T) {
 			if diff := cmp.Diff(tt.want, resp); diff != "" {
 				t.Errorf("retruned struct differ:\n%s", diff)
 			}
-			if diff := cmp.Diff(tt.wantErr, err,
-				cmpopts.IgnoreFields(validator.FieldError{}, "FieldNamespace", "NameNamespace",
-					"Name", "Kind", "ActualTag", "Type", "Param", "Value")); diff != "" {
-				t.Errorf("returned error differ:\n%s", diff)
+
+			if err == nil {
+				if tt.wantErr != nil {
+					t.Errorf("returned error is nil, but expected error is not nil: %v", tt.wantErr)
+				}
+				return
 			}
+			testValidateErrors(t, tt.wantErr, err)
 		})
 	}
+}
+
+func testValidateErrors(t *testing.T, want managementapi.ValidationErrors, got error) {
+	gotErr, ok := got.(managementapi.ValidationErrors)
+	if !ok {
+		t.Errorf("return error is not validator.ValidationErrors, got: %v", got)
+		return
+	}
+
+	if diff := cmp.Diff(want, gotErr); diff != "" {
+		t.Errorf("ValidationErrors differ:\n%v", diff)
+	}
+
 }
