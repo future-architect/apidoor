@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"github.com/future-architect/apidoor/gateway"
 	"github.com/future-architect/apidoor/gateway/datasource/redis"
@@ -9,6 +10,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+var (
+	updateDBInterval = 10 * time.Second
 )
 
 // gateway entry point @localhost
@@ -20,7 +28,7 @@ func main() {
 	}
 
 	// open log file
-	file, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0200)
+	file, err := os.OpenFile(logPath, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -31,11 +39,29 @@ func main() {
 	defer writer.Flush()
 
 	h := gateway.DefaultHandler{
-		Appender: logger.CSVAppender{
+		Appender: &logger.CSVAppender{
 			Writer: writer,
 		},
 		DataSource: redis.New(),
 	}
+
+	ctx := context.Background()
+
+	// update access logging db
+	routineDone := make(chan bool)
+	routineKill := make(chan bool)
+	go logger.UpdateDBRoutine(ctx, h.Appender, updateDBInterval, routineDone, routineKill)
+	defer cleanupUpdateDBTask(routineDone, routineKill)
+
+	// capturing keyboard interrupt
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		log.Println("keyboard interrupt occurs")
+		cleanupUpdateDBTask(routineDone, routineKill)
+		os.Exit(2)
+	}()
 
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
@@ -53,4 +79,10 @@ func main() {
 	if err := s.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
+
+}
+
+func cleanupUpdateDBTask(done, kill chan bool) {
+	kill <- true
+	_ = <-done
 }
