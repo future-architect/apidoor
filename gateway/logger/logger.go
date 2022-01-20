@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/csv"
 	"errors"
+	"github.com/Songmu/flextime"
 	"io"
 	"log"
 	"net/http"
@@ -21,8 +22,8 @@ type Appender interface {
 	Do(key, path string, r *http.Request) error
 }
 
-func UpdateDBRoutine(ctx context.Context, appender Appender, interval time.Duration, done, kill chan bool) {
-	ticker := time.NewTicker(interval)
+func UpdateDBRoutine(ctx context.Context, appender Appender, interval time.Duration, kill, finish chan bool) {
+	ticker := flextime.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {
@@ -30,19 +31,25 @@ func UpdateDBRoutine(ctx context.Context, appender Appender, interval time.Durat
 			appender.UpdateDB(ctx)
 		case <-kill:
 			appender.UpdateDB(ctx)
-			done <- true
+			finish <- true
 			return
 		}
 	}
 }
 
-type DefaultAppender struct {
-	Writer io.Writer
+func CleanupUpdateDBTask(kill, finish chan bool) {
+	kill <- true
+	<-finish
 }
 
-func (a DefaultAppender) Do(key, path string, r *http.Request) error {
-	record := make([]string, 0, len(logOptionPattern))
-	for _, logOption := range logOptionPattern {
+type DefaultAppender struct {
+	Writer   io.Writer
+	LogItems LogItems
+}
+
+func (a *DefaultAppender) Do(key, path string, r *http.Request) error {
+	record := make([]string, 0, len(LogOptionPattern))
+	for _, logOption := range LogOptionPattern {
 		logOption(&record, key, path, r)
 	}
 
@@ -52,8 +59,13 @@ func (a DefaultAppender) Do(key, path string, r *http.Request) error {
 	return err
 }
 
-func (a DefaultAppender) UpdateDB(ctx context.Context) {
-	// TODO: impl operate db
+func (a *DefaultAppender) UpdateDB(ctx context.Context) {
+	logItems := a.LogItems.ReadAndDeleteAll()
+	for _, item := range logItems {
+		if err := db.postAccessLogDB(ctx, item); err != nil {
+			log.Printf("putting log info, %v, failed: %v", item, err)
+		}
+	}
 }
 
 type CSVAppender struct {
@@ -62,9 +74,16 @@ type CSVAppender struct {
 	LogItems LogItems
 }
 
+func NewCSVAppender(writer *csv.Writer) CSVAppender {
+	return CSVAppender{
+		Writer:   writer,
+		LogItems: NewLogItems(),
+	}
+}
+
 func (a *CSVAppender) Do(key, path string, r *http.Request) error {
-	record := make([]string, 0, len(logOptionPattern))
-	for _, logOption := range logOptionPattern {
+	record := make([]string, 0, len(LogOptionPattern))
+	for _, logOption := range LogOptionPattern {
 		logOption(&record, key, path, r)
 	}
 	logItem, err := NewLogItem(record)
@@ -85,9 +104,9 @@ func (a *CSVAppender) UpdateDB(ctx context.Context) {
 }
 
 type LogItem struct {
-	TimeStamp string
-	Key       string
-	Path      string
+	TimeStamp string `dynamo:"timestamp"`
+	Key       string `dynamo:"api_key"`
+	Path      string `dynamo:"path"`
 }
 
 func NewLogItem(record []string) (LogItem, error) {
@@ -106,6 +125,12 @@ type LogItems struct {
 	Items []LogItem
 }
 
+func NewLogItems() LogItems {
+	return LogItems{
+		Items: make([]LogItem, 0),
+	}
+}
+
 func (li *LogItems) Append(item LogItem) {
 	li.Lock()
 	defer li.Unlock()
@@ -119,5 +144,6 @@ func (li *LogItems) ReadAndDeleteAll() []LogItem {
 	for i, v := range li.Items {
 		items[i] = v
 	}
+	li.Items = li.Items[:0]
 	return items
 }

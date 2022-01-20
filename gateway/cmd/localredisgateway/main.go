@@ -48,10 +48,10 @@ func main() {
 	ctx := context.Background()
 
 	// update access logging db
-	routineDone := make(chan bool)
 	routineKill := make(chan bool)
-	go logger.UpdateDBRoutine(ctx, h.Appender, updateDBInterval, routineDone, routineKill)
-	defer cleanupUpdateDBTask(routineDone, routineKill)
+	routineFinish := make(chan bool)
+	go logger.UpdateDBRoutine(ctx, h.Appender, updateDBInterval, routineKill, routineFinish)
+	defer logger.CleanupUpdateDBTask(routineKill, routineFinish)
 
 	// capturing keyboard interrupt
 	c := make(chan os.Signal)
@@ -59,7 +59,7 @@ func main() {
 	go func() {
 		<-c
 		log.Println("keyboard interrupt occurs")
-		cleanupUpdateDBTask(routineDone, routineKill)
+		logger.CleanupUpdateDBTask(routineKill, routineFinish)
 		os.Exit(2)
 	}()
 
@@ -80,9 +80,4 @@ func main() {
 		log.Fatal(err)
 	}
 
-}
-
-func cleanupUpdateDBTask(done, kill chan bool) {
-	kill <- true
-	_ = <-done
 }

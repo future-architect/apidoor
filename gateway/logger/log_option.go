@@ -36,7 +36,7 @@ func HeaderElement(name string) LogOption {
 	}
 }
 
-var logOptionPattern = DefaultLogPattern()
+var LogOptionPattern = DefaultLogPattern()
 
 func DefaultLogPattern() []LogOption {
 	// check log pattern

@@ -133,7 +133,7 @@ func TestHandle(t *testing.T) {
 	}
 
 	h := DefaultHandler{
-		Appender: logger.DefaultAppender{
+		Appender: &logger.DefaultAppender{
 			Writer: os.Stdout,
 		},
 		DataSource: dbMock{},
