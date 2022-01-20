@@ -37,7 +37,7 @@ func New() *DataSource {
 		log.Fatal("missing DYNAMO_TABLE_API_FORWARDING env")
 	}
 
-	dbEndpoint := os.Getenv("DYNAMO_ENDPOINT")
+	dbEndpoint := os.Getenv("DYNAMO_DATA_SOURCE_ENDPOINT")
 	if dbEndpoint != "" {
 		return &DataSource{
 			client: dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
