@@ -19,8 +19,11 @@ type Field struct {
 	Template      URITemplate
 	Path          URITemplate
 	ForwardSchema string
-	Num           int
-	Max           interface{}
+	// Num represents the recent number of api calls.
+	Num int
+	// Max represents the maximum api call limit if Max's type is int.
+	// If it is "-", the number of the api calls has no limit.
+	Max interface{}
 }
 
 type Fields []Field

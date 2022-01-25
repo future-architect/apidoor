@@ -1,0 +1,79 @@
+{
+  "access_log": [
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key1"
+          },
+          "timestamp": {
+            "S": "2020-12-14T06:00:00Z"
+          },
+          "path": {
+            "S": "api/test"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key1"
+          },
+          "timestamp": {
+            "S": "2020-12-13T06:00:00Z"
+          },
+          "path": {
+            "S": "api/test"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key1"
+          },
+          "timestamp": {
+            "S": "2020-11-14T06:00:00Z"
+          },
+          "path": {
+            "S": "api/test"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key2"
+          },
+          "timestamp": {
+            "S": "2020-12-14T08:00:00Z"
+          },
+          "path": {
+            "S": "api/test"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key1"
+          },
+          "timestamp": {
+            "S": "2020-12-14T09:00:00Z"
+          },
+          "path": {
+            "S": "api/dummy"
+          }
+        }
+      }
+    }
+  ]
+}
