@@ -30,6 +30,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// get all apis linked with the api key
 	fields, err := h.DataSource.GetFields(r.Context(), apikey)
 	if err != nil {
 		log.Print(err.Error())
@@ -41,6 +42,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// look up and check the path
 	path, err := fields.URI(r.URL.Path)
 	if err != nil {
 		log.Print(err.Error())

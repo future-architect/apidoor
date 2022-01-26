@@ -3,10 +3,15 @@ package redis
 import (
 	"context"
 	"fmt"
+	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/future-architect/apidoor/gateway/model"
 	"github.com/go-redis/redis/v8"
 	"os"
 	"strings"
+)
+
+var (
+	defaultAPICallMaxLimit = 100
 )
 
 type DataSource struct {
@@ -53,15 +58,22 @@ func (rd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 			// スキーマが存在しない(tcpなどのスキーマは非対応)
 			schema = "http"
 		}
+		path := model.NewURITemplate(pathValue)
+		template := model.NewURITemplate(hk)
 
-		fmt.Printf("%+v\n", model.NewURITemplate(pathValue))
+		fmt.Printf("%+v\n", path)
+
+		count, err := logger.APICounter.GetCount(ctx, key, template)
+		if err != nil {
+			return nil, fmt.Errorf("fetch fields error: %w", err)
+		}
 
 		fields = append(fields, model.Field{
-			Template:      model.NewURITemplate(hk),
+			Template:      template,
 			ForwardSchema: schema,
-			Path:          model.NewURITemplate(pathValue),
-			Num:           5,  // TODO
-			Max:           10, // TODO
+			Path:          path,
+			Num:           count,
+			Max:           defaultAPICallMaxLimit, // TODO: look up api limit
 		})
 	}
 

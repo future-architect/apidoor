@@ -7,6 +7,7 @@ import (
 	"github.com/guregu/dynamo"
 	"log"
 	"os"
+	"time"
 )
 
 type accessLogDB struct {
@@ -45,4 +46,12 @@ func init() {
 func (ad accessLogDB) postAccessLogDB(ctx context.Context, item LogItem) error {
 	return ad.client.Table(ad.accessLogTable).
 		Put(item).RunWithContext(ctx)
+}
+
+func (ad accessLogDB) countAccessLogDB(ctx context.Context, apikey, path string, startAt time.Time) (int64, error) {
+	return ad.client.Table(ad.accessLogTable).
+		Get("api_key", apikey).
+		Range("timestamp", dynamo.GreaterOrEqual, startAt).
+		Filter("'path' = ?", path).
+		CountWithContext(ctx)
 }

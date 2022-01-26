@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/csv"
 	"errors"
-	"github.com/Songmu/flextime"
 	"io"
 	"log"
 	"net/http"
@@ -23,7 +22,7 @@ type Appender interface {
 }
 
 func UpdateDBRoutine(ctx context.Context, appender Appender, interval time.Duration, kill, finish chan bool) {
-	ticker := flextime.NewTicker(interval)
+	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 	for {
 		select {

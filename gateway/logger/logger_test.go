@@ -118,14 +118,12 @@ func TestUpdateDBRoutine(t *testing.T) {
 		t.Errorf("append access log %+v failed: %v", inputAccesses[0], err)
 	}
 
-	//check the process has not put items
-	testAccessLogDBResult(t, []logger.LogItem{})
+	testAccessLogDBResult(t, "the process has not put items", []logger.LogItem{})
 
 	// updating the db occurs during the sleep
 	time.Sleep(7 * time.Second)
 
-	//check the process has put an item
-	testAccessLogDBResult(t, []logger.LogItem{
+	testAccessLogDBResult(t, "the process has put an item", []logger.LogItem{
 		{
 			Key:  inputAccesses[0].key,
 			Path: inputAccesses[0].path,
@@ -136,43 +134,42 @@ func TestUpdateDBRoutine(t *testing.T) {
 		t.Errorf("append access log %+v failed: %v", inputAccesses[1], err)
 	}
 
-	//check the process has not put the second item
-	testAccessLogDBResult(t, []logger.LogItem{
-		{
-			Key:  inputAccesses[0].key,
-			Path: inputAccesses[0].path,
-		},
-	})
+	testAccessLogDBResult(t, "the process has not put the second item",
+		[]logger.LogItem{
+			{
+				Key:  inputAccesses[0].key,
+				Path: inputAccesses[0].path,
+			},
+		})
 
 	// updating the db occurs during the sleep
 	time.Sleep(5 * time.Second)
 
-	//check the process has put the second item and duplicate putting an item has not occurred
-	testAccessLogDBResult(t, []logger.LogItem{
-		{
-			Key:  inputAccesses[1].key,
-			Path: inputAccesses[1].path,
-		},
-		{
-			Key:  inputAccesses[0].key,
-			Path: inputAccesses[0].path,
-		},
-	})
+	testAccessLogDBResult(t, "the process has put the second item and duplicate putting an item has not occurred",
+		[]logger.LogItem{
+			{
+				Key:  inputAccesses[1].key,
+				Path: inputAccesses[1].path,
+			},
+			{
+				Key:  inputAccesses[0].key,
+				Path: inputAccesses[0].path,
+			},
+		})
 }
 
-func testAccessLogDBResult(t *testing.T, wantResult []logger.LogItem) {
+func testAccessLogDBResult(t *testing.T, name string, wantResult []logger.LogItem) {
 	result := scanAccessLog(t)
 
 	if len(result) < 1 {
 		if len(wantResult) >= 1 {
-			t.Errorf("scan access log result is empty, but want: %+v", wantResult)
+			t.Errorf("check %v: scan access log result is empty, but want: %+v", name, wantResult)
 		}
 		return
 	}
 	if diff := cmp.Diff(result, wantResult, cmpopts.IgnoreFields(logger.LogItem{}, "TimeStamp")); diff != "" {
-		t.Errorf("access log scan result differs:\n%v", diff)
+		t.Errorf("check %v: access log scan result differs:\n%v", name, diff)
 	}
-
 }
 
 func scanAccessLog(t *testing.T) []logger.LogItem {
