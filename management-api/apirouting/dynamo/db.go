@@ -38,7 +38,7 @@ func New() *APIRouting {
 }
 
 func (ar APIRouting) PostRouting(ctx context.Context, apikey, path, forwardURL string) error {
-	routing := apiRouting{
+	routing := routing{
 		Apikey:     apikey,
 		Path:       path,
 		ForwardURL: forwardURL,
@@ -47,7 +47,7 @@ func (ar APIRouting) PostRouting(ctx context.Context, apikey, path, forwardURL s
 		Put(routing).RunWithContext(ctx)
 }
 
-type apiRouting struct {
+type routing struct {
 	Apikey     string `dynamo:"api_key"`
 	Path       string `dynamo:"path"`
 	ForwardURL string `dynamo:"forward_url"`

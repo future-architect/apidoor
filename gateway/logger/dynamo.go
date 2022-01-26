@@ -30,7 +30,6 @@ func init() {
 		db = accessLogDB{
 			client: dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
 				SharedConfigState: session.SharedConfigEnable,
-				Profile:           "local",
 				Config:            aws.Config{Endpoint: aws.String(dbEndpoint)},
 			}))),
 			accessLogTable: accessLogTable,

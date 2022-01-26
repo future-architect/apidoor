@@ -19,11 +19,15 @@ services:
             - DB_TYPE=REDIS
             - REDIS_HOST=redis
             - REDIS_PORT=6379
-            - DYNAMO_ACCESS_LOG_ENDPOINT=http://localhost:4566
+            - DYNAMO_ACCESS_LOG_ENDPOINT=http://localstack:4566
             - DYNAMO_TABLE_ACCESS_LOG=access_log
             - API_DB_TYPE=DYNAMO
-            - DYNAMO_DATA_SOURCE_ENDPOINT=http://localhost:4566
-            - DYNAMO_TABLE_API_ROUTING=access_log
+            - DYNAMO_DATA_SOURCE_ENDPOINT=http://localstack:4566
+            - DYNAMO_TABLE_API_ROUTING=api_routing
+            - AWS_ACCESS_KEY_ID=dummy
+            - AWS_SECRET_ACCESS_KEY=dummy
+            - AWS_DEFAULT_REGION=ap-northeast-1
+            - AWS_DEFAULT_OUTPUT=json
             - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
@@ -50,8 +54,12 @@ services:
             - DATABASE_NAME=root
             - DATABASE_SSLMODE=disable
             - API_DB_TYPE=DYNAMO
-            - DYNAMO_ENDPOINT=http://localhost:4566
-            - DYNAMO_TABLE_API_ROUTING=access_log
+            - DYNAMO_ENDPOINT=http://localstack:4566
+            - DYNAMO_TABLE_API_ROUTING=api_routing
+            - AWS_ACCESS_KEY_ID=dummy
+            - AWS_SECRET_ACCESS_KEY=dummy
+            - AWS_DEFAULT_REGION=ap-northeast-1
+            - AWS_DEFAULT_OUTPUT=json
     test-server:
         build: ./quickstart
         container_name: test-server
