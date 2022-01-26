@@ -3,15 +3,10 @@ package redis
 import (
 	"context"
 	"fmt"
-	"github.com/future-architect/apidoor/gateway/logger"
+	"github.com/future-architect/apidoor/gateway/datasource"
 	"github.com/future-architect/apidoor/gateway/model"
 	"github.com/go-redis/redis/v8"
 	"os"
-	"strings"
-)
-
-var (
-	defaultAPICallMaxLimit = 100
 )
 
 type DataSource struct {
@@ -46,35 +41,13 @@ func (rd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 
 		pathValue := rd.client.HGet(ctx, key, hk).Val()
 
-		var schema string
-		if strings.HasPrefix(pathValue, "http://") {
-			schema = "http"
-			pathValue = strings.Replace(pathValue, "http://", "", 1)
-			fmt.Println("Redis After:", pathValue)
-		} else if strings.HasPrefix(pathValue, "https://") {
-			schema = "https"
-			pathValue = strings.Replace(pathValue, "https://", "", 1)
-		} else {
-			// スキーマが存在しない(tcpなどのスキーマは非対応)
-			schema = "http"
-		}
-		path := model.NewURITemplate(pathValue)
-		template := model.NewURITemplate(hk)
-
-		fmt.Printf("%+v\n", path)
-
-		count, err := logger.APICounter.GetCount(ctx, key, template)
+		field, err := datasource.CreateField(ctx, key, hk, pathValue)
 		if err != nil {
-			return nil, fmt.Errorf("fetch fields error: %w", err)
+			return nil, fmt.Errorf("fetch field, key = %v, hk = %v, forwardURL = %v, error: %w",
+				key, hk, pathValue, err)
 		}
 
-		fields = append(fields, model.Field{
-			Template:      template,
-			ForwardSchema: schema,
-			Path:          path,
-			Num:           count,
-			Max:           defaultAPICallMaxLimit, // TODO: look up api limit
-		})
+		fields = append(fields, field)
 	}
 
 	if len(fields) == 0 {

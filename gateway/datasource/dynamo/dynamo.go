@@ -5,36 +5,28 @@ import (
 	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/future-architect/apidoor/gateway/datasource"
 	"github.com/future-architect/apidoor/gateway/model"
 	"github.com/guregu/dynamo"
 	"log"
 	"os"
 )
 
-type APIForwarding struct {
+type APIRouting struct {
 	APIKey     string `dynamo:"api_key"`
 	Path       string `dynamo:"path"`
 	ForwardURL string `dynamo:"forward_url"`
 }
 
-func (af APIForwarding) Field() model.Field {
-	return model.Field{
-		Template: model.NewURITemplate(af.Path),
-		Path:     model.NewURITemplate(af.ForwardURL),
-		Num:      5,
-		Max:      10,
-	}
-}
-
 type DataSource struct {
-	client             *dynamo.DB
-	apiForwardingTable string
+	client          *dynamo.DB
+	apiRoutingTable string
 }
 
 func New() *DataSource {
-	apiForwardingTable := os.Getenv("DYNAMO_TABLE_API_FORWARDING")
-	if apiForwardingTable == "" {
-		log.Fatal("missing DYNAMO_TABLE_API_FORWARDING env")
+	apiRoutingTable := os.Getenv("DYNAMO_TABLE_API_ROUTING")
+	if apiRoutingTable == "" {
+		log.Fatal("missing DYNAMO_TABLE_API_ROUTING env")
 	}
 
 	dbEndpoint := os.Getenv("DYNAMO_DATA_SOURCE_ENDPOINT")
@@ -44,22 +36,21 @@ func New() *DataSource {
 				SharedConfigState: session.SharedConfigEnable,
 				Config:            aws.Config{Endpoint: aws.String(dbEndpoint)},
 			}))),
-			apiForwardingTable: apiForwardingTable,
+			apiRoutingTable: apiRoutingTable,
 		}
 	}
 
 	return &DataSource{
-		client:             dynamo.New(session.Must(session.NewSession())),
-		apiForwardingTable: apiForwardingTable,
+		client:          dynamo.New(session.Must(session.NewSession())),
+		apiRoutingTable: apiRoutingTable,
 	}
-
 }
 
 func (dd DataSource) GetFields(ctx context.Context, key string) (model.Fields, error) {
-	var resp []*APIForwarding
-	err := dd.client.Table(dd.apiForwardingTable).
+	var routingList []*APIRouting
+	err := dd.client.Table(dd.apiRoutingTable).
 		Get("api_key", key).
-		AllWithContext(ctx, &resp)
+		AllWithContext(ctx, &routingList)
 	if err != nil {
 		if err == dynamo.ErrNotFound {
 			return nil, model.ErrUnauthorizedRequest
@@ -67,9 +58,14 @@ func (dd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 		return nil, &model.MyError{Message: fmt.Sprintf("internal server error: %v", err)}
 	}
 
-	fields := make([]model.Field, 0, len(resp))
-	for _, forwarding := range resp {
-		fields = append(fields, forwarding.Field())
+	fields := make([]model.Field, 0, len(routingList))
+	for _, routing := range routingList {
+		field, err := datasource.CreateField(ctx, routing.APIKey, routing.Path, routing.ForwardURL)
+		if err != nil {
+			return nil, fmt.Errorf("fetch field, key = %v, hk = %v, forwardURL = %v, error: %w",
+				routing.APIKey, routing.Path, routing.ForwardURL, err)
+		}
+		fields = append(fields, field)
 	}
 
 	return fields, nil

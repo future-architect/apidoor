@@ -3,6 +3,7 @@ package managementapi
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/future-architect/apidoor/managementapi/apirouting"
 	"io"
 	"log"
 	"net/http"
@@ -53,7 +54,7 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := ApiDBDriver.PostRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
+	if err := apirouting.ApiDBDriver.PostRouting(r.Context(), req.ApiKey, req.Path, req.ForwardURL); err != nil {
 		log.Printf("post api routing db error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}
