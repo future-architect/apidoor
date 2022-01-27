@@ -80,7 +80,7 @@ func TestUpdateLog(t *testing.T) {
 
 func TestUpdateDBRoutine(t *testing.T) {
 	gateway.Setup(t,
-		`aws dynamodb --profile local --endpoint-url http://localhost:4566 create-table --cli-input-json file://../db_table/access_log_table.json`,
+		`aws dynamodb --profile local --endpoint-url http://localhost:4566 create-table --cli-input-json file://../../dynamo_table/access_log_table.json`,
 	)
 	t.Cleanup(func() {
 		gateway.Teardown(t,

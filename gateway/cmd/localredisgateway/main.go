@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/csv"
 	"github.com/future-architect/apidoor/gateway"
+	"github.com/future-architect/apidoor/gateway/datasource"
+	"github.com/future-architect/apidoor/gateway/datasource/dynamo"
 	"github.com/future-architect/apidoor/gateway/datasource/redis"
 	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/go-chi/chi/v5"
@@ -38,11 +40,20 @@ func main() {
 	writer := csv.NewWriter(file)
 	defer writer.Flush()
 
+	//set up api db
+	var dataSource datasource.DataSource
+	apiDBType := os.Getenv("API_DB_TYPE")
+	if apiDBType == "REDIS" {
+		dataSource = redis.New()
+	} else {
+		dataSource = dynamo.New()
+	}
+
 	h := gateway.DefaultHandler{
 		Appender: &logger.CSVAppender{
 			Writer: writer,
 		},
-		DataSource: redis.New(),
+		DataSource: dataSource,
 	}
 
 	ctx := context.Background()

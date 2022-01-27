@@ -19,6 +19,15 @@ services:
             - DB_TYPE=REDIS
             - REDIS_HOST=redis
             - REDIS_PORT=6379
+            - DYNAMO_ACCESS_LOG_ENDPOINT=http://localstack:4566
+            - DYNAMO_TABLE_ACCESS_LOG=access_log
+            - API_DB_TYPE=DYNAMO
+            - DYNAMO_DATA_SOURCE_ENDPOINT=http://localstack:4566
+            - DYNAMO_TABLE_API_ROUTING=api_routing
+            - AWS_ACCESS_KEY_ID=dummy
+            - AWS_SECRET_ACCESS_KEY=dummy
+            - AWS_DEFAULT_REGION=ap-northeast-1
+            - AWS_DEFAULT_OUTPUT=json
             - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
@@ -44,9 +53,13 @@ services:
             - DATABASE_PASSWORD=password
             - DATABASE_NAME=root
             - DATABASE_SSLMODE=disable
-            - API_DB_TYPE=REDIS
-            - REDIS_HOST=redis
-            - REDIS_PORT=6379
+            - API_DB_TYPE=DYNAMO
+            - DYNAMO_ENDPOINT=http://localstack:4566
+            - DYNAMO_TABLE_API_ROUTING=api_routing
+            - AWS_ACCESS_KEY_ID=dummy
+            - AWS_SECRET_ACCESS_KEY=dummy
+            - AWS_DEFAULT_REGION=ap-northeast-1
+            - AWS_DEFAULT_OUTPUT=json
     test-server:
         build: ./quickstart
         container_name: test-server
@@ -63,6 +76,8 @@ services:
             - POSTGRES_INITDB_ARGS=--encoding=UTF-8
         ports:
             - "5432:5432"
+        volumes:
+            - ./sql:/docker-entrypoint-initdb.d
 #        volumes:
 #            - ./init:/docker-entrypoint-initdb.d
 #            - /etc/localtime:/etc/localtime:ro
@@ -92,3 +107,6 @@ services:
         environment:
             - SERVICES=dynamodb
             - DEFAULT_REGION=ap-northeast-1
+        volumes:
+            -   ./localstack/init_scripts:/docker-entrypoint-initaws.d
+            -   ./dynamo_table:/tmp/dynamo_table

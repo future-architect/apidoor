@@ -1,4 +1,4 @@
-package apiredis
+package redis
 
 import (
 	"context"
@@ -7,15 +7,15 @@ import (
 	"os"
 )
 
-type RedisDB struct {
+type APIRouting struct {
 	client *redis.Client
 }
 
-func NewRedisDB() *RedisDB {
+func New() *APIRouting {
 	host := os.Getenv("REDIS_HOST")
 	port := os.Getenv("REDIS_PORT")
 	addr := fmt.Sprintf("%s:%s", host, port)
-	return &RedisDB{
+	return &APIRouting{
 		client: redis.NewClient(&redis.Options{
 			Addr:     addr,
 			Password: "",
@@ -24,7 +24,7 @@ func NewRedisDB() *RedisDB {
 	}
 }
 
-func (rd RedisDB) PostRouting(ctx context.Context, apikey, path, forwardURL string) error {
-	err := rd.client.HSet(ctx, apikey, path, forwardURL).Err()
+func (ar APIRouting) PostRouting(ctx context.Context, apikey, path, forwardURL string) error {
+	err := ar.client.HSet(ctx, apikey, path, forwardURL).Err()
 	return err
 }

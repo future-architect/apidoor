@@ -1,12 +1,12 @@
-package managementapi
+package apirouting
 
 import (
 	"context"
 	"fmt"
+	"github.com/future-architect/apidoor/managementapi/apirouting/dynamo"
+	"github.com/future-architect/apidoor/managementapi/apirouting/redis"
 	"log"
 	"os"
-
-	"github.com/future-architect/apidoor/managementapi/apiredis"
 )
 
 var ApiDBDriver APIDB
@@ -24,11 +24,14 @@ type APIDB interface {
 }
 
 func createDBDriver(dbType string) (APIDB, error) {
-	if dbType == "REDIS" {
-		return apiredis.NewRedisDB(), nil
-	} else if dbType == "" {
-		return apiredis.NewRedisDB(), nil
-	} else {
+	switch dbType {
+	case "REDIS":
+		return redis.New(), nil
+	case "DYNAMO":
+		fallthrough
+	case "":
+		return dynamo.New(), nil
+	default:
 		return nil, fmt.Errorf("unsupported DB type: %s", dbType)
 	}
 }
