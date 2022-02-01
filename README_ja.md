@@ -39,13 +39,31 @@ docker compose build \
 # Launch apidoor services
 docker compose up -d
 
-# Set your first API routing through management-api
+# Set your first API routing through management-api, and check apidoor works
+# Case 1: original api
 curl -X POST -H "Content-Type: application/json" \
 -d '{"api_key": "key", "path": "test", "forward_url": "http://test-server:3333/welcome"}' localhost:3001/mgmt/api
 
-# Check apidoor works
-curl -H "Content-Type: application/json" -H "Authorization:key" localhost:3000/test
+curl -H "Content-Type: application/json" -H "X-Apidoor-Authorization:key" localhost:3000/test
 # welcome to apidoor!
+
+# Case 2: external api using https scheme with query parameter
+curl -X POST -H "Content-Type: application/json" \
+-d '{"api_key": "key", "path": "github/search", "forward_url": "https://api.github.com/search/repositories"}'\
+localhost:3001/mgmt/api
+
+curl -H "Content-Type: application/json" -H "X-Apidoor-Authorization:key" localhost:3000/github/search?q=apidoor
+# <search result>
+
+# Case 3: external api with access token
+# You must generate your GitHub's access token allowing to access repo:status in advance
+curl -X POST -H "Content-Type: application/json" \
+-d '{"api_key": "key", "path": "github/user/repos", "forward_url": "https://api.github.com/user/repos"}' \
+localhost:3001/mgmt/api
+
+curl -H "Content-Type: application/json" -H "X-Apidoor-Authorization:key" \
+-H "Authorization: token <your GitHub's access token>" localhost:3000/github/user/repos
+# <your repositories' status>
 
 # Check log file is provided
 cat ./log/log.csv

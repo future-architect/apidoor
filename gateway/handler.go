@@ -23,7 +23,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	apikey := r.Header.Get("Authorization")
+	apikey := r.Header.Get("X-Apidoor-Authorization")
 	if apikey == "" {
 		log.Print("No authorization key")
 		http.Error(w, "no authorization request header", http.StatusBadRequest)
@@ -97,7 +97,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 func setRequestHeader(src, dist *http.Request) {
 	dist.Header = src.Header
-	dist.Header.Del("Authorization")
+	dist.Header.Del("X-Apidoor-Authorization")
 	dist.Header.Del("Connection")
 	dist.Header.Del("Cookie")
 }
