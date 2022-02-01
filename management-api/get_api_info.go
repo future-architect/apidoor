@@ -8,21 +8,21 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// GetProducts godoc
-// @Summary Get list of products
+// GetAPIInfo godoc
+// @Summary Get list of API info.
 // @Description Get list of APIs and its information
 // @produce json
-// @Success 200 {object} Products
-// @Router /products [get]
-func GetProducts(w http.ResponseWriter, r *http.Request) {
-	list, err := db.getProducts(r.Context())
+// @Success 200 {object} APIInfoList
+// @Router /api [get]
+func GetAPIInfo(w http.ResponseWriter, r *http.Request) {
+	list, err := db.getAPIInfo(r.Context())
 	if err != nil {
-		log.Printf("execute get products from db error: %v", err)
+		log.Printf("execute get apiinfo from db error: %v", err)
 		http.Error(w, "error occurs in database", http.StatusInternalServerError)
 		return
 	}
 
-	res, err := json.Marshal(Products{Products: list})
+	res, err := json.Marshal(APIInfoList{List: list})
 	if err != nil {
 		log.Print("error occurs while reading response")
 		http.Error(w, "error occur in database", http.StatusInternalServerError)

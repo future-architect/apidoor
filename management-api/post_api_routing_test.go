@@ -108,7 +108,7 @@ func TestPostAPIRouting(t *testing.T) {
 				t.Errorf("faild creating body: %v", err)
 				return
 			}
-			r := httptest.NewRequest(http.MethodPost, "localhost:3001/mgmt/api/", bytes.NewReader(body))
+			r := httptest.NewRequest(http.MethodPost, "localhost:3001/mgmt/routing", bytes.NewReader(body))
 			r.Header.Set("Content-Type", "application/json")
 			w := httptest.NewRecorder()
 			managementapi.PostAPIRouting(w, r)

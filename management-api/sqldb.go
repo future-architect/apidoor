@@ -60,15 +60,15 @@ func NewSqlDB() (*sqlDB, error) {
 	}, nil
 }
 
-func (sd sqlDB) getProducts(ctx context.Context) ([]Product, error) {
+func (sd sqlDB) getAPIInfo(ctx context.Context) ([]APIInfo, error) {
 	rows, err := sd.driver.QueryxContext(ctx, "SELECT * from apiinfo")
 	if err != nil {
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	var list []Product
+	var list []APIInfo
 	for rows.Next() {
-		var row Product
+		var row APIInfo
 
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
@@ -80,17 +80,17 @@ func (sd sqlDB) getProducts(ctx context.Context) ([]Product, error) {
 	return list, nil
 }
 
-func (sd sqlDB) postProducts(ctx context.Context, product *PostProductReq) error {
+func (sd sqlDB) postAPIInfo(ctx context.Context, info *PostAPIInfoReq) error {
 	_, err := sd.driver.NamedExecContext(ctx,
 		"INSERT INTO apiinfo(name, source, description, thumbnail, swagger_url) VALUES(:name, :source, :description, :thumbnail, :swagger_url)",
-		product)
+		info)
 	if err != nil {
 		return fmt.Errorf("sql execution error: %w", err)
 	}
 	return nil
 }
 
-func (sd sqlDB) searchProducts(ctx context.Context, params *SearchProductsParams) (*SearchProductsResp, error) {
+func (sd sqlDB) searchAPIInfo(ctx context.Context, params *SearchAPIInfoParams) (*SearchAPIInfoResp, error) {
 	var query bytes.Buffer
 	if err := searchAPISQLTemplate.Execute(&query, params); err != nil {
 		return nil, fmt.Errorf("generate SQL error: %w", err)
@@ -109,18 +109,18 @@ func (sd sqlDB) searchProducts(ctx context.Context, params *SearchProductsParams
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	list := make([]Product, 0)
+	list := make([]APIInfo, 0)
 	count := 0
 	for rows.Next() {
-		var row SearchProductsResult
+		var row SearchAPIInfoResult
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
 		}
 
-		list = append(list, row.Product)
+		list = append(list, row.APIInfo)
 		count = row.Count
 	}
-	metaData := SearchProductsMetaData{
+	metaData := SearchAPIInfoMetaData{
 		ResultSet: ResultSet{
 			Count:  count,
 			Limit:  params.Limit,
@@ -128,9 +128,9 @@ func (sd sqlDB) searchProducts(ctx context.Context, params *SearchProductsParams
 		},
 	}
 
-	return &SearchProductsResp{
-		Products:               list,
-		SearchProductsMetaData: metaData,
+	return &SearchAPIInfoResp{
+		APIList:               list,
+		SearchAPIInfoMetaData: metaData,
 	}, nil
 }
 

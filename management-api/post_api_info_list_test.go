@@ -13,7 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestPostProduct(t *testing.T) {
+func TestPostAPIInfo(t *testing.T) {
 	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
 		t.Fatal(err)
 	}
@@ -21,16 +21,16 @@ func TestPostProduct(t *testing.T) {
 	tests := []struct {
 		name           string
 		contentType    string
-		req            managementapi.PostProductReq
+		req            managementapi.PostAPIInfoReq
 		wantHttpStatus int
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
-		wantRecords []managementapi.Product
+		wantRecords []managementapi.APIInfo
 		wantResp    interface{}
 	}{
 		{
-			name:        "productを登録できる",
+			name:        "api infoを登録できる",
 			contentType: "application/json",
-			req: managementapi.PostProductReq{
+			req: managementapi.PostAPIInfoReq{
 				Name:        "Awesome API",
 				Source:      "Company1",
 				Description: "provide fantastic information.",
@@ -38,7 +38,7 @@ func TestPostProduct(t *testing.T) {
 				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusCreated,
-			wantRecords: []managementapi.Product{
+			wantRecords: []managementapi.APIInfo{
 				{
 					Name:        "Awesome API",
 					Source:      "Company1",
@@ -52,7 +52,7 @@ func TestPostProduct(t *testing.T) {
 		{
 			name:        "Fieldに空文字列がある場合は登録できない",
 			contentType: "application/json",
-			req: managementapi.PostProductReq{
+			req: managementapi.PostAPIInfoReq{
 				Name:        "",
 				Source:      "Company2",
 				Description: "provide fantastic information.",
@@ -60,7 +60,7 @@ func TestPostProduct(t *testing.T) {
 				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.Product{},
+			wantRecords:    []managementapi.APIInfo{},
 			wantResp: managementapi.BadRequestResp{
 				Message: "input validation error",
 				ValidationErrors: &managementapi.ValidationErrors{
@@ -76,7 +76,7 @@ func TestPostProduct(t *testing.T) {
 		{
 			name:        "Content-Typeがapplication/json以外の場合は登録できない",
 			contentType: "text/plain",
-			req: managementapi.PostProductReq{
+			req: managementapi.PostAPIInfoReq{
 				Name:        "wrong content-type",
 				Source:      "Company3",
 				Description: "provide fantastic information.",
@@ -84,7 +84,7 @@ func TestPostProduct(t *testing.T) {
 				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.Product{},
+			wantRecords:    []managementapi.APIInfo{},
 			wantResp: managementapi.BadRequestResp{
 				Message: `unexpected request Content-Type, it must be "application/json"`,
 			},
@@ -100,11 +100,11 @@ func TestPostProduct(t *testing.T) {
 			}
 			body := bytes.NewReader(bodyBytes)
 
-			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/product", body)
+			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/api", body)
 			r.Header.Add("Content-Type", tt.contentType)
 
 			w := httptest.NewRecorder()
-			managementapi.PostProduct(w, r)
+			managementapi.PostAPIInfo(w, r)
 
 			rw := w.Result()
 
@@ -119,13 +119,13 @@ func TestPostProduct(t *testing.T) {
 
 			rows, err := db.Queryx("SELECT * from apiinfo WHERE source=$1", tt.req.Source)
 			if err != nil {
-				t.Errorf("db get products error: %v", err)
+				t.Errorf("db get api info error: %v", err)
 				return
 			}
 
-			list := []managementapi.Product{}
+			list := []managementapi.APIInfo{}
 			for rows.Next() {
-				var row managementapi.Product
+				var row managementapi.APIInfo
 
 				if err := rows.StructScan(&row); err != nil {
 					t.Errorf("reading row error: %v", err)
@@ -135,8 +135,8 @@ func TestPostProduct(t *testing.T) {
 				list = append(list, row)
 			}
 
-			if diff := cmp.Diff(tt.wantRecords, list, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
-				t.Errorf("db get products responce differs:\n %v", diff)
+			if diff := cmp.Diff(tt.wantRecords, list, cmpopts.IgnoreFields(managementapi.APIInfo{}, "ID")); diff != "" {
+				t.Errorf("db get list of api info responce differs:\n %v", diff)
 			}
 			switch tt.wantResp.(type) {
 			case string:

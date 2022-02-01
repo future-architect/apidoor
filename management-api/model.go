@@ -27,7 +27,7 @@ type ResultSet struct {
 	Offset int `json:"offset"`
 }
 
-type Product struct {
+type APIInfo struct {
 	ID          int    `json:"id" db:"id"`
 	Name        string `json:"name" db:"name"`
 	Source      string `json:"source" db:"source"`
@@ -36,11 +36,11 @@ type Product struct {
 	SwaggerURL  string `json:"swagger_url" db:"swagger_url"`
 }
 
-type Products struct {
-	Products []Product `json:"products"`
+type APIInfoList struct {
+	List []APIInfo `json:"api_info_list"`
 }
 
-type PostProductReq struct {
+type PostAPIInfoReq struct {
 	Name        string `json:"name" db:"name" validate:"required"`
 	Source      string `json:"source" db:"source" validate:"required"`
 	Description string `json:"description" db:"description" validate:"required"`
@@ -48,7 +48,7 @@ type PostProductReq struct {
 	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required,url"`
 }
 
-type SearchProductsReq struct {
+type SearchAPIInfoReq struct {
 	Q            string `json:"q" schema:"name" validate:"required,url_encoded"`
 	TargetFields string `json:"target_fields" schema:"target_fields"`
 	PatternMatch string `json:"pattern_match" schema:"pattern_match"`
@@ -56,7 +56,7 @@ type SearchProductsReq struct {
 	Offset       int    `json:"offset" schema:"offset"`
 }
 
-func (sr SearchProductsReq) CreateParams() (*SearchProductsParams, error) {
+func (sr SearchAPIInfoReq) CreateParams() (*SearchAPIInfoParams, error) {
 	var err error
 	if err = ValidateStruct(sr); err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (sr SearchProductsReq) CreateParams() (*SearchProductsParams, error) {
 		limit = ResultLimitDefault
 	}
 
-	params := SearchProductsParams{
+	params := SearchAPIInfoParams{
 		Q:            qSplit,
 		TargetFields: targetFieldExpand,
 		PatternMatch: patternMatch,
@@ -105,21 +105,21 @@ func (sr SearchProductsReq) CreateParams() (*SearchProductsParams, error) {
 	return &params, nil
 }
 
-type SearchProductsResult struct {
-	Product
+type SearchAPIInfoResult struct {
+	APIInfo
 	Count int `db:"count"`
 }
 
-type SearchProductsMetaData struct {
+type SearchAPIInfoMetaData struct {
 	ResultSet ResultSet `json:"result_set"`
 }
 
-type SearchProductsResp struct {
-	Products               []Product              `json:"products"`
-	SearchProductsMetaData SearchProductsMetaData `json:"metadata"`
+type SearchAPIInfoResp struct {
+	APIList               []APIInfo             `json:"api_info_list"`
+	SearchAPIInfoMetaData SearchAPIInfoMetaData `json:"metadata"`
 }
 
-type SearchProductsParams struct {
+type SearchAPIInfoParams struct {
 	Q            []string `json:"q" validate:"gte=1,dive,ne="`
 	TargetFields []string `json:"target_fields" validate:"dive,eq=all|eq=name|eq=description|eq=source"`
 	PatternMatch string   `json:"pattern_match" validate:"eq=exact|eq=partial"`

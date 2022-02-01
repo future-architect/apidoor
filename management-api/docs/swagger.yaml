@@ -1,5 +1,27 @@
 basePath: /mgmt
 definitions:
+  managementapi.APIInfo:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      source:
+        type: string
+      swagger_url:
+        type: string
+      thumbnail:
+        type: string
+    type: object
+  managementapi.APIInfoList:
+    properties:
+      api_info_list:
+        items:
+          $ref: '#/definitions/managementapi.APIInfo'
+        type: array
+    type: object
   managementapi.BadRequestResp:
     properties:
       message:
@@ -9,20 +31,7 @@ definitions:
           $ref: '#/definitions/managementapi.ValidationError'
         type: array
     type: object
-  managementapi.PostAPIRoutingReq:
-    properties:
-      api_key:
-        type: string
-      forward_url:
-        type: string
-      path:
-        type: string
-    required:
-    - api_key
-    - forward_url
-    - path
-    type: object
-  managementapi.PostProductReq:
+  managementapi.PostAPIInfoReq:
     properties:
       description:
         type: string
@@ -41,6 +50,19 @@ definitions:
     - swagger_url
     - thumbnail
     type: object
+  managementapi.PostAPIRoutingReq:
+    properties:
+      api_key:
+        type: string
+      forward_url:
+        type: string
+      path:
+        type: string
+    required:
+    - api_key
+    - forward_url
+    - path
+    type: object
   managementapi.PostUserReq:
     properties:
       account_id:
@@ -56,28 +78,6 @@ definitions:
     - email_address
     - password
     type: object
-  managementapi.Product:
-    properties:
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      source:
-        type: string
-      swagger_url:
-        type: string
-      thumbnail:
-        type: string
-    type: object
-  managementapi.Products:
-    properties:
-      products:
-        items:
-          $ref: '#/definitions/managementapi.Product'
-        type: array
-    type: object
   managementapi.ResultSet:
     properties:
       count:
@@ -87,19 +87,19 @@ definitions:
       offset:
         type: integer
     type: object
-  managementapi.SearchProductsMetaData:
+  managementapi.SearchAPIInfoMetaData:
     properties:
       result_set:
         $ref: '#/definitions/managementapi.ResultSet'
     type: object
-  managementapi.SearchProductsResp:
+  managementapi.SearchAPIInfoResp:
     properties:
-      metadata:
-        $ref: '#/definitions/managementapi.SearchProductsMetaData'
-      products:
+      api_info_list:
         items:
-          $ref: '#/definitions/managementapi.Product'
+          $ref: '#/definitions/managementapi.APIInfo'
         type: array
+      metadata:
+        $ref: '#/definitions/managementapi.SearchAPIInfoMetaData'
     type: object
   managementapi.ValidationError:
     properties:
@@ -128,52 +128,25 @@ info:
   version: "1.0"
 paths:
   /api:
-    post:
-      description: Post a new API routing
-      parameters:
-      - description: routing parameters
-        in: body
-        name: api_routing
-        required: true
-        schema:
-          $ref: '#/definitions/managementapi.PostAPIRoutingReq'
+    get:
+      description: Get list of APIs and its information
       produces:
       - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/managementapi.BadRequestResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Post API routing
-  /health:
-    get:
-      description: checks whether this API works correctly or not
-      produces:
-      - text/plain
       responses:
         "200":
           description: OK
           schema:
-            type: string
-      summary: checks if API works
-  /product:
+            $ref: '#/definitions/managementapi.APIInfoList'
+      summary: Get list of API info.
     post:
       description: Get list of APIs and its information
       parameters:
       - description: api information
         in: body
-        name: product
+        name: api_info
         required: true
         schema:
-          $ref: '#/definitions/managementapi.PostProductReq'
+          $ref: '#/definitions/managementapi.PostAPIInfoReq'
       produces:
       - application/json
       responses:
@@ -189,19 +162,8 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get list of products
-  /products:
-    get:
-      description: Get list of APIs and its information
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/managementapi.Products'
-      summary: Get list of products
-  /products/search:
+      summary: Get list of API information
+  /api/search:
     get:
       description: Get list of APIs and its information
       parameters:
@@ -244,7 +206,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/managementapi.SearchProductsResp'
+            $ref: '#/definitions/managementapi.SearchAPIInfoResp'
         "400":
           description: Bad Request
           schema:
@@ -253,14 +215,51 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: search for products
+      summary: search for api info
+  /health:
+    get:
+      description: checks whether this API works correctly or not
+      produces:
+      - text/plain
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: checks if API works
+  /routing:
+    post:
+      description: Post a new API routing
+      parameters:
+      - description: routing parameters
+        in: body
+        name: api_routing
+        required: true
+        schema:
+          $ref: '#/definitions/managementapi.PostAPIRoutingReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/managementapi.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Post an API routing
   /users:
     post:
       description: Create a user
       parameters:
       - description: user description
         in: body
-        name: product
+        name: user
         required: true
         schema:
           $ref: '#/definitions/managementapi.PostUserReq'
