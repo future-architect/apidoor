@@ -36,13 +36,13 @@ func init() {
 	}
 }
 
-func TestGetProducts(t *testing.T) {
+func TestGetAPIInfo(t *testing.T) {
 	// insert data for test
 	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
 		t.Fatal(err)
 	}
 
-	var data = []managementapi.Product{
+	var data = []managementapi.APIInfo{
 		{
 			Name:        "Awesome API",
 			Source:      "Nice Company",
@@ -71,10 +71,10 @@ func TestGetProducts(t *testing.T) {
 		}
 	}
 
-	// test if GetProducts works correctly
-	r := httptest.NewRequest(http.MethodGet, "localhost:3000/products", nil)
+	// test if GetAPIInfo works correctly
+	r := httptest.NewRequest(http.MethodGet, "localhost:3000/api", nil)
 	w := httptest.NewRecorder()
-	managementapi.GetProducts(w, r)
+	managementapi.GetAPIInfo(w, r)
 
 	rw := w.Result()
 	defer rw.Body.Close()
@@ -83,12 +83,12 @@ func TestGetProducts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var res managementapi.Products
+	var res managementapi.APIInfoList
 	if err := json.Unmarshal(body, &res); err != nil {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(data, res.Products, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
+	if diff := cmp.Diff(data, res.List, cmpopts.IgnoreFields(managementapi.APIInfo{}, "ID")); diff != "" {
 		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 

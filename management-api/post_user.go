@@ -12,7 +12,7 @@ import (
 // @Summary Create a user
 // @Description Create a user
 // @produce json
-// @Param product body PostUserReq true "user description"
+// @Param user body PostUserReq true "user description"
 // @Success 201 {string} string
 // @Failure 400 {object} BadRequestResp
 // @Failure 500 {string} error
@@ -54,7 +54,7 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := db.postUser(r.Context(), &req); err != nil {
-		log.Printf("db insert product error: %v", err)
+		log.Printf("db insert user error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}
 

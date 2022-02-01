@@ -19,15 +19,18 @@ func main() {
 		r.Route("/health", func(r chi.Router) {
 			r.Get("/", managementapi.Health)
 		})
-		r.Route("/api", func(r chi.Router) {
+		r.Route("/routing", func(r chi.Router) {
 			r.Post("/", managementapi.PostAPIRouting)
 		})
-		r.Route("/products", func(r chi.Router) {
-			r.Get("/", managementapi.GetProducts)
+		r.Route("/api", func(r chi.Router) {
+			r.Get("/", managementapi.GetAPIInfo)
+			r.Post("/", managementapi.PostAPIInfo)
+			r.Get("/search", managementapi.SearchAPIInfo)
 		})
-		r.Route("/product", func(r chi.Router) {
-			r.Post("/", managementapi.PostProduct)
+		r.Route("/users", func(r chi.Router) {
+			r.Post("/", managementapi.PostUser)
 		})
+
 	})
 
 	s := &http.Server{

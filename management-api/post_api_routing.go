@@ -10,14 +10,14 @@ import (
 )
 
 // PostAPIRouting godoc
-// @Summary Post API routing
+// @Summary Post an API routing
 // @Description Post a new API routing
 // @Produce json
 // @Param api_routing body PostAPIRoutingReq true "routing parameters"
 // @Success 201 {string} string
 // @Failure 400 {object} BadRequestResp
 // @Failure 500 {string} error
-// @Router /api [post]
+// @Router /routing [post]
 func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")

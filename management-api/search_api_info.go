@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-// SearchProducts godoc
-// @Summary search for products
+// SearchAPIInfo godoc
+// @Summary search for api info
 // @Description Get list of APIs and its information
 // @produce json
 // @Param q query string true "search query words (split words by '.', ex: 'foo.bar'). If containing multiple words, items which match the all search words return"
@@ -16,18 +16,18 @@ import (
 // @Param pattern_match query string false "pattern match, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
 // @Param offset query int false "the starting point for the result set" default(0)
-// @Success 200 {object} SearchProductsResp
+// @Success 200 {object} SearchAPIInfoResp
 // @Failure 400 {object} BadRequestResp
 // @Failure 500 {string} string
-// @Router /products/search [get]
-func SearchProducts(w http.ResponseWriter, r *http.Request) {
+// @Router /api/search [get]
+func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Printf("parse param error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
-	var req SearchProductsReq
+	var req SearchAPIInfoReq
 	if err := schemaDecoder.Decode(&req, r.Form); err != nil {
 		log.Printf("parse query param error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
@@ -49,9 +49,9 @@ func SearchProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respBody, err := db.searchProducts(r.Context(), params)
+	respBody, err := db.searchAPIInfo(r.Context(), params)
 	if err != nil {
-		log.Printf("search products db error: %v", err)
+		log.Printf("search api info db error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}

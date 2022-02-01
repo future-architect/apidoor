@@ -14,13 +14,13 @@ import (
 	"github.com/gorilla/schema"
 )
 
-func TestSearchProducts(t *testing.T) {
+func TestSearchAPIInfo(t *testing.T) {
 	// insert data for test
 	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
 		t.Fatal(err)
 	}
 
-	var data = []managementapi.Product{
+	var data = []managementapi.APIInfo{
 		{
 			Name:        "Awesome API",
 			Source:      "Nice Company",
@@ -74,19 +74,19 @@ func TestSearchProducts(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		params     managementapi.SearchProductsReq
+		params     managementapi.SearchAPIInfoReq
 		wantStatus int
-		wantResp   interface{} // *managementapi.SearchProductsResp
+		wantResp   interface{} // *managementapi.SearchAPIInfoResp
 	}{
 		{
 			name: "完全一致の検索ができる",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q:            "Awesome API",
 				PatternMatch: "exact",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchProductsResp{
-				Products: []managementapi.Product{
+			wantResp: managementapi.SearchAPIInfoResp{
+				APIList: []managementapi.APIInfo{
 					{
 						Name:        "Awesome API",
 						Source:      "Nice Company",
@@ -95,7 +95,7 @@ func TestSearchProducts(t *testing.T) {
 						SwaggerURL:  "example.com/api/awesome",
 					},
 				},
-				SearchProductsMetaData: managementapi.SearchProductsMetaData{
+				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
 					ResultSet: managementapi.ResultSet{
 						Count:  1,
 						Limit:  50,
@@ -106,12 +106,12 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "部分一致の検索ができる(pattern matchは省略可能)",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q: "Awesome API",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchProductsResp{
-				Products: []managementapi.Product{
+			wantResp: managementapi.SearchAPIInfoResp{
+				APIList: []managementapi.APIInfo{
 					{
 						Name:        "Awesome API",
 						Source:      "Nice Company",
@@ -127,7 +127,7 @@ func TestSearchProducts(t *testing.T) {
 						SwaggerURL:  "example.com/api/v2/awesome",
 					},
 				},
-				SearchProductsMetaData: managementapi.SearchProductsMetaData{
+				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
 					ResultSet: managementapi.ResultSet{
 						Count:  2,
 						Limit:  50,
@@ -138,12 +138,12 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "複数キーワードであり、また、パーセントエンコーディングを持つキーワードを含む部分一致検索ができる",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q: "Search.example%2ecom",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchProductsResp{
-				Products: []managementapi.Product{
+			wantResp: managementapi.SearchAPIInfoResp{
+				APIList: []managementapi.APIInfo{
 					{
 						Name:        "Search API",
 						Source:      "Great Company",
@@ -152,7 +152,7 @@ func TestSearchProducts(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchProductsMetaData: managementapi.SearchProductsMetaData{
+				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
 					ResultSet: managementapi.ResultSet{
 						Count:  1,
 						Limit:  50,
@@ -163,13 +163,13 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "フィールドを指定して検索ができる",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q:            "Great",
 				TargetFields: "source.description",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchProductsResp{
-				Products: []managementapi.Product{
+			wantResp: managementapi.SearchAPIInfoResp{
+				APIList: []managementapi.APIInfo{
 					{
 						Name:        "Search API",
 						Source:      "Great Company",
@@ -178,7 +178,7 @@ func TestSearchProducts(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchProductsMetaData: managementapi.SearchProductsMetaData{
+				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
 					ResultSet: managementapi.ResultSet{
 						Count:  1,
 						Limit:  50,
@@ -189,14 +189,14 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "limitで件数を制限し、offsetで開始位置を指定できる",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q:            "special",
 				PatternMatch: "partial",
 				Offset:       1,
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchProductsResp{
-				Products: []managementapi.Product{
+			wantResp: managementapi.SearchAPIInfoResp{
+				APIList: []managementapi.APIInfo{
 					{
 						Name:        "Great API",
 						Source:      "Nice Company",
@@ -205,7 +205,7 @@ func TestSearchProducts(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchProductsMetaData: managementapi.SearchProductsMetaData{
+				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
 					ResultSet: managementapi.ResultSet{
 						Count:  2,
 						Limit:  50,
@@ -216,13 +216,13 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "検索結果が0件",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q: "not exist",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchProductsResp{
-				Products: []managementapi.Product{},
-				SearchProductsMetaData: managementapi.SearchProductsMetaData{
+			wantResp: managementapi.SearchAPIInfoResp{
+				APIList: []managementapi.APIInfo{},
+				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
 					ResultSet: managementapi.ResultSet{
 						Count:  0,
 						Limit:  50,
@@ -233,7 +233,7 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "リクエストパラメータが不正",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q:            "img",
 				TargetFields: "name.thumbnail",
 			},
@@ -253,7 +253,7 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "Qパラメータが未指定、または空文字列",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
@@ -271,7 +271,7 @@ func TestSearchProducts(t *testing.T) {
 		},
 		{
 			name: "Qパラメータに空文字列が含まれている",
-			params: managementapi.SearchProductsReq{
+			params: managementapi.SearchAPIInfoReq{
 				Q:            "Awesome..API",
 				TargetFields: "name",
 			},
@@ -302,9 +302,9 @@ func TestSearchProducts(t *testing.T) {
 			if err := encoder.Encode(tt.params, form); err != nil {
 				t.Fatalf("encode params error: %v", err)
 			}
-			r := httptest.NewRequest(http.MethodGet, "localhost:3000/products/search?"+form.Encode(), nil)
+			r := httptest.NewRequest(http.MethodGet, "localhost:3000/api/search?"+form.Encode(), nil)
 			w := httptest.NewRecorder()
-			managementapi.SearchProducts(w, r)
+			managementapi.SearchAPIInfo(w, r)
 
 			rw := w.Result()
 			defer rw.Body.Close()
@@ -318,28 +318,28 @@ func TestSearchProducts(t *testing.T) {
 				t.Fatal(err)
 			}
 			switch tt.wantResp.(type) {
-			case managementapi.SearchProductsResp:
-				testCompareBodyAsSearchProductResp(t, tt.wantResp.(managementapi.SearchProductsResp), body)
+			case managementapi.SearchAPIInfoResp:
+				testCompareBodyAsSearchAPIInfoResp(t, tt.wantResp.(managementapi.SearchAPIInfoResp), body)
 			case managementapi.BadRequestResp:
 				want := tt.wantResp.(managementapi.BadRequestResp)
 				testBadRequestResp(t, &want, body)
 			case string:
 				testCompareBodyAsString(t, tt.wantResp.(string), body)
 			default:
-				t.Error("wantResp is neither SearchProductResp nor string")
+				t.Error("wantResp is neither SearchAPIInfoResp, BadRequestResp nor string")
 			}
 
 		})
 	}
 }
 
-func testCompareBodyAsSearchProductResp(t *testing.T, want managementapi.SearchProductsResp, got []byte) {
-	var respBody managementapi.SearchProductsResp
+func testCompareBodyAsSearchAPIInfoResp(t *testing.T, want managementapi.SearchAPIInfoResp, got []byte) {
+	var respBody managementapi.SearchAPIInfoResp
 	if err := json.Unmarshal(got, &respBody); err != nil {
-		t.Errorf("parse body as search products response error: %v", err)
+		t.Errorf("parse body as search api info response error: %v", err)
 		return
 	}
-	if diff := cmp.Diff(want, respBody, cmpopts.IgnoreFields(managementapi.Product{}, "ID")); diff != "" {
+	if diff := cmp.Diff(want, respBody, cmpopts.IgnoreFields(managementapi.APIInfo{}, "ID")); diff != "" {
 		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 }

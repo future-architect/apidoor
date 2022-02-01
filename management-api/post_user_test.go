@@ -184,7 +184,7 @@ func TestPostUser(t *testing.T) {
 			}
 			body := bytes.NewReader(bodyBytes)
 
-			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/product", body)
+			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/users", body)
 			r.Header.Add("Content-Type", tt.contentType)
 
 			w := httptest.NewRecorder()
@@ -212,7 +212,7 @@ func TestPostUser(t *testing.T) {
 
 			rows, err := db.Queryx("SELECT * from apiuser WHERE email_address=$1", tt.req.EmailAddress)
 			if err != nil {
-				t.Errorf("db get products error: %v", err)
+				t.Errorf("db get users error: %v", err)
 				return
 			}
 

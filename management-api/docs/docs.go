@@ -24,77 +24,35 @@ var doc = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/api": {
-            "post": {
-                "description": "Post a new API routing",
+            "get": {
+                "description": "Get list of APIs and its information",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Post API routing",
-                "parameters": [
-                    {
-                        "description": "routing parameters",
-                        "name": "api_routing",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/managementapi.PostAPIRoutingReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/health": {
-            "get": {
-                "description": "checks whether this API works correctly or not",
-                "produces": [
-                    "text/plain"
-                ],
-                "summary": "checks if API works",
+                "summary": "Get list of API info.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/managementapi.APIInfoList"
                         }
                     }
                 }
-            }
-        },
-        "/product": {
+            },
             "post": {
                 "description": "Get list of APIs and its information",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Get list of products",
+                "summary": "Get list of API information",
                 "parameters": [
                     {
                         "description": "api information",
-                        "name": "product",
+                        "name": "api_info",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/managementapi.PostProductReq"
+                            "$ref": "#/definitions/managementapi.PostAPIInfoReq"
                         }
                     }
                 ],
@@ -120,30 +78,13 @@ var doc = `{
                 }
             }
         },
-        "/products": {
+        "/api/search": {
             "get": {
                 "description": "Get list of APIs and its information",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Get list of products",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/managementapi.Products"
-                        }
-                    }
-                }
-            }
-        },
-        "/products/search": {
-            "get": {
-                "description": "Get list of APIs and its information",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "search for products",
+                "summary": "search for api info",
                 "parameters": [
                     {
                         "type": "string",
@@ -191,7 +132,64 @@ var doc = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.SearchProductsResp"
+                            "$ref": "#/definitions/managementapi.SearchAPIInfoResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "checks whether this API works correctly or not",
+                "produces": [
+                    "text/plain"
+                ],
+                "summary": "checks if API works",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/routing": {
+            "post": {
+                "description": "Post a new API routing",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Post an API routing",
+                "parameters": [
+                    {
+                        "description": "routing parameters",
+                        "name": "api_routing",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.PostAPIRoutingReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
                         }
                     },
                     "400": {
@@ -219,7 +217,7 @@ var doc = `{
                 "parameters": [
                     {
                         "description": "user description",
-                        "name": "product",
+                        "name": "user",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -251,6 +249,40 @@ var doc = `{
         }
     },
     "definitions": {
+        "managementapi.APIInfo": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "swagger_url": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
+        "managementapi.APIInfoList": {
+            "type": "object",
+            "properties": {
+                "api_info_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/managementapi.APIInfo"
+                    }
+                }
+            }
+        },
         "managementapi.BadRequestResp": {
             "type": "object",
             "properties": {
@@ -265,26 +297,7 @@ var doc = `{
                 }
             }
         },
-        "managementapi.PostAPIRoutingReq": {
-            "type": "object",
-            "required": [
-                "api_key",
-                "forward_url",
-                "path"
-            ],
-            "properties": {
-                "api_key": {
-                    "type": "string"
-                },
-                "forward_url": {
-                    "type": "string"
-                },
-                "path": {
-                    "type": "string"
-                }
-            }
-        },
-        "managementapi.PostProductReq": {
+        "managementapi.PostAPIInfoReq": {
             "type": "object",
             "required": [
                 "description",
@@ -311,6 +324,25 @@ var doc = `{
                 }
             }
         },
+        "managementapi.PostAPIRoutingReq": {
+            "type": "object",
+            "required": [
+                "api_key",
+                "forward_url",
+                "path"
+            ],
+            "properties": {
+                "api_key": {
+                    "type": "string"
+                },
+                "forward_url": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                }
+            }
+        },
         "managementapi.PostUserReq": {
             "type": "object",
             "required": [
@@ -333,40 +365,6 @@ var doc = `{
                 }
             }
         },
-        "managementapi.Product": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "swagger_url": {
-                    "type": "string"
-                },
-                "thumbnail": {
-                    "type": "string"
-                }
-            }
-        },
-        "managementapi.Products": {
-            "type": "object",
-            "properties": {
-                "products": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/managementapi.Product"
-                    }
-                }
-            }
-        },
         "managementapi.ResultSet": {
             "type": "object",
             "properties": {
@@ -381,7 +379,7 @@ var doc = `{
                 }
             }
         },
-        "managementapi.SearchProductsMetaData": {
+        "managementapi.SearchAPIInfoMetaData": {
             "type": "object",
             "properties": {
                 "result_set": {
@@ -389,17 +387,17 @@ var doc = `{
                 }
             }
         },
-        "managementapi.SearchProductsResp": {
+        "managementapi.SearchAPIInfoResp": {
             "type": "object",
             "properties": {
-                "metadata": {
-                    "$ref": "#/definitions/managementapi.SearchProductsMetaData"
-                },
-                "products": {
+                "api_info_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/managementapi.Product"
+                        "$ref": "#/definitions/managementapi.APIInfo"
                     }
+                },
+                "metadata": {
+                    "$ref": "#/definitions/managementapi.SearchAPIInfoMetaData"
                 }
             }
         },

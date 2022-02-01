@@ -8,16 +8,16 @@ import (
 	"net/http"
 )
 
-// PostProduct godoc
-// @Summary Get list of products
+// PostAPIInfo godoc
+// @Summary Get list of API information
 // @Description Get list of APIs and its information
 // @produce json
-// @Param product body PostProductReq true "api information"
+// @Param api_info body PostAPIInfoReq true "api information"
 // @Success 201 {string} string
 // @Failure 400 {object} BadRequestResp
 // @Failure 500 {string} error
-// @Router /product [post]
-func PostProduct(w http.ResponseWriter, r *http.Request) {
+// @Router /api [post]
+func PostAPIInfo(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Print("unexpected request content")
 		resp := NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
@@ -28,7 +28,7 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req PostProductReq
+	var req PostAPIInfoReq
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("failed to parse json body: %v", err)
 		resp := NewBadRequestResp("failed to parse body as json")
@@ -53,8 +53,8 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := db.postProducts(r.Context(), &req); err != nil {
-		log.Printf("db insert product error: %v", err)
+	if err := db.postAPIInfo(r.Context(), &req); err != nil {
+		log.Printf("db insert api info error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 	}
 
