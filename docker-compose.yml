@@ -27,7 +27,6 @@ services:
             - AWS_ACCESS_KEY_ID=dummy
             - AWS_SECRET_ACCESS_KEY=dummy
             - AWS_DEFAULT_REGION=ap-northeast-1
-            - AWS_DEFAULT_OUTPUT=json
             - LOG_PATH=/log/log.csv
             - NO_PROXY=test-server
         volumes:
@@ -59,7 +58,6 @@ services:
             - AWS_ACCESS_KEY_ID=dummy
             - AWS_SECRET_ACCESS_KEY=dummy
             - AWS_DEFAULT_REGION=ap-northeast-1
-            - AWS_DEFAULT_OUTPUT=json
     test-server:
         build: ./quickstart
         container_name: test-server

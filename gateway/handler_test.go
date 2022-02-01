@@ -157,7 +157,7 @@ func TestHandle(t *testing.T) {
 			r := httptest.NewRequest(method, tt.request, nil)
 			r.Header.Set("Content-Type", tt.content)
 			if tt.apikey != "" {
-				r.Header.Set("Authorization", tt.apikey)
+				r.Header.Set("X-Apidoor-Authorization", tt.apikey)
 			}
 			w := httptest.NewRecorder()
 			h.Handle(w, r)
