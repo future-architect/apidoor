@@ -158,7 +158,7 @@ func (sd sqlDB) postProduct(ctx context.Context, product *PostProductReq) error 
 	}
 	stmt, err := tx.PrepareNamedContext(ctx,
 		`INSERT INTO product(name, display_name, source, description, thumbnail, is_available, created_at, updated_at)
-				VALUES (:name, :display_name, :description, :thumbnail, :is_available, current_timestamp, current_timestamp)
+				VALUES (:name, :display_name, :source, :description, :thumbnail, :is_available, current_timestamp, current_timestamp)
 				RETURNING id`)
 	if err != nil {
 		tx.Rollback()
@@ -175,7 +175,7 @@ func (sd sqlDB) postProduct(ctx context.Context, product *PostProductReq) error 
 	for _, content := range product.Contents {
 		_, err = tx.ExecContext(ctx,
 			`INSERT INTO product_api_content(product_id, api_id, description, created_at, updated_at)
-					VALUES (?, ?, ?, current_timestamp, current_timestamp)`,
+					VALUES ($1, $2, $3, current_timestamp, current_timestamp)`,
 			productID, content.ID, content.Description)
 		if err != nil {
 			tx.Rollback()

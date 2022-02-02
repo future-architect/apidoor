@@ -19,10 +19,20 @@ type productAPIContent struct {
 }
 
 func TestPostProduct(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE apiinfo"); err != nil {
+	if _, err := db.Exec("TRUNCATE product_api_content"); err != nil {
 		t.Fatal(err)
 	}
-	defer db.Exec("TRUNCATE apiinfo")
+	if _, err := db.Exec("DELETE FROM product"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		db.Exec("TRUNCATE product_api_content")
+		db.Exec("DELETE FROM product")
+		db.Exec("DELETE FROM apiinfo")
+	}()
 
 	// set up api info db
 	apiInfoList := managementapi.APIInfoList{
@@ -111,13 +121,68 @@ func TestPostProduct(t *testing.T) {
 			},
 		},
 		{
+			name:        "post product when some optional fields are omitted",
+			contentType: "application/json",
+			req: managementapi.PostProductReq{
+				Name:        "product2",
+				Source:      "company 2",
+				Description: "product 2 has one API",
+				Thumbnail:   "http://example.com/test",
+				Contents: []managementapi.APIContent{
+					{
+						ID: apiInfoList.List[0].ID,
+					},
+				},
+				IsAvailable: true,
+			},
+			wantHTTPStatus: http.StatusCreated,
+			wantResp:       "Created",
+			wantProductRecord: []managementapi.Product{
+				{
+					Name:            "product2",
+					Source:          "company 2",
+					Description:     "product 2 has one API",
+					Thumbnail:       "http://example.com/test",
+					IsAvailableCode: 1,
+				},
+			},
+			wantContentRecord: []productAPIContent{
+				{
+					ApiID: apiInfoList.List[0].ID,
+				},
+			},
+		},
+		{
+			name:        "post product containing no API is allowed",
+			contentType: "application/json",
+			req: managementapi.PostProductReq{
+				Name:        "product3",
+				Source:      "company 3",
+				Description: "product 3 has no API",
+				Thumbnail:   "http://example.com/test",
+				Contents:    []managementapi.APIContent{},
+				IsAvailable: false,
+			},
+			wantHTTPStatus: http.StatusCreated,
+			wantResp:       "Created",
+			wantProductRecord: []managementapi.Product{
+				{
+					Name:        "product3",
+					Source:      "company 3",
+					Description: "product 3 has no API",
+					Thumbnail:   "http://example.com/test",
+				},
+			},
+			wantContentRecord: []productAPIContent{},
+		},
+		{
 			name:        "api id not existing is contained",
 			contentType: "application/json",
 			req: managementapi.PostProductReq{
-				Name:        "product9",
-				DisplayName: "product 9",
-				Source:      "company 9",
-				Description: "product 9 is wrong",
+				Name:        "product91",
+				DisplayName: "product 91",
+				Source:      "company 91",
+				Description: "product 91 is wrong",
 				Thumbnail:   "http://example.com/test",
 				Contents: []managementapi.APIContent{
 					{
@@ -131,6 +196,38 @@ func TestPostProduct(t *testing.T) {
 			wantResp: managementapi.BadRequestResp{
 				Message:          fmt.Sprintf("api_id %d does not exist", notExistID),
 				ValidationErrors: nil,
+			},
+			wantProductRecord: []managementapi.Product{},
+			wantContentRecord: []productAPIContent{},
+		},
+		{
+			name:        "input validation is failed",
+			contentType: "application/json",
+			req: managementapi.PostProductReq{
+				Name:        "product 92",
+				DisplayName: "product 92",
+				Description: "product 92 is wrong",
+				Thumbnail:   "http://example.com/test",
+				Contents:    []managementapi.APIContent{},
+				IsAvailable: false,
+			},
+			wantHTTPStatus: http.StatusBadRequest,
+			wantResp: managementapi.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &managementapi.ValidationErrors{
+					{
+						Field:          "name",
+						ConstraintType: "alphanum",
+						Message:        "input value, product 92, does not satisfy the format, alphanum",
+						Got:            "product 92",
+					},
+					{
+						Field:          "source",
+						ConstraintType: "required",
+						Message:        "required field, but got empty",
+						Got:            "",
+					},
+				},
 			},
 			wantProductRecord: []managementapi.Product{},
 			wantContentRecord: []productAPIContent{},
@@ -177,7 +274,9 @@ func TestPostProduct(t *testing.T) {
 			}
 
 			// db check
-			rows, err := db.Queryx("SELECT * from apiinfo WHERE name=$1", tt.req.Name)
+			rows, err := db.Queryx(`SELECT id, name, display_name, source, description, thumbnail, is_available
+       				FROM product WHERE name=$1`, tt.req.Name)
+			//rows, err := db.Queryx("SELECT * from apiinfo WHERE name=$1", tt.req.Name)
 			if err != nil {
 				t.Errorf("db get api info error: %v", err)
 				return
@@ -201,7 +300,7 @@ func TestPostProduct(t *testing.T) {
 			}
 			productID := productList[0].ID
 
-			rows, err = db.Queryx("SELECT * from product_api_content WHERE product_id=$1", productID)
+			rows, err = db.Queryx("SELECT api_id, description from product_api_content WHERE product_id=$1", productID)
 			if err != nil {
 				t.Errorf("db get api info error: %v", err)
 				return

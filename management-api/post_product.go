@@ -52,9 +52,10 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	req.convert()
 
 	if err := db.postProduct(r.Context(), &req); err != nil {
-		log.Printf("insert product to db failed:%v", err)
+		log.Printf("insert product to db failed: %v", err)
 		if constraintErr, ok := err.(*dbConstraintErr); ok {
 			br := BadRequestResp{
 				Message: fmt.Sprintf("api_id %d does not exist", constraintErr.value),
