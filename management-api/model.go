@@ -144,3 +144,32 @@ type User struct {
 	CreatedAt         string `json:"created_at" db:"created_at"`
 	UpdatedAt         string `json:"updated_at" db:"updated_at"`
 }
+
+/////////////
+// product //
+/////////////
+
+type Product struct {
+	ID          int    `json:"id" db:"id"`
+	Name        string `json:"name" db:"name"`
+	DisplayName string `json:"display_name" db:"display_name"`
+	Source      string `json:"source" db:"source"`
+	Description string `json:"description" db:"description"`
+	Thumbnail   string `json:"thumbnail" db:"thumbnail"`
+	IsAvailable bool   `json:"is_available" db:"is_available"`
+}
+
+type PostProductReq struct {
+	Name        string       `json:"name" db:"name" validator:"required,alphanum"`
+	DisplayName string       `json:"display_name" db:"display_name"`
+	Source      string       `json:"source" db:"source" validator:"required"`
+	Description string       `json:"description" db:"description" validator:"required"`
+	Thumbnail   string       `json:"thumbnail" db:"thumbnail" validator:"required,url"`
+	Contents    []APIContent `json:"api_contents"`
+	IsAvailable bool         `json:"is_available" db:"is_available"`
+}
+
+type APIContent struct {
+	ID          int    `json:"id" db:"id" validator:"required"`
+	Description string `json:"description" db:"description"`
+}
