@@ -144,3 +144,42 @@ type User struct {
 	CreatedAt         string `json:"created_at" db:"created_at"`
 	UpdatedAt         string `json:"updated_at" db:"updated_at"`
 }
+
+/////////////
+// product //
+/////////////
+
+type Product struct {
+	ID              int    `json:"id" db:"id"`
+	Name            string `json:"name" db:"name"`
+	DisplayName     string `json:"display_name" db:"display_name"`
+	Source          string `json:"source" db:"source"`
+	Description     string `json:"description" db:"description"`
+	Thumbnail       string `json:"thumbnail" db:"thumbnail"`
+	IsAvailableCode int    `json:"is_available" db:"is_available"`
+}
+
+type PostProductReq struct {
+	Name            string       `json:"name" db:"name" validate:"required,alphanum"`
+	DisplayName     string       `json:"display_name" db:"display_name"`
+	Source          string       `json:"source" db:"source" validate:"required"`
+	Description     string       `json:"description" db:"description" validate:"required"`
+	Thumbnail       string       `json:"thumbnail" db:"thumbnail" validate:"required,url"`
+	Contents        []APIContent `json:"api_contents" validate:"dive"`
+	IsAvailable     bool         `json:"is_available"`
+	IsAvailableCode int          `json:"-" db:"is_available"`
+}
+
+func (pp PostProductReq) convert() PostProductReq {
+	if pp.IsAvailable {
+		pp.IsAvailableCode = 1
+	} else {
+		pp.IsAvailableCode = 0
+	}
+	return pp
+}
+
+type APIContent struct {
+	ID          int    `json:"id" db:"id" validate:"required"`
+	Description string `json:"description" db:"description"`
+}

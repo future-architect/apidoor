@@ -30,6 +30,9 @@ func main() {
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/", managementapi.PostUser)
 		})
+		r.Route("/products", func(r chi.Router) {
+			r.Post("/", managementapi.PostProduct)
+		})
 
 	})
 

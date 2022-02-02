@@ -1,5 +1,14 @@
 basePath: /mgmt
 definitions:
+  managementapi.APIContent:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+    required:
+    - id
+    type: object
   managementapi.APIInfo:
     properties:
       description:
@@ -62,6 +71,30 @@ definitions:
     - api_key
     - forward_url
     - path
+    type: object
+  managementapi.PostProductReq:
+    properties:
+      api_contents:
+        items:
+          $ref: '#/definitions/managementapi.APIContent'
+        type: array
+      description:
+        type: string
+      display_name:
+        type: string
+      is_available:
+        type: boolean
+      name:
+        type: string
+      source:
+        type: string
+      thumbnail:
+        type: string
+    required:
+    - description
+    - name
+    - source
+    - thumbnail
     type: object
   managementapi.PostUserReq:
     properties:
@@ -227,6 +260,32 @@ paths:
           schema:
             type: string
       summary: checks if API works
+  /products:
+    post:
+      description: Post an API product
+      parameters:
+      - description: product definition
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/managementapi.PostProductReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/managementapi.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Post a product
   /routing:
     post:
       description: Post a new API routing
