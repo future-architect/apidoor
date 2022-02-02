@@ -52,7 +52,7 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	req.convert()
+	req = req.convert()
 
 	if err := db.postProduct(r.Context(), &req); err != nil {
 		log.Printf("insert product to db failed: %v", err)

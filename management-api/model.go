@@ -170,12 +170,13 @@ type PostProductReq struct {
 	IsAvailableCode int          `json:"-" db:"is_available"`
 }
 
-func (pp *PostProductReq) convert() {
+func (pp PostProductReq) convert() PostProductReq {
 	if pp.IsAvailable {
 		pp.IsAvailableCode = 1
 	} else {
 		pp.IsAvailableCode = 0
 	}
+	return pp
 }
 
 type APIContent struct {
