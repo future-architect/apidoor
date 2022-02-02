@@ -167,7 +167,7 @@ type PostProductReq struct {
 	Thumbnail       string       `json:"thumbnail" db:"thumbnail" validate:"required,url"`
 	Contents        []APIContent `json:"api_contents" validate:"dive"`
 	IsAvailable     bool         `json:"is_available"`
-	IsAvailableCode int          `db:"is_available"`
+	IsAvailableCode int          `json:"-" db:"is_available"`
 }
 
 func (pp *PostProductReq) convert() {

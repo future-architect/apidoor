@@ -167,6 +167,46 @@ var doc = `{
                 }
             }
         },
+        "/products": {
+            "post": {
+                "description": "Post an API product",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Post a product",
+                "parameters": [
+                    {
+                        "description": "product definition",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.PostProductReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/routing": {
             "post": {
                 "description": "Post a new API routing",
@@ -249,6 +289,20 @@ var doc = `{
         }
     },
     "definitions": {
+        "managementapi.APIContent": {
+            "type": "object",
+            "required": [
+                "id"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
         "managementapi.APIInfo": {
             "type": "object",
             "properties": {
@@ -339,6 +393,41 @@ var doc = `{
                     "type": "string"
                 },
                 "path": {
+                    "type": "string"
+                }
+            }
+        },
+        "managementapi.PostProductReq": {
+            "type": "object",
+            "required": [
+                "description",
+                "name",
+                "source",
+                "thumbnail"
+            ],
+            "properties": {
+                "api_contents": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/managementapi.APIContent"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "type": "string"
+                },
+                "is_available": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "thumbnail": {
                     "type": "string"
                 }
             }
