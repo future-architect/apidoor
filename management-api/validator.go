@@ -229,7 +229,6 @@ func ValidateStruct(target interface{}) error {
 
 func Unmarshal(reader io.Reader, target interface{}) error {
 	if err := json.NewDecoder(reader).Decode(target); err != nil {
-		//log.Printf("failed to parse json body: %v", err)
 		return UnmarshalJsonErr
 	}
 

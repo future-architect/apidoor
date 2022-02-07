@@ -29,7 +29,7 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req PostProductReq
-	if err := Unmarshal(r.Body, req); err != nil {
+	if err := Unmarshal(r.Body, &req); err != nil {
 		if errors.Is(err, UnmarshalJsonErr) {
 			log.Printf("failed to parse json body: %v", err)
 			resp := NewBadRequestResp(UnmarshalJsonErr.Error())
@@ -48,7 +48,6 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 			log.Printf("invalid body: %v", err)
 			http.Error(w, fmt.Sprintf("invalid body"), http.StatusBadRequest)
 		}
-
 		return
 	}
 	req = req.convert()
