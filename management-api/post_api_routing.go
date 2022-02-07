@@ -1,6 +1,8 @@
 package managementapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/future-architect/apidoor/managementapi/apirouting"
@@ -28,9 +30,11 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	body := new(bytes.Buffer)
+	io.Copy(body, r.Body)
 
 	var req PostAPIRoutingReq
-	if err := Unmarshal(r.Body, &req); err != nil {
+	if err := json.Unmarshal(body.Bytes(), &req); err != nil {
 		if errors.Is(err, UnmarshalJsonErr) {
 			log.Printf("failed to parse json body: %v", err)
 			resp := NewBadRequestResp(UnmarshalJsonErr.Error())
@@ -59,10 +63,4 @@ func PostAPIRouting(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	io.WriteString(w, "Created")
-}
-
-type PostAPIRoutingReq struct {
-	ApiKey     string `json:"api_key" validate:"required"`
-	Path       string `json:"path" validate:"required"`
-	ForwardURL string `json:"forward_url" validate:"required,url"`
 }

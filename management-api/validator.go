@@ -2,7 +2,6 @@ package managementapi
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"io"
@@ -17,9 +16,6 @@ var (
 
 	enumTagPattern    = regexp.MustCompile(`^(eq=\w+\|)*eq=\w+$`)
 	enumTagSubPattern = regexp.MustCompile(`eq=(\w+)`)
-
-	UnmarshalJsonErr        = errors.New("failed to parse body as json")
-	OtherInputValidationErr = errors.New("input validation failed")
 )
 
 func init() {
