@@ -18,7 +18,7 @@ type DefaultHandler struct {
 func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// check header
 	if r.Header.Get("Content-Type") != "application/json" {
-		log.Print("unexpected request content")
+		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
 		http.Error(w, "unexpected request content", http.StatusBadRequest)
 		return
 	}

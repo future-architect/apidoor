@@ -2,8 +2,10 @@ package managementapi
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
+	"io"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -15,6 +17,9 @@ var (
 
 	enumTagPattern    = regexp.MustCompile(`^(eq=\w+\|)*eq=\w+$`)
 	enumTagSubPattern = regexp.MustCompile(`eq=(\w+)`)
+
+	UnmarshalJsonErr        = errors.New("failed to parse body as json")
+	OtherInputValidationErr = errors.New("input validation failed")
 )
 
 func init() {
@@ -220,4 +225,20 @@ func ValidateStruct(target interface{}) error {
 	valErrors := NewValidationErrors(fieldErrs)
 
 	return valErrors
+}
+
+func Unmarshal(reader io.Reader, target interface{}) error {
+	if err := json.NewDecoder(reader).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(target); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
 }
