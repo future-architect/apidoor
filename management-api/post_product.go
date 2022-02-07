@@ -19,7 +19,7 @@ import (
 // @Router /products [post]
 func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
-		log.Print("unexpected request content")
+		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
 		resp := NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
 		if err := resp.writeResp(w); err != nil {
 			log.Printf("write bad request response failed: %v", err)
