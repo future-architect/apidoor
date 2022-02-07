@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
-	"io"
 	"net/http"
 	"reflect"
 	"regexp"
@@ -221,20 +220,4 @@ func ValidateStruct(target interface{}) error {
 	valErrors := NewValidationErrors(fieldErrs)
 
 	return valErrors
-}
-
-func Unmarshal(reader io.Reader, target interface{}) error {
-	if err := json.NewDecoder(reader).Decode(target); err != nil {
-		return UnmarshalJsonErr
-	}
-
-	if err := ValidateStruct(target); err != nil {
-		if ve, ok := err.(ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
 }
