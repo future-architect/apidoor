@@ -1,6 +1,8 @@
 package managementapi
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -27,9 +29,11 @@ func PostAPIInfo(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	body := new(bytes.Buffer)
+	io.Copy(body, r.Body)
 
 	var req PostAPIInfoReq
-	if err := Unmarshal(r.Body, &req); err != nil {
+	if err := json.Unmarshal(body.Bytes(), &req); err != nil {
 		if errors.Is(err, UnmarshalJsonErr) {
 			log.Printf("failed to parse json body: %v", err)
 			resp := NewBadRequestResp(UnmarshalJsonErr.Error())

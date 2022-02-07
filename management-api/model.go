@@ -1,6 +1,9 @@
 package managementapi
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -10,6 +13,9 @@ import (
 
 var (
 	schemaDecoder *schema.Decoder
+
+	UnmarshalJsonErr        = errors.New("failed to parse body as json")
+	OtherInputValidationErr = errors.New("input validation failed")
 )
 
 const (
@@ -46,6 +52,30 @@ type PostAPIInfoReq struct {
 	Description string `json:"description" db:"description" validate:"required"`
 	Thumbnail   string `json:"thumbnail" db:"thumbnail" validate:"required,url"`
 	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required,url"`
+}
+
+func (pi *PostAPIInfoReq) UnmarshalJSON(data []byte) error {
+	type Alias PostAPIInfoReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pi),
+	}
+
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(pi); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
 }
 
 type SearchAPIInfoReq struct {
@@ -134,6 +164,30 @@ type PostUserReq struct {
 	Name         string `json:"name" db:"name"`
 }
 
+func (pu *PostUserReq) UnmarshalJSON(data []byte) error {
+	type Alias PostUserReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pu),
+	}
+
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(pu); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
+}
+
 type User struct {
 	ID                string `json:"id" db:"id"`
 	AccountID         string `json:"account_id" db:"account_id"`
@@ -170,6 +224,30 @@ type PostProductReq struct {
 	IsAvailableCode int          `json:"-" db:"is_available"`
 }
 
+func (pp *PostProductReq) UnmarshalJSON(data []byte) error {
+	type Alias PostProductReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pp),
+	}
+
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(pp); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
+}
+
 func (pp PostProductReq) convert() PostProductReq {
 	if pp.IsAvailable {
 		pp.IsAvailableCode = 1
@@ -182,4 +260,38 @@ func (pp PostProductReq) convert() PostProductReq {
 type APIContent struct {
 	ID          int    `json:"id" db:"id" validate:"required"`
 	Description string `json:"description" db:"description"`
+}
+
+/////////////
+// routing //
+/////////////
+
+type PostAPIRoutingReq struct {
+	ApiKey     string `json:"api_key" validate:"required"`
+	Path       string `json:"path" validate:"required"`
+	ForwardURL string `json:"forward_url" validate:"required,url"`
+}
+
+func (pr *PostAPIRoutingReq) UnmarshalJSON(data []byte) error {
+	type Alias PostAPIRoutingReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pr),
+	}
+
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(pr); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
 }
