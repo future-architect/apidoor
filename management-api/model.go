@@ -1,6 +1,7 @@
 package managementapi
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
@@ -46,6 +47,22 @@ type PostAPIInfoReq struct {
 	Description string `json:"description" db:"description" validate:"required"`
 	Thumbnail   string `json:"thumbnail" db:"thumbnail" validate:"required,url"`
 	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required,url"`
+}
+
+func (pa *PostAPIInfoReq) UnmarshalJSON(data []byte) error {
+	if err := json.Unmarshal(data, pa); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(pa); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
 }
 
 type SearchAPIInfoReq struct {
