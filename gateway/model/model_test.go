@@ -7,26 +7,6 @@ import (
 
 func TestFields(t *testing.T) {
 
-	cases := []struct {
-		name   string
-		input  string
-		output string
-		err    error
-	}{
-		{
-			name:   "valid path",
-			input:  "/normal",
-			output: "normal/dist",
-			err:    nil,
-		},
-		{
-			name:   "invalid path",
-			input:  "/invalid",
-			output: "",
-			err:    &MyError{Message: "unauthorized request"},
-		},
-	}
-
 	fieldsSample := Fields{
 		{
 			Template: NewURITemplate("/normal"),
@@ -58,25 +38,6 @@ func TestFields(t *testing.T) {
 			Num:      5,
 			Max:      "unlimited",
 		},
-	}
-
-	for _, tt := range cases {
-		path, err := fieldsSample.URI(tt.input)
-
-		if tt.output != path {
-			t.Fatalf("case %s: unexpected result %s, want %s", tt.name, path, tt.output)
-		}
-		if tt.err == nil && err != nil {
-			t.Fatalf("case %s: unexpected error %s, want nil", tt.name, err.Error())
-		}
-		if tt.err != nil && err == nil {
-			t.Fatalf("case %s: unexpected error nil, want %s", tt.name, tt.err.Error())
-		}
-		if tt.err != nil && err != nil {
-			if tt.err.Error() != err.Error() {
-				t.Fatalf("case %s: unexpected error %s, want %s", tt.name, err.Error(), tt.err.Error())
-			}
-		}
 	}
 
 	checkAPILimitTestData := []struct {
@@ -130,5 +91,102 @@ func TestFields(t *testing.T) {
 				t.Fatalf("case %s: unexpected error %s, want %s", tt.name, err.Error(), tt.err.Error())
 			}
 		}
+	}
+}
+
+func TestFields_URI(t *testing.T) {
+	fields := Fields{
+		{
+			Template: NewURITemplate("/users/{userID}"),
+			Path:     NewURITemplate("example.com/users/{userID}"),
+		},
+		{
+			Template: NewURITemplate("/users"),
+			Path:     NewURITemplate("example.com/users"),
+		},
+		{
+			Template: NewURITemplate("/items/{itemID}"),
+			Path:     NewURITemplate("example.com/v1/items/{itemID}"),
+		},
+		{
+			Template: NewURITemplate("/items/{itemID}/{subItemID}"),
+			Path:     NewURITemplate("example.com/items/{itemID}/{subItemID}"),
+		},
+		{
+			Template: NewURITemplate("/{itemID}/old"),
+			Path:     NewURITemplate("example.com/v1/{itemID}/old"),
+		},
+	}
+
+	tests := []struct {
+		name           string
+		path           string
+		wantForwardURI string
+		wantErr        error
+	}{
+		{
+			name:           "get path without placeholder properly",
+			path:           "/users",
+			wantForwardURI: "example.com/users",
+			wantErr:        nil,
+		},
+		{
+			name:           "get path with a placeholder properly",
+			path:           "/users/foo",
+			wantForwardURI: "example.com/users/foo",
+			wantErr:        nil,
+		},
+		{
+			name:           "get path whose placeholder's position is different properly",
+			path:           "/items/bar",
+			wantForwardURI: "example.com/v1/items/bar",
+			wantErr:        nil,
+		},
+		{
+			name:           "get path with multiple placeholders properly",
+			path:           "/items/foo/bar",
+			wantForwardURI: "example.com/items/foo/bar",
+			wantErr:        nil,
+		},
+		{
+			name:           "getting path when a placeholder is in the middle",
+			path:           "/foo/old",
+			wantForwardURI: "example.com/v1/foo/old",
+			wantErr:        nil,
+		},
+		{
+			name:           "get path fails when the path parameter is not provided",
+			path:           "/items",
+			wantForwardURI: "",
+			wantErr:        ErrUnauthorizedRequest,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := fields.LookupTemplate(tt.path)
+			if result == nil {
+				if tt.wantForwardURI != "" {
+					t.Error("returning non nil result is exprect, got nil")
+				}
+			} else if result.ForwardURL != tt.wantForwardURI {
+				t.Errorf("uri in the result defers: want %s, got %s", tt.wantForwardURI, result.ForwardURL)
+			}
+
+			if tt.wantErr == nil {
+				if err != nil {
+					t.Errorf("returned error expects nil, got %v", err)
+				}
+			} else {
+				if err == nil {
+					t.Errorf("returned error expects %v, got nil", tt.wantErr)
+				} else if !errors.Is(err, tt.wantErr) {
+					t.Errorf("returned error expects %v, got %v", tt.wantErr, err)
+
+				}
+
+			}
+
+		})
 	}
 }

@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"errors"
+	"fmt"
 	"github.com/future-architect/apidoor/gateway/datasource"
 	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/future-architect/apidoor/gateway/model"
@@ -16,12 +17,6 @@ type DefaultHandler struct {
 }
 
 func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
-	// check header
-	if r.Header.Get("Content-Type") != "application/json" {
-		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
-		http.Error(w, "unexpected request content", http.StatusBadRequest)
-		return
-	}
 
 	apikey := r.Header.Get("X-Apidoor-Authorization")
 	if apikey == "" {
@@ -43,15 +38,16 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// look up and check the path
-	path, err := fields.URI(r.URL.Path)
+	result, err := fields.LookupTemplate(r.URL.Path)
 	if err != nil {
 		log.Print(err.Error())
 		http.Error(w, "invalid key or path", http.StatusNotFound)
 		return
 	}
+	forwardURL := result.ForwardURL
 
 	// check if number of request does not exceed limit
-	if err := fields.CheckAPILimit(path); err != nil {
+	if err := fields.CheckAPILimit(result.Field.Path.JoinPath()); err != nil {
 		log.Print(err.Error())
 		http.Error(w, "API limit exceeded", http.StatusForbidden)
 		return
@@ -63,12 +59,12 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	if method == http.MethodGet || method == http.MethodHead || method == http.MethodDelete || method == http.MethodOptions {
 		if query != "" {
-			path = path + "?" + query
+			forwardURL = forwardURL + "?" + query
 		}
-		req, err = http.NewRequest(method, path, nil)
+		req, err = http.NewRequest(method, forwardURL, nil)
 	} else {
 		// Post, Put, Patchなど
-		req, err = http.NewRequest(http.MethodPost, path, r.Body)
+		req, err = http.NewRequest(http.MethodPost, forwardURL, r.Body)
 	}
 	if err != nil {
 		log.Print(err.Error())
@@ -90,7 +86,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Appender.Do(apikey, path, r); err != nil {
+	if err := h.Appender.Do(apikey, result.Field.Path.JoinPath(), r); err != nil {
 		log.Printf("[ERROR] appender write err: %v\n", err)
 	}
 }
@@ -105,12 +101,28 @@ func setRequestHeader(src, dist *http.Request) {
 func copyResponse(w *http.ResponseWriter, res *http.Response) error {
 	switch code := res.StatusCode; {
 	case 400 <= code && code <= 499:
-		log.Printf("client error: %v, status code: %d", res.Body, code)
-		http.Error(*w, "client error", code)
+		respBytes, err := io.ReadAll(res.Body)
+		respStr := string(respBytes)
+		if err != nil {
+			log.Printf("api client error occured, but read the response failed: %v, status code: %d", err, code)
+			http.Error(*w,
+				fmt.Sprintf("api client error occured, but read the response failed, status code: %d", code),
+				http.StatusInternalServerError)
+		}
+		log.Printf("api client error: %v, status code: %d", respStr, code)
+		http.Error(*w, fmt.Sprintf("api client error, status code: %d, body:\n%v", code, respStr), code)
 		return errors.New("client error")
 	case 500 <= code && code <= 599:
-		log.Printf("server error: %v, status code: %d", res.Body, code)
-		http.Error(*w, "server error", code)
+		respBytes, err := io.ReadAll(res.Body)
+		respStr := string(respBytes)
+		if err != nil {
+			log.Printf("api server error occured, but read the response failed: %v, status code: %d", err, code)
+			http.Error(*w,
+				fmt.Sprintf("api server error occured, but read the response failed, status code: %d", code),
+				http.StatusInternalServerError)
+		}
+		log.Printf("api server error: %v, status code: %d", respStr, code)
+		http.Error(*w, fmt.Sprintf("api server error, status code: %d, body:\n%v", code, respStr), code)
 		return errors.New("server error")
 	}
 
