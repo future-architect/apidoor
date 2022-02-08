@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 var ErrUnauthorizedRequest = &MyError{Message: "unauthorized request"}
@@ -16,7 +17,9 @@ func (err *MyError) Error() string {
 }
 
 type Field struct {
-	Template      URITemplate
+	// Template is a gateway path
+	Template URITemplate
+	// Path is a  destination api path
 	Path          URITemplate
 	ForwardSchema string
 	// Num represents the recent number of api calls.
@@ -26,19 +29,38 @@ type Field struct {
 	Max interface{}
 }
 
-type Fields []Field
-
-func (f Fields) URI(path string) (string, error) {
-	u := NewURITemplate(path)
-	for _, v := range f {
-		if _, ok := u.Match(v.Template); ok {
-			if v.ForwardSchema == "" {
-				return v.Path.JoinPath(), nil
-			}
-			return v.ForwardSchema + "://" + v.Path.JoinPath(), nil
+func (f Field) createForwardURL(query map[string]string) string {
+	nodes := make([]string, 0, len(f.Path.path))
+	for _, v := range f.Path.path {
+		if v.isParam {
+			nodes = append(nodes, query[v.value])
+		} else {
+			nodes = append(nodes, v.value)
 		}
 	}
-	return "", ErrUnauthorizedRequest // Not found path
+	var schema string
+	if f.ForwardSchema != "" {
+		schema = f.ForwardSchema + "://"
+	}
+	return schema + strings.Join(nodes, "/")
+}
+
+type Fields []Field
+
+type FieldResult struct {
+	Field      Field
+	ForwardURL string
+}
+
+func (f Fields) LookupTemplate(path string) (*FieldResult, error) {
+	u := NewURITemplate(path)
+	for _, v := range f {
+		if params, ok := u.Match(v.Template); ok {
+			forwardURL := v.createForwardURL(params)
+			return &FieldResult{Field: v, ForwardURL: forwardURL}, nil
+		}
+	}
+	return nil, ErrUnauthorizedRequest // Not found path
 }
 
 func (f Fields) CheckAPILimit(path string) error {

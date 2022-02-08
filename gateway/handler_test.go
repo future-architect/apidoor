@@ -77,7 +77,8 @@ func TestHandle(t *testing.T) {
 			apikey:  "apikey1",
 			field:   "/test/{test}",
 			request: "/test/hoge",
-			out:     "client error",
+			out: `api client error, status code: 400, body:
+response from API server`,
 			outCode: http.StatusBadRequest,
 		},
 		{
@@ -87,18 +88,9 @@ func TestHandle(t *testing.T) {
 			apikey:  "apikey1",
 			field:   "/test/{test}",
 			request: "/test/hoge",
-			out:     "server error",
+			out: `api server error, status code: 500, body:
+response from API server`,
 			outCode: http.StatusInternalServerError,
-		},
-		{
-			name:    "invalid Content-Type",
-			resCode: http.StatusOK,
-			content: "text/html",
-			apikey:  "apikey1",
-			field:   "/test/{test}",
-			request: "/test/hoge",
-			out:     "unexpected request content",
-			outCode: http.StatusBadRequest,
 		},
 		{
 			name:    "no authorization header",
@@ -141,47 +133,48 @@ func TestHandle(t *testing.T) {
 
 	for _, method := range methods {
 		for _, tt := range cases {
+			t.Run(tt.name, func(t *testing.T) {
+				// http server for test
+				ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(tt.resCode)
+					w.Write([]byte("response from API server"))
+				}))
 
-			// http server for test
-			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(tt.resCode)
-				w.Write([]byte("response from API server"))
-			}))
+				// set routing data
+				host := ts.URL[6:]
+				dbHost = host
+				templatePath = tt.field
 
-			// set routing data
-			host := ts.URL[6:]
-			dbHost = host
-			templatePath = tt.field
+				// send request to test server
+				r := httptest.NewRequest(method, tt.request, nil)
+				r.Header.Set("Content-Type", tt.content)
+				if tt.apikey != "" {
+					r.Header.Set("X-Apidoor-Authorization", tt.apikey)
+				}
+				w := httptest.NewRecorder()
+				h.Handle(w, r)
 
-			// send request to test server
-			r := httptest.NewRequest(method, tt.request, nil)
-			r.Header.Set("Content-Type", tt.content)
-			if tt.apikey != "" {
-				r.Header.Set("X-Apidoor-Authorization", tt.apikey)
-			}
-			w := httptest.NewRecorder()
-			h.Handle(w, r)
+				// check response
+				rw := w.Result()
 
-			// check response
-			rw := w.Result()
+				b, err := io.ReadAll(rw.Body)
+				if err != nil {
+					t.Fatalf("method:%s, case:%s: unexpected body type", method, tt.name)
+				}
 
-			b, err := io.ReadAll(rw.Body)
-			if err != nil {
-				t.Fatalf("method:%s, case:%s: unexpected body type", method, tt.name)
-			}
+				if rw.StatusCode != tt.outCode {
+					t.Fatalf("method:%s, case:%s: unexpected status code %d, expected %d, body:%s", method, tt.name, rw.StatusCode, tt.outCode, b)
+				}
 
-			if rw.StatusCode != tt.outCode {
-				t.Fatalf("method:%s, case:%s: unexpected status code %d, expected %d, body:%s", method, tt.name, rw.StatusCode, tt.outCode, b)
-			}
+				trimmed := strings.TrimSpace(string(b))
+				if trimmed != tt.out {
+					t.Fatalf("method:%s, case:%s: unexpected response: %s, expected: %s", method, tt.name, trimmed, tt.out)
+				}
 
-			trimmed := strings.TrimSpace(string(b))
-			if trimmed != tt.out {
-				t.Fatalf("method:%s, case:%s: unexpected response: %s, expected: %s", method, tt.name, trimmed, tt.out)
-			}
-
-			// loopの中なのでdeferは使えない
-			ts.Close()
-			rw.Body.Close()
+				// loopの中なのでdeferは使えない
+				ts.Close()
+				rw.Body.Close()
+			})
 		}
 	}
 }
