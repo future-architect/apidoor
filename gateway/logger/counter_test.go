@@ -6,6 +6,7 @@ import (
 	"github.com/future-architect/apidoor/gateway"
 	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/future-architect/apidoor/gateway/model"
+	"net/http"
 	"testing"
 	"time"
 )
@@ -92,9 +93,19 @@ func TestAPICallCounter_GetCountWithCache(t *testing.T) {
 
 	flextime.Fix(startTime.Add(5 * time.Second))
 	putAccessLog(t, logger.LogItem{
-		Key:       apikey,
-		TimeStamp: startTime.Add(5 * time.Second).Format(time.RFC3339),
-		Path:      pathStr,
+		Key:           apikey,
+		TimeStamp:     startTime.Add(5 * time.Second).Format(time.RFC3339),
+		Path:          pathStr,
+		StatusCode:    http.StatusOK,
+		BillingStatus: logger.Billing,
+	})
+	flextime.Fix(startTime.Add(5 * time.Second))
+	putAccessLog(t, logger.LogItem{
+		Key:           apikey,
+		TimeStamp:     startTime.Add(10 * time.Second).Format(time.RFC3339),
+		Path:          pathStr,
+		StatusCode:    http.StatusBadRequest,
+		BillingStatus: logger.NotBilling,
 	})
 
 	// the result is not changed, because the cache is valid

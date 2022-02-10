@@ -40,7 +40,7 @@ func (ac *APICallCounter) getCount(ctx context.Context, key counterKey) (int, er
 }
 
 func (ac *APICallCounter) updateCount(ctx context.Context, key counterKey) (int, error) {
-	count64, err := db.countAccessLogDB(ctx, key.apikey, key.path, ac.countStartAt())
+	count64, err := db.countBillingAccessLogDB(ctx, key.apikey, key.path, ac.countStartAt())
 	if err != nil {
 		return 0, fmt.Errorf("count api call db error: %w", err)
 	}

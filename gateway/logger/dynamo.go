@@ -47,10 +47,11 @@ func (ad accessLogDB) postAccessLogDB(ctx context.Context, item LogItem) error {
 		Put(item).RunWithContext(ctx)
 }
 
-func (ad accessLogDB) countAccessLogDB(ctx context.Context, apikey, path string, startAt time.Time) (int64, error) {
+func (ad accessLogDB) countBillingAccessLogDB(ctx context.Context, apikey, path string, startAt time.Time) (int64, error) {
 	return ad.client.Table(ad.accessLogTable).
 		Get("api_key", apikey).
 		Range("timestamp", dynamo.GreaterOrEqual, startAt).
 		Filter("'path' = ?", path).
+		Filter("'billing_status' = ?", Billing).
 		CountWithContext(ctx)
 }

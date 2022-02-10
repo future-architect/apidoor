@@ -3,35 +3,44 @@ package logger
 import (
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
-	"time"
-
-	"github.com/Songmu/flextime"
 )
 
-type LogOption func(record *[]string, key, path string, r *http.Request)
+type LogOption func(record *[]string, logItem *LogItem, r *http.Request)
 
 func WithTime() LogOption {
-	return func(record *[]string, key, path string, r *http.Request) {
-		now := flextime.Now()
-		*record = append(*record, now.Format(time.RFC3339))
+	return func(record *[]string, logItem *LogItem, r *http.Request) {
+		*record = append(*record, logItem.TimeStamp)
 	}
 }
 
 func WithKey() LogOption {
-	return func(record *[]string, key, path string, r *http.Request) {
-		*record = append(*record, key)
+	return func(record *[]string, logItem *LogItem, r *http.Request) {
+		*record = append(*record, logItem.Key)
 	}
 }
 
 func WithPath() LogOption {
-	return func(record *[]string, key, path string, r *http.Request) {
-		*record = append(*record, path)
+	return func(record *[]string, logItem *LogItem, r *http.Request) {
+		*record = append(*record, logItem.Path)
+	}
+}
+
+func WithResponseStatus() LogOption {
+	return func(record *[]string, logItem *LogItem, r *http.Request) {
+		*record = append(*record, strconv.Itoa(logItem.StatusCode))
+	}
+}
+
+func WithBillingStatus() LogOption {
+	return func(record *[]string, logItem *LogItem, r *http.Request) {
+		*record = append(*record, logItem.BillingStatus.String())
 	}
 }
 
 func HeaderElement(name string) LogOption {
-	return func(record *[]string, key, path string, r *http.Request) {
+	return func(record *[]string, logItem *LogItem, r *http.Request) {
 		*record = append(*record, r.Header.Get(name))
 	}
 }
@@ -42,7 +51,7 @@ func DefaultLogPattern() []LogOption {
 	// check log pattern
 	ptn := os.Getenv("LOG_PATTERN")
 	if ptn == "" {
-		ptn = "time,key,path" // default
+		ptn = "time,key,path,response_status,billing_status" // default
 	}
 
 	// get column name and set function to write log
@@ -55,6 +64,10 @@ func DefaultLogPattern() []LogOption {
 			pattern = append(pattern, WithKey())
 		case "path":
 			pattern = append(pattern, WithPath())
+		case "response_status":
+			pattern = append(pattern, WithResponseStatus())
+		case "billing_status":
+			pattern = append(pattern, WithBillingStatus())
 		default:
 			pattern = append(pattern, HeaderElement(value))
 		}

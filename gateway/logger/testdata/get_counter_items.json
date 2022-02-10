@@ -11,6 +11,12 @@
           },
           "path": {
             "S": "api/test"
+          },
+          "status_code": {
+            "S": "200"
+          },
+          "billing_status": {
+            "N": "1"
           }
         }
       }
@@ -26,6 +32,12 @@
           },
           "path": {
             "S": "api/test"
+          },
+          "status_code": {
+            "S": "200"
+          },
+          "billing_status": {
+            "N": "1"
           }
         }
       }
@@ -41,6 +53,12 @@
           },
           "path": {
             "S": "api/test"
+          },
+          "status_code": {
+            "S": "200"
+          },
+          "billing_status": {
+            "N": "1"
           }
         }
       }
@@ -56,6 +74,12 @@
           },
           "path": {
             "S": "api/test"
+          },
+          "status_code": {
+            "S": "200"
+          },
+          "billing_status": {
+            "N": "1"
           }
         }
       }
@@ -71,6 +95,33 @@
           },
           "path": {
             "S": "api/dummy"
+          },
+          "status_code": {
+            "S": "200"
+          },
+          "billing_status": {
+            "N": "1"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key1"
+          },
+          "timestamp": {
+            "S": "2020-12-14T06:01:00Z"
+          },
+          "path": {
+            "S": "api/test"
+          },
+          "status_code": {
+            "S": "500"
+          },
+          "billing_status": {
+            "N": "0"
           }
         }
       }
