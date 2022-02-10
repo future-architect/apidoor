@@ -93,7 +93,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Appender.Do(apikey, result.Field.Path.JoinPath(), r); err != nil {
+	if err := h.Appender.Do(apikey, result.Field.Path.JoinPath(), r, res, calcBillingStatus); err != nil {
 		log.Printf("[ERROR] appender write err: %v\n", err)
 	}
 }
@@ -111,15 +111,13 @@ func copyResponse(w http.ResponseWriter, res *http.Response) error {
 		http.Error(w, "gateway error: error occur while writing response", http.StatusInternalServerError)
 		return errors.New("error occur while writing response")
 	}
-
-	switch code := res.StatusCode; {
-	case 400 <= code && code <= 499:
-		log.Printf("api client error, status code: %d", code)
-		return errors.New("client error")
-	case 500 <= code && code <= 599:
-		log.Printf("api server error, status code: %d", code)
-		return errors.New("server error")
-	}
-
 	return nil
+}
+
+func calcBillingStatus(resp *http.Response) logger.BillingStatus {
+	code := resp.StatusCode
+	if code >= 400 && code <= 599 {
+		return logger.NotBilling
+	}
+	return logger.Billing
 }

@@ -3,7 +3,7 @@ package logger
 import (
 	"context"
 	"encoding/csv"
-	"errors"
+	"github.com/Songmu/flextime"
 	"io"
 	"log"
 	"net/http"
@@ -12,13 +12,23 @@ import (
 	"time"
 )
 
-var (
-	InsufficientLogAttributesErr = errors.New("the number of attributes in the record is less than 3")
+type BillingStatus int
+
+const (
+	NotBilling BillingStatus = iota
+	Billing
 )
+
+var billingStatuses = [...]string{"not billing", "billing"}
+
+func (bs BillingStatus) String() string {
+	return billingStatuses[bs]
+}
 
 type Appender interface {
 	UpdateDB(ctx context.Context)
-	Do(key, path string, r *http.Request) error
+	Do(key, path string, r *http.Request,
+		apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) error
 }
 
 func UpdateDBRoutine(ctx context.Context, appender Appender, interval time.Duration, kill, finish chan bool) {
@@ -46,15 +56,19 @@ type DefaultAppender struct {
 	LogItems LogItems
 }
 
-func (a *DefaultAppender) Do(key, path string, r *http.Request) error {
+func (a *DefaultAppender) Do(key, path string, r *http.Request,
+	apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) error {
+	logItem, err := NewLogItem(key, path, apiResp, calcBillingStatus)
 	record := make([]string, 0, len(LogOptionPattern))
 	for _, logOption := range LogOptionPattern {
-		logOption(&record, key, path, r)
+		logOption(&record, &logItem, r)
 	}
+	if err != nil {
+		return err
+	}
+	a.LogItems.Append(logItem)
 
-	// デフォルトはカンマ区切り
-	_, err := a.Writer.Write([]byte(strings.Join(record, ",") + "\n"))
-
+	_, err = a.Writer.Write([]byte(strings.Join(record, ",") + "\n"))
 	return err
 }
 
@@ -80,12 +94,13 @@ func NewCSVAppender(writer *csv.Writer) CSVAppender {
 	}
 }
 
-func (a *CSVAppender) Do(key, path string, r *http.Request) error {
+func (a *CSVAppender) Do(key, path string, r *http.Request,
+	apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) error {
+	logItem, err := NewLogItem(key, path, apiResp, calcBillingStatus)
 	record := make([]string, 0, len(LogOptionPattern))
 	for _, logOption := range LogOptionPattern {
-		logOption(&record, key, path, r)
+		logOption(&record, &logItem, r)
 	}
-	logItem, err := NewLogItem(record)
 	if err != nil {
 		return err
 	}
@@ -103,19 +118,20 @@ func (a *CSVAppender) UpdateDB(ctx context.Context) {
 }
 
 type LogItem struct {
-	TimeStamp string `dynamo:"timestamp"`
-	Key       string `dynamo:"api_key"`
-	Path      string `dynamo:"path"`
+	TimeStamp     string        `dynamo:"timestamp"`
+	Key           string        `dynamo:"api_key"`
+	Path          string        `dynamo:"path"`
+	StatusCode    int           `dynamo:"status_code"`
+	BillingStatus BillingStatus `dynamo:"billing_status"`
 }
 
-func NewLogItem(record []string) (LogItem, error) {
-	if len(record) < 3 {
-		return LogItem{}, InsufficientLogAttributesErr
-	}
+func NewLogItem(key, path string, apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) (LogItem, error) {
 	return LogItem{
-		TimeStamp: record[0],
-		Key:       record[1],
-		Path:      record[2],
+		TimeStamp:     flextime.Now().Format(time.RFC3339),
+		Key:           key,
+		Path:          path,
+		StatusCode:    apiResp.StatusCode,
+		BillingStatus: calcBillingStatus(apiResp),
 	}, nil
 }
 
