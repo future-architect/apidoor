@@ -2,13 +2,13 @@ package gateway
 
 import (
 	"errors"
-	"fmt"
 	"github.com/future-architect/apidoor/gateway/datasource"
 	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/future-architect/apidoor/gateway/model"
 	"io"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type DefaultHandler struct {
@@ -21,7 +21,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	apikey := r.Header.Get("X-Apidoor-Authorization")
 	if apikey == "" {
 		log.Print("No authorization key")
-		http.Error(w, "no authorization request header", http.StatusBadRequest)
+		http.Error(w, "gateway error: no authorization request header", http.StatusBadRequest)
 		return
 	}
 
@@ -30,9 +30,9 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Print(err.Error())
 		if errors.Is(err, model.ErrUnauthorizedRequest) {
-			http.Error(w, "invalid key or path", http.StatusNotFound)
+			http.Error(w, "gateway error: invalid key or path", http.StatusNotFound)
 		} else {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			http.Error(w, "gateway error: internal server error", http.StatusInternalServerError)
 		}
 		return
 	}
@@ -41,7 +41,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	result, err := fields.LookupTemplate(r.URL.Path)
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, "invalid key or path", http.StatusNotFound)
+		http.Error(w, "gateway error: invalid key or path", http.StatusNotFound)
 		return
 	}
 	forwardURL := result.ForwardURL
@@ -49,7 +49,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	// check if number of request does not exceed limit
 	if err := fields.CheckAPILimit(result.Field.Path.JoinPath()); err != nil {
 		log.Print(err.Error())
-		http.Error(w, "API limit exceeded", http.StatusForbidden)
+		http.Error(w, "gateway error: API limit exceeded", http.StatusForbidden)
 		return
 	}
 
@@ -68,21 +68,28 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	if err != nil {
 		log.Print(err.Error())
-		http.Error(w, "couldn't make request", http.StatusInternalServerError)
+		http.Error(w, "gateway error: couldn't make request", http.StatusInternalServerError)
 		return
 	}
 	setRequestHeader(r, req)
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
+		//TODO: notify detailed errors to the client when certain errors, such as timeout, occurred
 		log.Printf("error in http %s: %s", method, err.Error())
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, "gateway error: server error", http.StatusInternalServerError)
 		return
 	}
 	defer res.Body.Close()
 
+	for key, values := range res.Header {
+		valueSerialized := strings.Join(values, ",")
+		w.Header().Set(key, valueSerialized)
+	}
+	w.WriteHeader(res.StatusCode)
+
 	// return response and write log
-	if err := copyResponse(&w, res); err != nil {
+	if err := copyResponse(w, res); err != nil {
 		return
 	}
 
@@ -98,38 +105,20 @@ func setRequestHeader(src, dist *http.Request) {
 	dist.Header.Del("Cookie")
 }
 
-func copyResponse(w *http.ResponseWriter, res *http.Response) error {
-	switch code := res.StatusCode; {
-	case 400 <= code && code <= 499:
-		respBytes, err := io.ReadAll(res.Body)
-		respStr := string(respBytes)
-		if err != nil {
-			log.Printf("api client error occured, but read the response failed: %v, status code: %d", err, code)
-			http.Error(*w,
-				fmt.Sprintf("api client error occured, but read the response failed, status code: %d", code),
-				http.StatusInternalServerError)
-		}
-		log.Printf("api client error: %v, status code: %d", respStr, code)
-		http.Error(*w, fmt.Sprintf("api client error, status code: %d, body:\n%v", code, respStr), code)
-		return errors.New("client error")
-	case 500 <= code && code <= 599:
-		respBytes, err := io.ReadAll(res.Body)
-		respStr := string(respBytes)
-		if err != nil {
-			log.Printf("api server error occured, but read the response failed: %v, status code: %d", err, code)
-			http.Error(*w,
-				fmt.Sprintf("api server error occured, but read the response failed, status code: %d", code),
-				http.StatusInternalServerError)
-		}
-		log.Printf("api server error: %v, status code: %d", respStr, code)
-		http.Error(*w, fmt.Sprintf("api server error, status code: %d, body:\n%v", code, respStr), code)
-		return errors.New("server error")
+func copyResponse(w http.ResponseWriter, res *http.Response) error {
+	if _, err := io.Copy(w, res.Body); err != nil {
+		log.Printf("error occur while writing response: %s", err.Error())
+		http.Error(w, "gateway error: error occur while writing response", http.StatusInternalServerError)
+		return errors.New("error occur while writing response")
 	}
 
-	if _, err := io.Copy(*w, res.Body); err != nil {
-		log.Printf("error occur while writing response: %s", err.Error())
-		http.Error(*w, "error occur while writing response", http.StatusInternalServerError)
-		return errors.New("error occur while writing response")
+	switch code := res.StatusCode; {
+	case 400 <= code && code <= 499:
+		log.Printf("api client error, status code: %d", code)
+		return errors.New("client error")
+	case 500 <= code && code <= 599:
+		log.Printf("api server error, status code: %d", code)
+		return errors.New("server error")
 	}
 
 	return nil
