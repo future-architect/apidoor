@@ -116,7 +116,7 @@ func copyResponse(w http.ResponseWriter, res *http.Response) error {
 
 func calcBillingStatus(resp *http.Response) logger.BillingStatus {
 	code := resp.StatusCode
-	if code >= 400 && code <= 599 {
+	if code >= 500 && code <= 599 {
 		return logger.NotBilling
 	}
 	return logger.Billing
