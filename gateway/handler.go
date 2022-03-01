@@ -57,7 +57,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	var req *http.Request
 	method := r.Method
-	if err := setStoredTokens(r.Context(), result.TemplatePath, r, h.DataSource); err != nil {
+	if err := h.addStoredTokens(r.Context(), r, result.TemplatePath); err != nil {
 		log.Printf("set stored tokens failed: %v", err)
 	}
 
@@ -103,16 +103,9 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func setRequestHeader(src, dist *http.Request) {
-	dist.Header = src.Header
-	dist.Header.Del("X-Apidoor-Authorization")
-	dist.Header.Del("Connection")
-	dist.Header.Del("Cookie")
-}
-
-func setStoredTokens(ctx context.Context, templatePath string, src *http.Request, source datasource.DataSource) error {
+func (h DefaultHandler) addStoredTokens(ctx context.Context, src *http.Request, templatePath string) error {
 	apikey := src.Header.Get("X-Apidoor-Authorization")
-	accessTokens, err := source.GetAccessTokens(ctx, apikey, templatePath)
+	accessTokens, err := h.DataSource.GetAccessTokens(ctx, apikey, templatePath)
 	if err != nil {
 		return fmt.Errorf("get access tokens failed: %w", err)
 	}
@@ -123,6 +116,13 @@ func setStoredTokens(ctx context.Context, templatePath string, src *http.Request
 		return fmt.Errorf("adding tokens to request failed: %v", err)
 	}
 	return nil
+}
+
+func setRequestHeader(src, dist *http.Request) {
+	dist.Header = src.Header
+	dist.Header.Del("X-Apidoor-Authorization")
+	dist.Header.Del("Connection")
+	dist.Header.Del("Cookie")
 }
 
 func copyResponse(w http.ResponseWriter, res *http.Response) error {

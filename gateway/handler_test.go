@@ -374,7 +374,7 @@ func TestSetStoredTokens(t *testing.T) {
 			}
 			req.Header.Add("X-Apidoor-Authorization", apikey)
 
-			err = setStoredTokens(context.Background(), tt.templatePath, req, h.DataSource)
+			err = h.addStoredTokens(context.Background(), req, tt.templatePath)
 			if err != nil {
 				if errors.Is(err, tt.wantErr) {
 					t.Errorf("returned error differs: want %v, got %v", tt.wantErr, err)
