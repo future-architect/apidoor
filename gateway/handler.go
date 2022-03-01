@@ -1,7 +1,9 @@
 package gateway
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"github.com/future-architect/apidoor/gateway/datasource"
 	"github.com/future-architect/apidoor/gateway/logger"
 	"github.com/future-architect/apidoor/gateway/model"
@@ -55,11 +57,13 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 
 	var req *http.Request
 	method := r.Method
-	query := r.URL.RawQuery
+	if err := h.addStoredTokens(r.Context(), r, result.TemplatePath); err != nil {
+		log.Printf("set stored tokens failed: %v", err)
+	}
 
 	if method == http.MethodGet || method == http.MethodHead || method == http.MethodDelete || method == http.MethodOptions {
-		if query != "" {
-			forwardURL = forwardURL + "?" + query
+		if r.URL.RawQuery != "" {
+			forwardURL = forwardURL + "?" + r.URL.RawQuery
 		}
 		req, err = http.NewRequest(method, forwardURL, nil)
 	} else {
@@ -73,6 +77,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	}
 	setRequestHeader(r, req)
 
+	// call a target api
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		//TODO: notify detailed errors to the client when certain errors, such as timeout, occurred
@@ -96,6 +101,21 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	if err := h.Appender.Do(apikey, result.Field.Path.JoinPath(), r, res, calcBillingStatus); err != nil {
 		log.Printf("[ERROR] appender write err: %v\n", err)
 	}
+}
+
+func (h DefaultHandler) addStoredTokens(ctx context.Context, src *http.Request, templatePath string) error {
+	apikey := src.Header.Get("X-Apidoor-Authorization")
+	accessTokens, err := h.DataSource.GetAccessTokens(ctx, apikey, templatePath)
+	if err != nil {
+		return fmt.Errorf("get access tokens failed: %w", err)
+	}
+	if accessTokens == nil {
+		return nil
+	}
+	if err = accessTokens.AddTokensToRequest(src); err != nil {
+		return fmt.Errorf("adding tokens to request failed: %v", err)
+	}
+	return nil
 }
 
 func setRequestHeader(src, dist *http.Request) {

@@ -21,6 +21,7 @@ type APIRouting struct {
 type DataSource struct {
 	client          *dynamo.DB
 	apiRoutingTable string
+	accessKeyTable  string
 }
 
 func New() *DataSource {
@@ -28,6 +29,7 @@ func New() *DataSource {
 	if apiRoutingTable == "" {
 		log.Fatal("missing DYNAMO_TABLE_API_ROUTING env")
 	}
+	//TODO: env
 
 	dbEndpoint := os.Getenv("DYNAMO_DATA_SOURCE_ENDPOINT")
 	if dbEndpoint != "" {
@@ -69,4 +71,16 @@ func (dd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 	}
 
 	return fields, nil
+}
+
+func (dd DataSource) GetAccessTokens(ctx context.Context, apikey, templatePath string) (*model.AccessTokens, error) {
+	key := fmt.Sprintf("%s#%s", apikey, templatePath)
+	var tokens model.AccessTokens
+	err := dd.client.Table(dd.accessKeyTable).
+		Get("key", key).
+		OneWithContext(ctx, &tokens)
+	if err != nil && err != dynamo.ErrNotFound {
+		return nil, &model.MyError{Message: fmt.Sprintf("get access tokens db error: %v", err)}
+	}
+	return &tokens, nil
 }

@@ -1,4 +1,4 @@
-FROM golang:1.16.4 as build
+FROM golang:1.17.7 as build
 WORKDIR /gateway
 COPY go.mod go.sum ./
 RUN ["go", "mod", "download"]

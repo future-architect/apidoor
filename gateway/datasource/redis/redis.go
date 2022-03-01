@@ -56,3 +56,8 @@ func (rd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 
 	return fields, nil
 }
+
+func (dd DataSource) GetAccessTokens(ctx context.Context, apikey, templatePath string) (*model.AccessTokens, error) {
+	//TODO: impl
+	return nil, &model.MyError{Message: "for redis get access tokens is not implemented"}
+}

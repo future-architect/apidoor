@@ -48,8 +48,9 @@ func (f Field) createForwardURL(query map[string]string) string {
 type Fields []Field
 
 type FieldResult struct {
-	Field      Field
-	ForwardURL string
+	Field        Field
+	ForwardURL   string
+	TemplatePath string
 }
 
 func (f Fields) LookupTemplate(path string) (*FieldResult, error) {
@@ -57,7 +58,7 @@ func (f Fields) LookupTemplate(path string) (*FieldResult, error) {
 	for _, v := range f {
 		if params, ok := u.Match(v.Template); ok {
 			forwardURL := v.createForwardURL(params)
-			return &FieldResult{Field: v, ForwardURL: forwardURL}, nil
+			return &FieldResult{Field: v, ForwardURL: forwardURL, TemplatePath: v.Template.JoinPath()}, nil
 		}
 	}
 	return nil, ErrUnauthorizedRequest // Not found path
