@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/future-architect/apidoor/managementapi/validator"
 )
 
@@ -48,7 +49,7 @@ func (pp *PostAPITokenReq) UnmarshalJSON(data []byte) error {
 
 	r := bytes.NewReader(data)
 	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return UnmarshalJsonErr
+		return fmt.Errorf("api token req: %s %w", err.Error(), UnmarshalJsonErr)
 	}
 
 	if err := validator.ValidateStruct(pp); err != nil {
