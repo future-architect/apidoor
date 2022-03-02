@@ -2,6 +2,8 @@ package managementapi_test
 
 import (
 	"encoding/json"
+	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/validator"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +22,7 @@ func TestSearchAPIInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var data = []managementapi.APIInfo{
+	var data = []model.APIInfo{
 		{
 			Name:        "Awesome API",
 			Source:      "Nice Company",
@@ -74,19 +76,19 @@ func TestSearchAPIInfo(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		params     managementapi.SearchAPIInfoReq
+		params     model.SearchAPIInfoReq
 		wantStatus int
 		wantResp   interface{} // *managementapi.SearchAPIInfoResp
 	}{
 		{
 			name: "完全一致の検索ができる",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q:            "Awesome API",
 				PatternMatch: "exact",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchAPIInfoResp{
-				APIList: []managementapi.APIInfo{
+			wantResp: model.SearchAPIInfoResp{
+				APIList: []model.APIInfo{
 					{
 						Name:        "Awesome API",
 						Source:      "Nice Company",
@@ -95,8 +97,8 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/awesome",
 					},
 				},
-				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
-					ResultSet: managementapi.ResultSet{
+				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+					ResultSet: model.ResultSet{
 						Count:  1,
 						Limit:  50,
 						Offset: 0,
@@ -106,12 +108,12 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "部分一致の検索ができる(pattern matchは省略可能)",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q: "Awesome API",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchAPIInfoResp{
-				APIList: []managementapi.APIInfo{
+			wantResp: model.SearchAPIInfoResp{
+				APIList: []model.APIInfo{
 					{
 						Name:        "Awesome API",
 						Source:      "Nice Company",
@@ -127,8 +129,8 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/v2/awesome",
 					},
 				},
-				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
-					ResultSet: managementapi.ResultSet{
+				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+					ResultSet: model.ResultSet{
 						Count:  2,
 						Limit:  50,
 						Offset: 0,
@@ -138,12 +140,12 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "複数キーワードであり、また、パーセントエンコーディングを持つキーワードを含む部分一致検索ができる",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q: "Search.example%2ecom",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchAPIInfoResp{
-				APIList: []managementapi.APIInfo{
+			wantResp: model.SearchAPIInfoResp{
+				APIList: []model.APIInfo{
 					{
 						Name:        "Search API",
 						Source:      "Great Company",
@@ -152,8 +154,8 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
-					ResultSet: managementapi.ResultSet{
+				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+					ResultSet: model.ResultSet{
 						Count:  1,
 						Limit:  50,
 						Offset: 0,
@@ -163,13 +165,13 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "フィールドを指定して検索ができる",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q:            "Great",
 				TargetFields: "source.description",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchAPIInfoResp{
-				APIList: []managementapi.APIInfo{
+			wantResp: model.SearchAPIInfoResp{
+				APIList: []model.APIInfo{
 					{
 						Name:        "Search API",
 						Source:      "Great Company",
@@ -178,8 +180,8 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
-					ResultSet: managementapi.ResultSet{
+				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+					ResultSet: model.ResultSet{
 						Count:  1,
 						Limit:  50,
 						Offset: 0,
@@ -189,14 +191,14 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "limitで件数を制限し、offsetで開始位置を指定できる",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q:            "special",
 				PatternMatch: "partial",
 				Offset:       1,
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchAPIInfoResp{
-				APIList: []managementapi.APIInfo{
+			wantResp: model.SearchAPIInfoResp{
+				APIList: []model.APIInfo{
 					{
 						Name:        "Great API",
 						Source:      "Nice Company",
@@ -205,8 +207,8 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
-					ResultSet: managementapi.ResultSet{
+				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+					ResultSet: model.ResultSet{
 						Count:  2,
 						Limit:  50,
 						Offset: 1,
@@ -216,14 +218,14 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "検索結果が0件",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q: "not exist",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: managementapi.SearchAPIInfoResp{
-				APIList: []managementapi.APIInfo{},
-				SearchAPIInfoMetaData: managementapi.SearchAPIInfoMetaData{
-					ResultSet: managementapi.ResultSet{
+			wantResp: model.SearchAPIInfoResp{
+				APIList: []model.APIInfo{},
+				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+					ResultSet: model.ResultSet{
 						Count:  0,
 						Limit:  50,
 						Offset: 0,
@@ -233,14 +235,14 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "リクエストパラメータが不正",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q:            "img",
 				TargetFields: "name.thumbnail",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp: managementapi.BadRequestResp{
+			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
-				ValidationErrors: &managementapi.ValidationErrors{
+				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "target_fields[1]",
 						ConstraintType: "enum",
@@ -253,13 +255,13 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "Qパラメータが未指定、または空文字列",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp: managementapi.BadRequestResp{
+			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
-				ValidationErrors: &managementapi.ValidationErrors{
+				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "q",
 						ConstraintType: "required",
@@ -271,14 +273,14 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "Qパラメータに空文字列が含まれている",
-			params: managementapi.SearchAPIInfoReq{
+			params: model.SearchAPIInfoReq{
 				Q:            "Awesome..API",
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
-			wantResp: managementapi.BadRequestResp{
+			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
-				ValidationErrors: &managementapi.ValidationErrors{
+				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "q[1]",
 						ConstraintType: "ne",
@@ -318,10 +320,10 @@ func TestSearchAPIInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 			switch tt.wantResp.(type) {
-			case managementapi.SearchAPIInfoResp:
-				testCompareBodyAsSearchAPIInfoResp(t, tt.wantResp.(managementapi.SearchAPIInfoResp), body)
-			case managementapi.BadRequestResp:
-				want := tt.wantResp.(managementapi.BadRequestResp)
+			case model.SearchAPIInfoResp:
+				testCompareBodyAsSearchAPIInfoResp(t, tt.wantResp.(model.SearchAPIInfoResp), body)
+			case validator.BadRequestResp:
+				want := tt.wantResp.(validator.BadRequestResp)
 				testBadRequestResp(t, &want, body)
 			case string:
 				testCompareBodyAsString(t, tt.wantResp.(string), body)
@@ -333,13 +335,13 @@ func TestSearchAPIInfo(t *testing.T) {
 	}
 }
 
-func testCompareBodyAsSearchAPIInfoResp(t *testing.T, want managementapi.SearchAPIInfoResp, got []byte) {
-	var respBody managementapi.SearchAPIInfoResp
+func testCompareBodyAsSearchAPIInfoResp(t *testing.T, want model.SearchAPIInfoResp, got []byte) {
+	var respBody model.SearchAPIInfoResp
 	if err := json.Unmarshal(got, &respBody); err != nil {
 		t.Errorf("parse body as search api info response error: %v", err)
 		return
 	}
-	if diff := cmp.Diff(want, respBody, cmpopts.IgnoreFields(managementapi.APIInfo{}, "ID")); diff != "" {
+	if diff := cmp.Diff(want, respBody, cmpopts.IgnoreFields(model.APIInfo{}, "ID")); diff != "" {
 		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 }

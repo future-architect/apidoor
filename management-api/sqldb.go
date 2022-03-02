@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	_ "embed"
 	"fmt"
+	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/lib/pq"
 	"log"
 	"os"
@@ -65,15 +66,15 @@ func NewSqlDB() (*sqlDB, error) {
 	}, nil
 }
 
-func (sd sqlDB) getAPIInfo(ctx context.Context) ([]APIInfo, error) {
+func (sd sqlDB) getAPIInfo(ctx context.Context) ([]model.APIInfo, error) {
 	rows, err := sd.driver.QueryxContext(ctx, "SELECT * from apiinfo")
 	if err != nil {
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	var list []APIInfo
+	var list []model.APIInfo
 	for rows.Next() {
-		var row APIInfo
+		var row model.APIInfo
 
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
@@ -85,7 +86,7 @@ func (sd sqlDB) getAPIInfo(ctx context.Context) ([]APIInfo, error) {
 	return list, nil
 }
 
-func (sd sqlDB) postAPIInfo(ctx context.Context, info *PostAPIInfoReq) error {
+func (sd sqlDB) postAPIInfo(ctx context.Context, info *model.PostAPIInfoReq) error {
 	_, err := sd.driver.NamedExecContext(ctx,
 		"INSERT INTO apiinfo(name, source, description, thumbnail, swagger_url) VALUES(:name, :source, :description, :thumbnail, :swagger_url)",
 		info)
@@ -95,7 +96,7 @@ func (sd sqlDB) postAPIInfo(ctx context.Context, info *PostAPIInfoReq) error {
 	return nil
 }
 
-func (sd sqlDB) searchAPIInfo(ctx context.Context, params *SearchAPIInfoParams) (*SearchAPIInfoResp, error) {
+func (sd sqlDB) searchAPIInfo(ctx context.Context, params *model.SearchAPIInfoParams) (*model.SearchAPIInfoResp, error) {
 	var query bytes.Buffer
 	if err := searchAPISQLTemplate.Execute(&query, params); err != nil {
 		return nil, fmt.Errorf("generate SQL error: %w", err)
@@ -114,10 +115,10 @@ func (sd sqlDB) searchAPIInfo(ctx context.Context, params *SearchAPIInfoParams) 
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	list := make([]APIInfo, 0)
+	list := make([]model.APIInfo, 0)
 	count := 0
 	for rows.Next() {
-		var row SearchAPIInfoResult
+		var row model.SearchAPIInfoResult
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
 		}
@@ -125,21 +126,21 @@ func (sd sqlDB) searchAPIInfo(ctx context.Context, params *SearchAPIInfoParams) 
 		list = append(list, row.APIInfo)
 		count = row.Count
 	}
-	metaData := SearchAPIInfoMetaData{
-		ResultSet: ResultSet{
+	metaData := model.SearchAPIInfoMetaData{
+		ResultSet: model.ResultSet{
 			Count:  count,
 			Limit:  params.Limit,
 			Offset: params.Offset,
 		},
 	}
 
-	return &SearchAPIInfoResp{
+	return &model.SearchAPIInfoResp{
 		APIList:               list,
 		SearchAPIInfoMetaData: metaData,
 	}, nil
 }
 
-func (sd sqlDB) postUser(ctx context.Context, user *PostUserReq) error {
+func (sd sqlDB) postUser(ctx context.Context, user *model.PostUserReq) error {
 	_, err := sd.driver.NamedExecContext(ctx,
 		`INSERT INTO apiuser(account_id, email_address, login_password_hash, name, created_at, updated_at)
 				VALUES(:account_id, :email_address, crypt(:password, gen_salt('bf')),
@@ -151,7 +152,7 @@ func (sd sqlDB) postUser(ctx context.Context, user *PostUserReq) error {
 	return nil
 }
 
-func (sd sqlDB) postProduct(ctx context.Context, product *PostProductReq) error {
+func (sd sqlDB) postProduct(ctx context.Context, product *model.PostProductReq) error {
 	tx, err := sd.driver.BeginTxx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("begin transaction failed: %w", err)

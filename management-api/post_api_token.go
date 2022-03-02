@@ -25,8 +25,8 @@ import (
 func PostAPIToken(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
-		resp := NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
-		if err := resp.writeResp(w); err != nil {
+		resp := validator.NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
+		if err := resp.WriteResp(w); err != nil {
 			log.Printf("write bad request response failed: %v", err)
 			http.Error(w, "server error", http.StatusInternalServerError)
 		}
@@ -37,10 +37,10 @@ func PostAPIToken(w http.ResponseWriter, r *http.Request) {
 
 	var req model.PostAPITokenReq
 	if err := json.Unmarshal(body.Bytes(), &req); err != nil {
-		if errors.Is(err, UnmarshalJsonErr) {
+		if errors.Is(err, model.UnmarshalJsonErr) {
 			log.Printf("failed to parse json body: %v", err)
-			resp := NewBadRequestResp(UnmarshalJsonErr.Error())
-			if err := resp.writeResp(w); err != nil {
+			resp := validator.NewBadRequestResp(model.UnmarshalJsonErr.Error())
+			if err := resp.WriteResp(w); err != nil {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}
@@ -66,8 +66,8 @@ func PostAPIToken(w http.ResponseWriter, r *http.Request) {
 	}
 	if cnt == 0 {
 		log.Println("api_key or path is wrong")
-		resp := NewBadRequestResp("api_key or path is wrong")
-		if err := resp.writeResp(w); err != nil {
+		resp := validator.NewBadRequestResp("api_key or path is wrong")
+		if err := resp.WriteResp(w); err != nil {
 			log.Printf("write bad request response failed: %v", err)
 			http.Error(w, "server error", http.StatusInternalServerError)
 		}

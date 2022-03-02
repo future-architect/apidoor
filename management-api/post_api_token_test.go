@@ -157,7 +157,7 @@ func TestPostAPIToken(t *testing.T) {
 				}
 			case validator.BadRequestResp:
 				want := tt.wantResp.(validator.BadRequestResp)
-				testValidatorBadRequestResp(t, &want, resp)
+				testBadRequestResp(t, &want, resp)
 			default:
 				t.Errorf("type of wantResp is not unsupported")
 			}
@@ -194,19 +194,4 @@ func getAccessToken(db *dynamo.DB, key string) (*accessToken, error) {
 type accessToken struct {
 	Key          string              `dynamo:"key"`
 	AccessTokens []model.AccessToken `dynamo:"tokens"`
-}
-
-// TODO: delete this function after moving validator to validator/ is completed
-func testValidatorBadRequestResp(t *testing.T, want *validator.BadRequestResp, got []byte) {
-	t.Helper()
-	var gotBody validator.BadRequestResp
-	if err := json.Unmarshal(got, &gotBody); err != nil {
-		t.Errorf("parsing body as BadRequestResp failed: %v", err)
-		return
-	}
-
-	if diff := cmp.Diff(*want, gotBody); diff != "" {
-		t.Errorf("bad request response differs:\n%v", diff)
-	}
-
 }

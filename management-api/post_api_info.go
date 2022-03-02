@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/validator"
 	"io"
 	"log"
 	"net/http"
@@ -22,8 +24,8 @@ import (
 func PostAPIInfo(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
-		resp := NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
-		if err := resp.writeResp(w); err != nil {
+		resp := validator.NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
+		if err := resp.WriteResp(w); err != nil {
 			log.Printf("write bad request response failed: %v", err)
 			http.Error(w, "server error", http.StatusInternalServerError)
 		}
@@ -32,18 +34,18 @@ func PostAPIInfo(w http.ResponseWriter, r *http.Request) {
 	body := new(bytes.Buffer)
 	io.Copy(body, r.Body)
 
-	var req PostAPIInfoReq
+	var req model.PostAPIInfoReq
 	if err := json.Unmarshal(body.Bytes(), &req); err != nil {
-		if errors.Is(err, UnmarshalJsonErr) {
+		if errors.Is(err, model.UnmarshalJsonErr) {
 			log.Printf("failed to parse json body: %v", err)
-			resp := NewBadRequestResp(UnmarshalJsonErr.Error())
-			if err := resp.writeResp(w); err != nil {
+			resp := validator.NewBadRequestResp(model.UnmarshalJsonErr.Error())
+			if err := resp.WriteResp(w); err != nil {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}
-		} else if ve, ok := err.(ValidationErrors); ok {
+		} else if ve, ok := err.(validator.ValidationErrors); ok {
 			log.Printf("input validation failed:\n%v", err)
-			if err = ve.toBadRequestResp().writeResp(w); err != nil {
+			if err = ve.ToBadRequestResp().WriteResp(w); err != nil {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}

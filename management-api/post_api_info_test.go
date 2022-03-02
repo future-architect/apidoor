@@ -3,6 +3,8 @@ package managementapi_test
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/validator"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,16 +23,16 @@ func TestPostAPIInfo(t *testing.T) {
 	tests := []struct {
 		name           string
 		contentType    string
-		req            managementapi.PostAPIInfoReq
+		req            model.PostAPIInfoReq
 		wantHttpStatus int
 		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
-		wantRecords []managementapi.APIInfo
+		wantRecords []model.APIInfo
 		wantResp    interface{}
 	}{
 		{
 			name:        "api infoを登録できる",
 			contentType: "application/json",
-			req: managementapi.PostAPIInfoReq{
+			req: model.PostAPIInfoReq{
 				Name:        "Awesome API",
 				Source:      "Company1",
 				Description: "provide fantastic information.",
@@ -38,7 +40,7 @@ func TestPostAPIInfo(t *testing.T) {
 				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusCreated,
-			wantRecords: []managementapi.APIInfo{
+			wantRecords: []model.APIInfo{
 				{
 					Name:        "Awesome API",
 					Source:      "Company1",
@@ -52,7 +54,7 @@ func TestPostAPIInfo(t *testing.T) {
 		{
 			name:        "Fieldに空文字列がある場合は登録できない",
 			contentType: "application/json",
-			req: managementapi.PostAPIInfoReq{
+			req: model.PostAPIInfoReq{
 				Name:        "",
 				Source:      "Company2",
 				Description: "provide fantastic information.",
@@ -60,10 +62,10 @@ func TestPostAPIInfo(t *testing.T) {
 				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.APIInfo{},
-			wantResp: managementapi.BadRequestResp{
+			wantRecords:    []model.APIInfo{},
+			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
-				ValidationErrors: &managementapi.ValidationErrors{
+				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "name",
 						ConstraintType: "required",
@@ -76,7 +78,7 @@ func TestPostAPIInfo(t *testing.T) {
 		{
 			name:        "Content-Typeがapplication/json以外の場合は登録できない",
 			contentType: "text/plain",
-			req: managementapi.PostAPIInfoReq{
+			req: model.PostAPIInfoReq{
 				Name:        "wrong content-type",
 				Source:      "Company3",
 				Description: "provide fantastic information.",
@@ -84,8 +86,8 @@ func TestPostAPIInfo(t *testing.T) {
 				SwaggerURL:  "http://example.com/api/awesome",
 			},
 			wantHttpStatus: http.StatusBadRequest,
-			wantRecords:    []managementapi.APIInfo{},
-			wantResp: managementapi.BadRequestResp{
+			wantRecords:    []model.APIInfo{},
+			wantResp: validator.BadRequestResp{
 				Message: `unexpected request Content-Type, it must be "application/json"`,
 			},
 		},
@@ -123,9 +125,9 @@ func TestPostAPIInfo(t *testing.T) {
 				return
 			}
 
-			list := []managementapi.APIInfo{}
+			list := []model.APIInfo{}
 			for rows.Next() {
-				var row managementapi.APIInfo
+				var row model.APIInfo
 
 				if err := rows.StructScan(&row); err != nil {
 					t.Errorf("reading row error: %v", err)
@@ -135,7 +137,7 @@ func TestPostAPIInfo(t *testing.T) {
 				list = append(list, row)
 			}
 
-			if diff := cmp.Diff(tt.wantRecords, list, cmpopts.IgnoreFields(managementapi.APIInfo{}, "ID")); diff != "" {
+			if diff := cmp.Diff(tt.wantRecords, list, cmpopts.IgnoreFields(model.APIInfo{}, "ID")); diff != "" {
 				t.Errorf("db get list of api info responce differs:\n %v", diff)
 			}
 			switch tt.wantResp.(type) {
@@ -143,8 +145,8 @@ func TestPostAPIInfo(t *testing.T) {
 				if tt.wantResp != string(resp) {
 					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
 				}
-			case managementapi.BadRequestResp:
-				want := tt.wantResp.(managementapi.BadRequestResp)
+			case validator.BadRequestResp:
+				want := tt.wantResp.(validator.BadRequestResp)
 				testBadRequestResp(t, &want, resp)
 			default:
 				t.Errorf("type of wantResp is not unsupported")
