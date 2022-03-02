@@ -3,6 +3,7 @@ package managementapi_test
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/future-architect/apidoor/managementapi/model"
 	"io"
 	"log"
 	"net/http"
@@ -42,7 +43,7 @@ func TestGetAPIInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var data = []managementapi.APIInfo{
+	var data = []model.APIInfo{
 		{
 			Name:        "Awesome API",
 			Source:      "Nice Company",
@@ -83,12 +84,12 @@ func TestGetAPIInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var res managementapi.APIInfoList
+	var res model.APIInfoList
 	if err := json.Unmarshal(body, &res); err != nil {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(data, res.List, cmpopts.IgnoreFields(managementapi.APIInfo{}, "ID")); diff != "" {
+	if diff := cmp.Diff(data, res.List, cmpopts.IgnoreFields(model.APIInfo{}, "ID")); diff != "" {
 		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 

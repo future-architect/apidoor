@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-//TODO: delete ../validator*.go
-
 var (
 	validate *validator.Validate
 

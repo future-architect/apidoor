@@ -3,6 +3,8 @@ package managementapi
 import (
 	_ "embed"
 	"encoding/json"
+	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/validator"
 	"log"
 	"net/http"
 )
@@ -16,8 +18,8 @@ import (
 // @Param pattern_match query string false "pattern match, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
 // @Param offset query int false "the starting point for the result set" default(0)
-// @Success 200 {object} SearchAPIInfoResp
-// @Failure 400 {object} BadRequestResp
+// @Success 200 {object} model.SearchAPIInfoResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} string
 // @Router /api/search [get]
 func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
@@ -27,8 +29,8 @@ func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req SearchAPIInfoReq
-	if err := schemaDecoder.Decode(&req, r.Form); err != nil {
+	var req model.SearchAPIInfoReq
+	if err := model.SchemaDecoder.Decode(&req, r.Form); err != nil {
 		log.Printf("parse query param error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
@@ -36,9 +38,9 @@ func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
 
 	params, err := req.CreateParams()
 	if err != nil {
-		if ve, ok := err.(ValidationErrors); ok {
+		if ve, ok := err.(validator.ValidationErrors); ok {
 			log.Printf("input validation failed:\n%v", err)
-			if err = ve.toBadRequestResp().writeResp(w); err != nil {
+			if err = ve.ToBadRequestResp().WriteResp(w); err != nil {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}

@@ -1,30 +1,30 @@
-package managementapi_test
+package model
 
 import (
+	"github.com/future-architect/apidoor/managementapi/validator"
 	"testing"
 
-	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
 )
 
 func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 	tests := []struct {
 		name  string
-		input managementapi.SearchAPIInfoReq
-		want  *managementapi.SearchAPIInfoParams
+		input SearchAPIInfoReq
+		want  *SearchAPIInfoParams
 		// wantErr は期待されるerrorでvalidator.FieldErrorsが返る。validator.FieldErrorは出力に関わるFieldとTagのみ比較する
-		wantErr managementapi.ValidationErrors
+		wantErr validator.ValidationErrors
 	}{
 		{
 			name: "パーセントエンコードされたクエリを分割して、デコードできる",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q:            "a.bc%2ed.efg",
 				TargetFields: "name.description",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
-			want: &managementapi.SearchAPIInfoParams{
+			want: &SearchAPIInfoParams{
 				Q:            []string{"a", "bc.d", "efg"},
 				TargetFields: []string{"name", "description"},
 				PatternMatch: "exact",
@@ -35,14 +35,14 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "target_fieldsがallのとき、展開される",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q:            "abc",
 				TargetFields: "all",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
-			want: &managementapi.SearchAPIInfoParams{
+			want: &SearchAPIInfoParams{
 				Q:            []string{"abc"},
 				TargetFields: []string{"name", "source", "description"},
 				PatternMatch: "exact",
@@ -53,14 +53,14 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "target_fieldsがallを含めて複数あるとき、all単独のときと同様に展開される",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q:            "abc",
 				TargetFields: "all.name",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
-			want: &managementapi.SearchAPIInfoParams{
+			want: &SearchAPIInfoParams{
 				Q:            []string{"abc"},
 				TargetFields: []string{"name", "source", "description"},
 				PatternMatch: "exact",
@@ -71,10 +71,10 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "未指定時に既定の値が設定される",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q: "abc",
 			},
-			want: &managementapi.SearchAPIInfoParams{
+			want: &SearchAPIInfoParams{
 				Q:            []string{"abc"},
 				TargetFields: []string{"name", "source", "description"},
 				PatternMatch: "partial",
@@ -85,14 +85,14 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "クエリが空",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				TargetFields: "name.description",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: managementapi.ValidationErrors{
+			wantErr: validator.ValidationErrors{
 				{
 					Field:          "q",
 					ConstraintType: "required",
@@ -103,11 +103,11 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "クエリに検索語に空文字列がある",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q: "abc.",
 			},
 			want: nil,
-			wantErr: managementapi.ValidationErrors{
+			wantErr: validator.ValidationErrors{
 				{
 					Field:          "q[1]",
 					ConstraintType: "ne",
@@ -118,11 +118,11 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "クエリがURL encodedとして不正",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q: "a%g3bc",
 			},
 			want: nil,
-			wantErr: managementapi.ValidationErrors{
+			wantErr: validator.ValidationErrors{
 				{
 					Field:          "q",
 					ConstraintType: "url_encoded",
@@ -133,7 +133,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "TargetFieldsに不正な値が含まれている",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q:            "abc",
 				TargetFields: "name.wrong",
 				PatternMatch: "exact",
@@ -141,7 +141,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: managementapi.ValidationErrors{
+			wantErr: validator.ValidationErrors{
 				{
 					Field:          "target_fields[1]",
 					ConstraintType: "enum",
@@ -153,7 +153,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "PatternMatchが不正な値",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q:            "abc",
 				TargetFields: "all",
 				PatternMatch: "wrong",
@@ -161,7 +161,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: managementapi.ValidationErrors{
+			wantErr: validator.ValidationErrors{
 				{
 					Field:          "pattern_match",
 					ConstraintType: "enum",
@@ -173,7 +173,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "Limitが上限を超えている",
-			input: managementapi.SearchAPIInfoReq{
+			input: SearchAPIInfoReq{
 				Q:            "abc",
 				TargetFields: "name",
 				PatternMatch: "exact",
@@ -181,7 +181,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 				Offset:       0,
 			},
 			want: nil,
-			wantErr: managementapi.ValidationErrors{
+			wantErr: validator.ValidationErrors{
 				{
 					Field:          "limit",
 					ConstraintType: "lte",
@@ -211,8 +211,8 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 	}
 }
 
-func testValidateErrors(t *testing.T, want managementapi.ValidationErrors, got error) {
-	gotErr, ok := got.(managementapi.ValidationErrors)
+func testValidateErrors(t *testing.T, want validator.ValidationErrors, got error) {
+	gotErr, ok := got.(validator.ValidationErrors)
 	if !ok {
 		t.Errorf("return error is not validator.ValidationErrors, got: %v", got)
 		return

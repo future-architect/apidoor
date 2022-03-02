@@ -2,6 +2,7 @@ package managementapi
 
 import (
 	"encoding/json"
+	"github.com/future-architect/apidoor/managementapi/model"
 	"log"
 	"net/http"
 
@@ -12,7 +13,7 @@ import (
 // @Summary Get list of API info.
 // @Description Get list of APIs and its information
 // @produce json
-// @Success 200 {object} APIInfoList
+// @Success 200 {object} model.APIInfoList
 // @Router /api [get]
 func GetAPIInfo(w http.ResponseWriter, r *http.Request) {
 	list, err := db.getAPIInfo(r.Context())
@@ -22,7 +23,7 @@ func GetAPIInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := json.Marshal(APIInfoList{List: list})
+	res, err := json.Marshal(model.APIInfoList{List: list})
 	if err != nil {
 		log.Print("error occurs while reading response")
 		http.Error(w, "error occur in database", http.StatusInternalServerError)

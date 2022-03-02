@@ -19,7 +19,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.APIInfoList"
+                            "$ref": "#/definitions/model.APIInfoList"
                         }
                     }
                 }
@@ -37,7 +37,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/managementapi.PostAPIInfoReq"
+                            "$ref": "#/definitions/model.PostAPIInfoReq"
                         }
                     }
                 ],
@@ -51,7 +51,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                            "$ref": "#/definitions/validator.BadRequestResp"
                         }
                     },
                     "500": {
@@ -117,13 +117,53 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.SearchAPIInfoResp"
+                            "$ref": "#/definitions/model.SearchAPIInfoResp"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/token": {
+            "post": {
+                "description": "post api tokens for calling external api",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "post api tokens for call external api",
+                "parameters": [
+                    {
+                        "description": "api token description",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostAPITokenReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
                         }
                     },
                     "500": {
@@ -166,7 +206,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/managementapi.PostProductReq"
+                            "$ref": "#/definitions/model.PostProductReq"
                         }
                     }
                 ],
@@ -180,7 +220,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                            "$ref": "#/definitions/validator.BadRequestResp"
                         }
                     },
                     "500": {
@@ -206,7 +246,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/managementapi.PostAPIRoutingReq"
+                            "$ref": "#/definitions/model.PostAPIRoutingReq"
                         }
                     }
                 ],
@@ -220,7 +260,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                            "$ref": "#/definitions/validator.BadRequestResp"
                         }
                     },
                     "500": {
@@ -246,7 +286,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/managementapi.PostUserReq"
+                            "$ref": "#/definitions/model.PostUserReq"
                         }
                     }
                 ],
@@ -260,7 +300,7 @@
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/managementapi.BadRequestResp"
+                            "$ref": "#/definitions/validator.BadRequestResp"
                         }
                     },
                     "500": {
@@ -274,7 +314,7 @@
         }
     },
     "definitions": {
-        "managementapi.APIContent": {
+        "model.APIContent": {
             "type": "object",
             "required": [
                 "id"
@@ -288,7 +328,7 @@
                 }
             }
         },
-        "managementapi.APIInfo": {
+        "model.APIInfo": {
             "type": "object",
             "properties": {
                 "description": {
@@ -311,32 +351,37 @@
                 }
             }
         },
-        "managementapi.APIInfoList": {
+        "model.APIInfoList": {
             "type": "object",
             "properties": {
                 "api_info_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/managementapi.APIInfo"
+                        "$ref": "#/definitions/model.APIInfo"
                     }
                 }
             }
         },
-        "managementapi.BadRequestResp": {
+        "model.AccessToken": {
             "type": "object",
+            "required": [
+                "key",
+                "param_type",
+                "value"
+            ],
             "properties": {
-                "message": {
+                "key": {
                     "type": "string"
                 },
-                "validation_errors": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/managementapi.ValidationError"
-                    }
+                "param_type": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
                 }
             }
         },
-        "managementapi.PostAPIInfoReq": {
+        "model.PostAPIInfoReq": {
             "type": "object",
             "required": [
                 "description",
@@ -363,7 +408,7 @@
                 }
             }
         },
-        "managementapi.PostAPIRoutingReq": {
+        "model.PostAPIRoutingReq": {
             "type": "object",
             "required": [
                 "api_key",
@@ -382,7 +427,29 @@
                 }
             }
         },
-        "managementapi.PostProductReq": {
+        "model.PostAPITokenReq": {
+            "type": "object",
+            "required": [
+                "api_key",
+                "path",
+                "tokens"
+            ],
+            "properties": {
+                "api_key": {
+                    "type": "string"
+                },
+                "path": {
+                    "type": "string"
+                },
+                "tokens": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.AccessToken"
+                    }
+                }
+            }
+        },
+        "model.PostProductReq": {
             "type": "object",
             "required": [
                 "description",
@@ -394,7 +461,7 @@
                 "api_contents": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/managementapi.APIContent"
+                        "$ref": "#/definitions/model.APIContent"
                     }
                 },
                 "description": {
@@ -417,7 +484,7 @@
                 }
             }
         },
-        "managementapi.PostUserReq": {
+        "model.PostUserReq": {
             "type": "object",
             "required": [
                 "account_id",
@@ -439,7 +506,7 @@
                 }
             }
         },
-        "managementapi.ResultSet": {
+        "model.ResultSet": {
             "type": "object",
             "properties": {
                 "count": {
@@ -453,29 +520,43 @@
                 }
             }
         },
-        "managementapi.SearchAPIInfoMetaData": {
+        "model.SearchAPIInfoMetaData": {
             "type": "object",
             "properties": {
                 "result_set": {
-                    "$ref": "#/definitions/managementapi.ResultSet"
+                    "$ref": "#/definitions/model.ResultSet"
                 }
             }
         },
-        "managementapi.SearchAPIInfoResp": {
+        "model.SearchAPIInfoResp": {
             "type": "object",
             "properties": {
                 "api_info_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/managementapi.APIInfo"
+                        "$ref": "#/definitions/model.APIInfo"
                     }
                 },
                 "metadata": {
-                    "$ref": "#/definitions/managementapi.SearchAPIInfoMetaData"
+                    "$ref": "#/definitions/model.SearchAPIInfoMetaData"
                 }
             }
         },
-        "managementapi.ValidationError": {
+        "validator.BadRequestResp": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "validation_errors": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/validator.ValidationError"
+                    }
+                }
+            }
+        },
+        "validator.ValidationError": {
             "type": "object",
             "properties": {
                 "constraint_type": {

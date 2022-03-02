@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/validator"
 	"io"
 	"log"
 	"net/http"
@@ -69,9 +71,9 @@ func TestPostAPIRouting(t *testing.T) {
 			checkHgetArgs: []string{targetKey, "test2"},
 			checkHgetResp: "",
 			httpStatus:    http.StatusBadRequest,
-			wantResp: managementapi.BadRequestResp{
+			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
-				ValidationErrors: &managementapi.ValidationErrors{
+				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "api_key",
 						ConstraintType: "required",
@@ -89,9 +91,9 @@ func TestPostAPIRouting(t *testing.T) {
 			checkHgetArgs: []string{targetKey, "test3"},
 			checkHgetResp: "",
 			httpStatus:    http.StatusBadRequest,
-			wantResp: managementapi.BadRequestResp{
+			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
-				ValidationErrors: &managementapi.ValidationErrors{
+				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "forward_url",
 						ConstraintType: "url",
@@ -105,7 +107,7 @@ func TestPostAPIRouting(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			reqParam := managementapi.PostAPIRoutingReq{
+			reqParam := model.PostAPIRoutingReq{
 				ApiKey:     tt.apiKey,
 				Path:       tt.path,
 				ForwardURL: tt.forwardURL,
@@ -142,8 +144,8 @@ func TestPostAPIRouting(t *testing.T) {
 				if tt.wantResp != string(resp) {
 					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
 				}
-			case managementapi.BadRequestResp:
-				want := tt.wantResp.(managementapi.BadRequestResp)
+			case validator.BadRequestResp:
+				want := tt.wantResp.(validator.BadRequestResp)
 				testBadRequestResp(t, &want, resp)
 			default:
 				t.Errorf("type of wantResp is not unsupported")
