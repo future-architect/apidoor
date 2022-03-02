@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/future-architect/apidoor/managementapi/apirouting/dynamo"
 	"github.com/future-architect/apidoor/managementapi/apirouting/redis"
+	"github.com/future-architect/apidoor/managementapi/model"
 	"log"
 	"os"
 )
@@ -21,6 +22,8 @@ func init() {
 
 type APIDB interface {
 	PostRouting(ctx context.Context, apiKey, path, forwardURL string) error
+	PostAPIToken(ctx context.Context, req model.PostAPITokenReq) error
+	CountRouting(ctx context.Context, apikey, path string) (int64, error)
 }
 
 func createDBDriver(dbType string) (APIDB, error) {

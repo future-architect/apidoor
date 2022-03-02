@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -16,6 +17,12 @@ import (
 )
 
 func TestPostAPIRouting(t *testing.T) {
+	dbType := managementapi.GetAPIDBType(t)
+	if dbType != managementapi.REDIS {
+		log.Println("this test is valid when redis is used, skip")
+		return
+	}
+
 	targetKey := "APIKEY"
 
 	//setup DB

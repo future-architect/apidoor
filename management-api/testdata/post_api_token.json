@@ -1,0 +1,19 @@
+{
+  "api_routing": [
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key"
+          },
+          "path": {
+            "S": "test/{correct}"
+          },
+          "forward_url": {
+            "S": "http://example.com/test/{correct}"
+          }
+        }
+      }
+    }
+  ]
+}

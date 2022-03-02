@@ -26,6 +26,7 @@ func main() {
 			r.Get("/", managementapi.GetAPIInfo)
 			r.Post("/", managementapi.PostAPIInfo)
 			r.Get("/search", managementapi.SearchAPIInfo)
+			r.Post("/token", managementapi.PostAPIToken)
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/", managementapi.PostUser)
