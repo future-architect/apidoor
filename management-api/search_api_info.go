@@ -18,8 +18,8 @@ import (
 // @Param pattern_match query string false "pattern match, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
 // @Param offset query int false "the starting point for the result set" default(0)
-// @Success 200 {object} SearchAPIInfoResp
-// @Failure 400 {object} BadRequestResp
+// @Success 200 {object} model.SearchAPIInfoResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} string
 // @Router /api/search [get]
 func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {

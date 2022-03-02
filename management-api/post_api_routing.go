@@ -17,9 +17,9 @@ import (
 // @Summary Post an API routing
 // @Description Post a new API routing
 // @Produce json
-// @Param api_routing body PostAPIRoutingReq true "routing parameters"
+// @Param api_routing body model.PostAPIRoutingReq true "routing parameters"
 // @Success 201 {string} string
-// @Failure 400 {object} BadRequestResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
 // @Router /routing [post]
 func PostAPIRouting(w http.ResponseWriter, r *http.Request) {

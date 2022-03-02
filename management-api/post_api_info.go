@@ -16,9 +16,9 @@ import (
 // @Summary Get list of API information
 // @Description Get list of APIs and its information
 // @produce json
-// @Param api_info body PostAPIInfoReq true "api information"
+// @Param api_info body model.PostAPIInfoReq true "api information"
 // @Success 201 {string} string
-// @Failure 400 {object} BadRequestResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
 // @Router /api [post]
 func PostAPIInfo(w http.ResponseWriter, r *http.Request) {

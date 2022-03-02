@@ -1,6 +1,6 @@
 basePath: /mgmt
 definitions:
-  managementapi.APIContent:
+  model.APIContent:
     properties:
       description:
         type: string
@@ -9,7 +9,7 @@ definitions:
     required:
     - id
     type: object
-  managementapi.APIInfo:
+  model.APIInfo:
     properties:
       description:
         type: string
@@ -24,23 +24,27 @@ definitions:
       thumbnail:
         type: string
     type: object
-  managementapi.APIInfoList:
+  model.APIInfoList:
     properties:
       api_info_list:
         items:
-          $ref: '#/definitions/managementapi.APIInfo'
+          $ref: '#/definitions/model.APIInfo'
         type: array
     type: object
-  managementapi.BadRequestResp:
+  model.AccessToken:
     properties:
-      message:
+      key:
         type: string
-      validation_errors:
-        items:
-          $ref: '#/definitions/managementapi.ValidationError'
-        type: array
+      param_type:
+        type: string
+      value:
+        type: string
+    required:
+    - key
+    - param_type
+    - value
     type: object
-  managementapi.PostAPIInfoReq:
+  model.PostAPIInfoReq:
     properties:
       description:
         type: string
@@ -59,7 +63,7 @@ definitions:
     - swagger_url
     - thumbnail
     type: object
-  managementapi.PostAPIRoutingReq:
+  model.PostAPIRoutingReq:
     properties:
       api_key:
         type: string
@@ -72,11 +76,26 @@ definitions:
     - forward_url
     - path
     type: object
-  managementapi.PostProductReq:
+  model.PostAPITokenReq:
+    properties:
+      api_key:
+        type: string
+      path:
+        type: string
+      tokens:
+        items:
+          $ref: '#/definitions/model.AccessToken'
+        type: array
+    required:
+    - api_key
+    - path
+    - tokens
+    type: object
+  model.PostProductReq:
     properties:
       api_contents:
         items:
-          $ref: '#/definitions/managementapi.APIContent'
+          $ref: '#/definitions/model.APIContent'
         type: array
       description:
         type: string
@@ -96,7 +115,7 @@ definitions:
     - source
     - thumbnail
     type: object
-  managementapi.PostUserReq:
+  model.PostUserReq:
     properties:
       account_id:
         type: string
@@ -111,7 +130,7 @@ definitions:
     - email_address
     - password
     type: object
-  managementapi.ResultSet:
+  model.ResultSet:
     properties:
       count:
         type: integer
@@ -120,21 +139,30 @@ definitions:
       offset:
         type: integer
     type: object
-  managementapi.SearchAPIInfoMetaData:
+  model.SearchAPIInfoMetaData:
     properties:
       result_set:
-        $ref: '#/definitions/managementapi.ResultSet'
+        $ref: '#/definitions/model.ResultSet'
     type: object
-  managementapi.SearchAPIInfoResp:
+  model.SearchAPIInfoResp:
     properties:
       api_info_list:
         items:
-          $ref: '#/definitions/managementapi.APIInfo'
+          $ref: '#/definitions/model.APIInfo'
         type: array
       metadata:
-        $ref: '#/definitions/managementapi.SearchAPIInfoMetaData'
+        $ref: '#/definitions/model.SearchAPIInfoMetaData'
     type: object
-  managementapi.ValidationError:
+  validator.BadRequestResp:
+    properties:
+      message:
+        type: string
+      validation_errors:
+        items:
+          $ref: '#/definitions/validator.ValidationError'
+        type: array
+    type: object
+  validator.ValidationError:
     properties:
       constraint_type:
         type: string
@@ -169,7 +197,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/managementapi.APIInfoList'
+            $ref: '#/definitions/model.APIInfoList'
       summary: Get list of API info.
     post:
       description: Get list of APIs and its information
@@ -179,7 +207,7 @@ paths:
         name: api_info
         required: true
         schema:
-          $ref: '#/definitions/managementapi.PostAPIInfoReq'
+          $ref: '#/definitions/model.PostAPIInfoReq'
       produces:
       - application/json
       responses:
@@ -190,7 +218,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/managementapi.BadRequestResp'
+            $ref: '#/definitions/validator.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -239,16 +267,42 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/managementapi.SearchAPIInfoResp'
+            $ref: '#/definitions/model.SearchAPIInfoResp'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/managementapi.BadRequestResp'
+            $ref: '#/definitions/validator.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
             type: string
       summary: search for api info
+  /api/token:
+    post:
+      description: post api tokens for calling external api
+      parameters:
+      - description: api token description
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostAPITokenReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: post api tokens for call external api
   /health:
     get:
       description: checks whether this API works correctly or not
@@ -269,7 +323,7 @@ paths:
         name: product
         required: true
         schema:
-          $ref: '#/definitions/managementapi.PostProductReq'
+          $ref: '#/definitions/model.PostProductReq'
       produces:
       - application/json
       responses:
@@ -280,7 +334,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/managementapi.BadRequestResp'
+            $ref: '#/definitions/validator.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -295,7 +349,7 @@ paths:
         name: api_routing
         required: true
         schema:
-          $ref: '#/definitions/managementapi.PostAPIRoutingReq'
+          $ref: '#/definitions/model.PostAPIRoutingReq'
       produces:
       - application/json
       responses:
@@ -306,7 +360,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/managementapi.BadRequestResp'
+            $ref: '#/definitions/validator.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:
@@ -321,7 +375,7 @@ paths:
         name: user
         required: true
         schema:
-          $ref: '#/definitions/managementapi.PostUserReq'
+          $ref: '#/definitions/model.PostUserReq'
       produces:
       - application/json
       responses:
@@ -332,7 +386,7 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/managementapi.BadRequestResp'
+            $ref: '#/definitions/validator.BadRequestResp'
         "500":
           description: Internal Server Error
           schema:

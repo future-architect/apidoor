@@ -16,9 +16,9 @@ import (
 // @Summary Post a product
 // @Description Post an API product
 // @produce json
-// @Param product body PostProductReq true "product definition"
+// @Param product body model.PostProductReq true "product definition"
 // @Success 201 {string} string
-// @Failure 400 {object} BadRequestResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
 // @Router /products [post]
 func PostProduct(w http.ResponseWriter, r *http.Request) {

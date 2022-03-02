@@ -19,7 +19,7 @@ import (
 // @produce json
 // @Param user body model.PostAPITokenReq true "api token description"
 // @Success 201 {string} string
-// @Failure 400 {object} BadRequestResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
 // @Router /api/token [post]
 func PostAPIToken(w http.ResponseWriter, r *http.Request) {

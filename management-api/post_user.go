@@ -16,9 +16,9 @@ import (
 // @Summary Create a user
 // @Description Create a user
 // @produce json
-// @Param user body PostUserReq true "user description"
+// @Param user body model.PostUserReq true "user description"
 // @Success 201 {string} string
-// @Failure 400 {object} BadRequestResp
+// @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
 // @Router /users [post]
 func PostUser(w http.ResponseWriter, r *http.Request) {

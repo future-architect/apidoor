@@ -13,7 +13,7 @@ import (
 // @Summary Get list of API info.
 // @Description Get list of APIs and its information
 // @produce json
-// @Success 200 {object} APIInfoList
+// @Success 200 {object} model.APIInfoList
 // @Router /api [get]
 func GetAPIInfo(w http.ResponseWriter, r *http.Request) {
 	list, err := db.getAPIInfo(r.Context())
