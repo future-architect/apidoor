@@ -32,6 +32,7 @@ func New() *APIRouting {
 	dbEndpoint := os.Getenv("DYNAMO_ENDPOINT")
 	if dbEndpoint != "" {
 		client = dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
+			Profile:           "local",
 			SharedConfigState: session.SharedConfigEnable,
 			Config:            aws.Config{Endpoint: aws.String(dbEndpoint)},
 		})))
@@ -67,6 +68,13 @@ func (ar APIRouting) PostAPIToken(ctx context.Context, req model.PostAPITokenReq
 	accessTokens := newAccessToken(req)
 	return ar.client.Table(ar.accessTokenTable).
 		Put(accessTokens).RunWithContext(ctx)
+}
+
+func (ar APIRouting) DeleteAPIToken(ctx context.Context, req model.DeleteAPITokenReq) error {
+	key := fmt.Sprintf("%s#%s", req.APIKey, req.Path)
+	return ar.client.Table(ar.accessTokenTable).
+		Delete("key", key).
+		RunWithContext(ctx)
 }
 
 type routing struct {

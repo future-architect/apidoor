@@ -38,3 +38,8 @@ func (ar APIRouting) PostAPIToken(ctx context.Context, req model.PostAPITokenReq
 	//TODO: impl
 	return nil
 }
+
+func (ar APIRouting) DeleteAPIToken(ctx context.Context, req model.DeleteAPITokenReq) error {
+	//TODO: impl
+	return nil
+}

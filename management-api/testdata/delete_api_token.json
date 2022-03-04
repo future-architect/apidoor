@@ -1,0 +1,103 @@
+{
+  "api_routing": [
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key"
+          },
+          "path": {
+            "S": "test/{correct}"
+          },
+          "forward_url": {
+            "S": "http://example.com/test/{correct}"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key"
+          },
+          "path": {
+            "S": "test/no/token/registered"
+          },
+          "forward_url": {
+            "S": "http://example.com/test/no/token/registered"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest":{
+        "Item": {
+          "api_key": {
+            "S": "key"
+          },
+          "path": {
+            "S": "test/insufficient/parameters"
+          },
+          "forward_url": {
+            "S": "http://example.com/test/insufficient/parameters"
+          }
+        }
+      }
+    }
+  ],
+  "access_token": [
+    {
+      "PutRequest": {
+        "Item": {
+          "key": {
+            "S":"key#test/{correct}"
+          },
+          "tokens": {
+            "L": [
+              {
+                "M": {
+                  "param_type": {
+                    "S": "header"
+                  },
+                  "key": {
+                    "S": "token"
+                  },
+                  "value": {
+                    "S": "token_value"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "key": {
+            "S":"key#test/insufficient/parameters"
+          },
+          "tokens": {
+            "L": [
+              {
+                "M": {
+                  "param_type": {
+                    "S": "header"
+                  },
+                  "key": {
+                    "S": "token"
+                  },
+                  "value": {
+                    "S": "token_value"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

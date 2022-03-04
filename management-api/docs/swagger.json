@@ -145,7 +145,7 @@
                 "parameters": [
                     {
                         "description": "api token description",
-                        "name": "user",
+                        "name": "tokens",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -158,6 +158,50 @@
                         "description": "Created",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "delete api tokens for calling external api",
+                "summary": "delete api tokens for call external api",
+                "parameters": [
+                    {
+                        "description": "target api_key",
+                        "name": "api_key",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "description": "target api_key",
+                        "name": "path",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content",
+                        "schema": {
+                            "$ref": "#/definitions/model.EmptyResp"
                         }
                     },
                     "400": {
@@ -380,6 +424,9 @@
                     "type": "string"
                 }
             }
+        },
+        "model.EmptyResp": {
+            "type": "object"
         },
         "model.PostAPIInfoReq": {
             "type": "object",

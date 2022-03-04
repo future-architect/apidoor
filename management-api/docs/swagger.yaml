@@ -44,6 +44,8 @@ definitions:
     - param_type
     - value
     type: object
+  model.EmptyResp:
+    type: object
   model.PostAPIInfoReq:
     properties:
       description:
@@ -278,12 +280,41 @@ paths:
             type: string
       summary: search for api info
   /api/token:
+    delete:
+      description: delete api tokens for calling external api
+      parameters:
+      - description: target api_key
+        in: body
+        name: api_key
+        required: true
+        schema:
+          type: string
+      - description: target api_key
+        in: body
+        name: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: No Content
+          schema:
+            $ref: '#/definitions/model.EmptyResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: delete api tokens for call external api
     post:
       description: post api tokens for calling external api
       parameters:
       - description: api token description
         in: body
-        name: user
+        name: tokens
         required: true
         schema:
           $ref: '#/definitions/model.PostAPITokenReq'

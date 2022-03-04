@@ -28,11 +28,22 @@ func init() {
 	SchemaDecoder = schema.NewDecoder()
 }
 
+////////////
+// common //
+////////////
+
 type ResultSet struct {
 	Count  int `json:"count"`
 	Limit  int `json:"limit"`
 	Offset int `json:"offset"`
 }
+
+// EmptyResp is used for swaggo to indicate empty response (204 no content etc.)
+type EmptyResp struct{}
+
+//////////////
+// api info //
+//////////////
 
 type APIInfo struct {
 	ID          int    `json:"id" db:"id"`
@@ -335,6 +346,35 @@ func (pp *PostAPITokenReq) UnmarshalJSON(data []byte) error {
 	}
 
 	if err := validator.ValidateStruct(pp); err != nil {
+		if ve, ok := err.(validator.ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
+}
+
+type DeleteAPITokenReq struct {
+	APIKey string `json:"api_key" schema:"api_key" validate:"required"`
+	Path   string `json:"path" schema:"path" validate:"required"`
+}
+
+func (da *DeleteAPITokenReq) UnmarshalJSON(data []byte) error {
+	type Alias DeleteAPITokenReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(da),
+	}
+
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return fmt.Errorf("api token req: %s %w", err.Error(), UnmarshalJsonErr)
+	}
+
+	if err := validator.ValidateStruct(da); err != nil {
 		if ve, ok := err.(validator.ValidationErrors); ok {
 			return ve
 		} else {
