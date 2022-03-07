@@ -27,7 +27,7 @@ func DeleteAPIToken(w http.ResponseWriter, r *http.Request) {
 	var req model.DeleteAPITokenReq
 	if err := model.SchemaDecoder.Decode(&req, r.Form); err != nil {
 		log.Printf("parse query param error: %v", err)
-		http.Error(w, "server error", http.StatusInternalServerError)
+		http.Error(w, "failed to parse query parameters", http.StatusBadRequest)
 		return
 	}
 
@@ -50,6 +50,7 @@ func DeleteAPIToken(w http.ResponseWriter, r *http.Request) {
 	if err := apirouting.ApiDBDriver.DeleteAPIToken(r.Context(), req); err != nil {
 		log.Printf("delete api token db error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
