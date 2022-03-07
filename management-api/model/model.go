@@ -1,8 +1,6 @@
 package model
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/future-architect/apidoor/managementapi/validator"
@@ -15,8 +13,7 @@ import (
 var (
 	SchemaDecoder *schema.Decoder
 
-	UnmarshalJsonErr        = errors.New("failed to parse body as json")
-	OtherInputValidationErr = errors.New("input validation failed")
+	UnmarshalJsonErr = errors.New("failed to parse body as json")
 )
 
 const (
@@ -73,21 +70,7 @@ func (pi *PostAPIInfoReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(pi),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return UnmarshalJsonErr
-	}
-
-	if err := validator.ValidateStruct(pi); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(pi, data, target)
 }
 
 type SearchAPIInfoReq struct {
@@ -187,21 +170,7 @@ func (pu *PostUserReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(pu),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return UnmarshalJsonErr
-	}
-
-	if err := validator.ValidateStruct(pu); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(pu, data, target)
 }
 
 type User struct {
@@ -249,21 +218,7 @@ func (pp *PostProductReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(pp),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return UnmarshalJsonErr
-	}
-
-	if err := validator.ValidateStruct(pp); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(pp, data, target)
 }
 
 func (pp PostProductReq) Convert() PostProductReq {
@@ -306,21 +261,7 @@ func (pr *PostContractReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(pr),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return UnmarshalJsonErr
-	}
-
-	if err := validator.ValidateStruct(pr); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(pr, data, target)
 }
 
 /////////////
@@ -340,21 +281,7 @@ func (pr *PostAPIRoutingReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(pr),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return UnmarshalJsonErr
-	}
-
-	if err := validator.ValidateStruct(pr); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(pr, data, target)
 }
 
 ////////////////
@@ -388,21 +315,7 @@ func (pp *PostAPITokenReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(pp),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return fmt.Errorf("api token req: %s %w", err.Error(), UnmarshalJsonErr)
-	}
-
-	if err := validator.ValidateStruct(pp); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(pp, data, target)
 }
 
 type DeleteAPITokenReq struct {
@@ -417,19 +330,5 @@ func (da *DeleteAPITokenReq) UnmarshalJSON(data []byte) error {
 	}{
 		Alias: (*Alias)(da),
 	}
-
-	r := bytes.NewReader(data)
-	if err := json.NewDecoder(r).Decode(target); err != nil {
-		return fmt.Errorf("api token req: %s %w", err.Error(), UnmarshalJsonErr)
-	}
-
-	if err := validator.ValidateStruct(da); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			return ve
-		} else {
-			// unreachable, because ValidateStruct returns ValidationErrors or nil
-			return OtherInputValidationErr
-		}
-	}
-	return nil
+	return validator.UnmarshalJSON(da, data, target)
 }
