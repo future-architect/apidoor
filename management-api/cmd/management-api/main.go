@@ -27,12 +27,16 @@ func main() {
 			r.Post("/", managementapi.PostAPIInfo)
 			r.Get("/search", managementapi.SearchAPIInfo)
 			r.Post("/token", managementapi.PostAPIToken)
+			r.Delete("/token", managementapi.DeleteAPIToken)
 		})
 		r.Route("/users", func(r chi.Router) {
 			r.Post("/", managementapi.PostUser)
 		})
 		r.Route("/products", func(r chi.Router) {
 			r.Post("/", managementapi.PostProduct)
+		})
+		r.Route("/contraacts", func(r chi.Router) {
+			r.Post("/", managementapi.PostContract)
 		})
 
 	})

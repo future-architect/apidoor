@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"errors"
 	"fmt"
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/lib/pq"
@@ -24,6 +25,8 @@ var (
 
 	foreignKeyErrCode pq.ErrorCode   = "23503"
 	foreignKeyErr     constraintType = "foreign key constraint"
+
+	ErrNotFound = errors.New("db: item not found")
 )
 
 func init() {
@@ -196,6 +199,77 @@ func (sd sqlDB) postProduct(ctx context.Context, product *model.PostProductReq) 
 
 	if err = tx.Commit(); err != nil {
 		return fmt.Errorf("commit transaction faield: %w", err)
+	}
+	return nil
+}
+
+func (sd sqlDB) fetchUser(ctx context.Context, accountID string) (*model.User, error) {
+	rows, err := sd.driver.QueryxContext(ctx, "SELECT * FROM apiuser WHERE account_id = $1", accountID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch user: %w", err)
+	}
+
+	cnt := 0
+	var user model.User
+	for rows.Next() {
+		if cnt > 0 {
+			// unreachable because apiuser.account_id has a unique constraint
+			return nil, fmt.Errorf("multiple users have an account_id %s", accountID)
+		}
+
+		if err := rows.StructScan(&user); err != nil {
+			return nil, fmt.Errorf("failed to scan result as user: %w", err)
+		}
+		cnt++
+	}
+
+	if cnt == 0 {
+		return nil, ErrNotFound
+	}
+	return &user, nil
+}
+
+func (sd sqlDB) fetchProduct(ctx context.Context, productName string) (*model.Product, error) {
+	rows, err := sd.driver.QueryxContext(ctx, "SELECT * FROM product WHERE name = $1", productName)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch product: %w", err)
+	}
+
+	cnt := 0
+	var product model.Product
+	for rows.Next() {
+		if cnt > 0 {
+			// unreachable because product.name has a unique constraint
+			return nil, fmt.Errorf("multiple products have a name %s", productName)
+		}
+
+		if err := rows.StructScan(&product); err != nil {
+			return nil, fmt.Errorf("failed to scan result as product: %w", err)
+		}
+		cnt++
+	}
+
+	if cnt == 0 {
+		return nil, ErrNotFound
+	}
+	return &product, nil
+}
+
+func (sd sqlDB) postContract(ctx context.Context, contract *model.Contract) error {
+	_, err := sd.driver.NamedExecContext(ctx,
+		`INSERT INTO contract(user_id, product_id, created_at, updated_at)
+				VALUES (:user_id, :product_id, current_timestamp, current_timestamp) RETURNING id`, contract)
+	if err != nil {
+		if postgresErr, ok := err.(*pq.Error); ok {
+			if postgresErr.Code == foreignKeyErrCode {
+				return &dbConstraintErr{
+					constraintType: foreignKeyErr,
+					field:          postgresErr.Column,
+					message:        "insert content failed: foreign key constraint",
+				}
+			}
+		}
+		return fmt.Errorf("execute sql to insert product failed: %w", err)
 	}
 	return nil
 }

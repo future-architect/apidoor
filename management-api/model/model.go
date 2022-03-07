@@ -169,6 +169,10 @@ type SearchAPIInfoParams struct {
 	Offset       int      `json:"offset" validate:"gte=0"`
 }
 
+//////////////
+// api user //
+//////////////
+
 type PostUserReq struct {
 	AccountID    string `json:"account_id" db:"account_id" validate:"required,printascii"`
 	EmailAddress string `json:"email_address" db:"email_address" validate:"required,email"`
@@ -201,7 +205,7 @@ func (pu *PostUserReq) UnmarshalJSON(data []byte) error {
 }
 
 type User struct {
-	ID                string `json:"id" db:"id"`
+	ID                int    `json:"id" db:"id"`
 	AccountID         string `json:"account_id" db:"account_id"`
 	EmailAddress      string `json:"email_address" db:"email_address"`
 	LoginPasswordHash string `json:"login_password_hash" db:"login_password_hash"`
@@ -223,6 +227,8 @@ type Product struct {
 	Description     string `json:"description" db:"description"`
 	Thumbnail       string `json:"thumbnail" db:"thumbnail"`
 	IsAvailableCode int    `json:"is_available" db:"is_available"`
+	CreatedAt       string `json:"created_at" db:"created_at"`
+	UpdatedAt       string `json:"updated_at" db:"updated_at"`
 }
 
 type PostProductReq struct {
@@ -272,6 +278,49 @@ func (pp PostProductReq) Convert() PostProductReq {
 type APIContent struct {
 	ID          int    `json:"id" db:"id" validate:"required"`
 	Description string `json:"description" db:"description"`
+}
+
+//////////////
+// contract //
+//////////////
+
+//TODO: 他にcontractに含めるべきカラムの検討
+
+type Contract struct {
+	ID        int    `json:"id" db:"id"`
+	UserID    int    `json:"user_id" db:"user_id"`
+	ProductID int    `json:"product_id" db:"product_id"`
+	CreatedAt string `json:"created_at" db:"created_at"`
+	UpdatedAt string `json:"updated_at" db:"updated_at"`
+}
+
+type PostContractReq struct {
+	UserAccountId string `json:"user_id" db:"user_id" validate:"required,printascii"`
+	ProductName   string `json:"product_name" db:"product_id" validate:"required,printascii"`
+}
+
+func (pr *PostContractReq) UnmarshalJSON(data []byte) error {
+	type Alias PostContractReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pr),
+	}
+
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := validator.ValidateStruct(pr); err != nil {
+		if ve, ok := err.(validator.ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
 }
 
 /////////////
