@@ -227,6 +227,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/contract": {
+            "post": {
+                "description": "Post an API product",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Post a product",
+                "parameters": [
+                    {
+                        "description": "contract definition",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostContractReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/health": {
             "get": {
                 "description": "checks whether this API works correctly or not",
@@ -501,6 +541,21 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/model.AccessToken"
                     }
+                }
+            }
+        },
+        "model.PostContractReq": {
+            "type": "object",
+            "required": [
+                "product_name",
+                "user_id"
+            ],
+            "properties": {
+                "product_name": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
                 }
             }
         },

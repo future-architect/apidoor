@@ -93,6 +93,16 @@ definitions:
     - path
     - tokens
     type: object
+  model.PostContractReq:
+    properties:
+      product_name:
+        type: string
+      user_id:
+        type: string
+    required:
+    - product_name
+    - user_id
+    type: object
   model.PostProductReq:
     properties:
       api_contents:
@@ -334,6 +344,32 @@ paths:
           schema:
             type: string
       summary: post api tokens for call external api
+  /contract:
+    post:
+      description: Post an API product
+      parameters:
+      - description: contract definition
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostContractReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Post a product
   /health:
     get:
       description: checks whether this API works correctly or not

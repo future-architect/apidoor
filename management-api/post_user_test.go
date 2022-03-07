@@ -255,7 +255,7 @@ func TestPostUser(t *testing.T) {
 func testBadRequestResp(t *testing.T, want *validator.BadRequestResp, got []byte) {
 	var gotBody validator.BadRequestResp
 	if err := json.Unmarshal(got, &gotBody); err != nil {
-		t.Errorf("parsing body as BadRequestResp failed: %v", err)
+		t.Errorf("parsing body as BadRequestResp failed: %v\ngot: %v", err, string(got))
 		return
 	}
 

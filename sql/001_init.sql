@@ -70,4 +70,13 @@ CREATE TABLE IF NOT EXISTS public.product_api_content
     updated_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS public.contract
+(
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES apiuser(id),
+    product_id INT REFERENCES product(id),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
 END;
