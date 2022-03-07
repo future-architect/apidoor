@@ -25,7 +25,11 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
 		resp := validator.NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
-		if err := resp.WriteResp(w); err != nil {
+		if respBytes, err := json.Marshal(resp); err == nil {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write(respBytes)
+		} else {
 			log.Printf("write bad request response failed: %v", err)
 			http.Error(w, "server error", http.StatusInternalServerError)
 		}
@@ -39,13 +43,21 @@ func PostUser(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, model.UnmarshalJsonErr) {
 			log.Printf("failed to parse json body: %v", err)
 			resp := validator.NewBadRequestResp(model.UnmarshalJsonErr.Error())
-			if err := resp.WriteResp(w); err != nil {
+			if respBytes, err := json.Marshal(resp); err == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write(respBytes)
+			} else {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}
 		} else if ve, ok := err.(validator.ValidationErrors); ok {
 			log.Printf("input validation failed:\n%v", err)
-			if err = ve.ToBadRequestResp().WriteResp(w); err != nil {
+			if respBytes, err := json.Marshal(ve.ToBadRequestResp()); err == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write(respBytes)
+			} else {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}

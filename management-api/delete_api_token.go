@@ -1,6 +1,7 @@
 package managementapi
 
 import (
+	"encoding/json"
 	"github.com/future-architect/apidoor/managementapi/apirouting"
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/validator"
@@ -34,7 +35,11 @@ func DeleteAPIToken(w http.ResponseWriter, r *http.Request) {
 	if err := validator.ValidateStruct(req); err != nil {
 		if ve, ok := err.(validator.ValidationErrors); ok {
 			log.Printf("input validation failed:\n%v", err)
-			if err = ve.ToBadRequestResp().WriteResp(w); err != nil {
+			if respBytes, err := json.Marshal(ve.ToBadRequestResp()); err == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write(respBytes)
+			} else {
 				log.Printf("write bad request response failed: %v", err)
 				http.Error(w, "server error", http.StatusInternalServerError)
 			}

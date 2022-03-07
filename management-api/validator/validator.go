@@ -1,10 +1,8 @@
 package validator
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/go-playground/validator/v10"
-	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
@@ -48,19 +46,6 @@ func NewBadRequestResp(msg string) BadRequestResp {
 	return BadRequestResp{
 		Message: msg,
 	}
-}
-
-func (br BadRequestResp) WriteResp(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusBadRequest)
-	resp, err := json.Marshal(br)
-	if err != nil {
-		return fmt.Errorf("response to json error: %w", err)
-	}
-	if _, err = w.Write(resp); err != nil {
-		return fmt.Errorf("write resoponse body error: %w", err)
-	}
-	return nil
 }
 
 type fieldError validator.FieldError
