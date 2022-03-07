@@ -1,4 +1,4 @@
-FROM golang:1.16.4 as build
+FROM golang:1.17.7 as build
 WORKDIR /quickstart
 ADD cmd/*.go cmd/
 RUN GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags '-s -w -buildid=' -trimpath -o /bin/main cmd/main.go

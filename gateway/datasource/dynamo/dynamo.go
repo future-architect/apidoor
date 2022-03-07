@@ -35,6 +35,7 @@ func New() *DataSource {
 	if dbEndpoint != "" {
 		return &DataSource{
 			client: dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
+				Profile:           "local",
 				SharedConfigState: session.SharedConfigEnable,
 				Config:            aws.Config{Endpoint: aws.String(dbEndpoint)},
 			}))),

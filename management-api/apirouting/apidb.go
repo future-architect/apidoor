@@ -23,6 +23,7 @@ func init() {
 type APIDB interface {
 	PostRouting(ctx context.Context, apiKey, path, forwardURL string) error
 	PostAPIToken(ctx context.Context, req model.PostAPITokenReq) error
+	DeleteAPIToken(ctx context.Context, req model.DeleteAPITokenReq) error
 	CountRouting(ctx context.Context, apikey, path string) (int64, error)
 }
 

@@ -17,7 +17,7 @@ import (
 // @Summary post api tokens for call external api
 // @Description post api tokens for calling external api
 // @produce json
-// @Param user body model.PostAPITokenReq true "api token description"
+// @Param tokens body model.PostAPITokenReq true "api token description"
 // @Success 201 {string} string
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error

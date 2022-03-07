@@ -40,6 +40,7 @@ func TestPostAPIToken(t *testing.T) {
 
 	dbEndpoint := os.Getenv("DYNAMO_ENDPOINT")
 	db := dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
+		Profile:           "local",
 		SharedConfigState: session.SharedConfigEnable,
 		Config:            aws.Config{Endpoint: aws.String(dbEndpoint)},
 	})))
