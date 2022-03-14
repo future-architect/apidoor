@@ -1,9 +1,8 @@
 package managementapi
 
 import (
-	"encoding/json"
-	"github.com/future-architect/apidoor/managementapi/apirouting"
 	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/usecase"
 	"github.com/future-architect/apidoor/managementapi/validator"
 	"log"
 	"net/http"
@@ -33,30 +32,14 @@ func DeleteAPIToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := validator.ValidateStruct(req); err != nil {
-		if ve, ok := err.(validator.ValidationErrors); ok {
-			log.Printf("input validation failed:\n%v", err)
-			if respBytes, err := json.Marshal(ve.ToBadRequestResp()); err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write(respBytes)
-			} else {
-				log.Printf("write bad request response failed: %v", err)
-				http.Error(w, "server error", http.StatusInternalServerError)
-			}
-		} else {
-			// unreachable code
-			log.Printf("unexpected error returned: %v", err)
-			http.Error(w, "server error", http.StatusInternalServerError)
-		}
+		writeErrResponse(w, err)
 		return
 	}
 
 	// delete item
-	if err := apirouting.ApiDBDriver.DeleteAPIToken(r.Context(), req); err != nil {
-		log.Printf("delete api token db error: %v", err)
-		http.Error(w, "server error", http.StatusInternalServerError)
+	if err := usecase.DeleteAPIToken(r.Context(), req); err != nil {
+		writeErrResponse(w, err)
 		return
 	}
-
 	w.WriteHeader(http.StatusNoContent)
 }
