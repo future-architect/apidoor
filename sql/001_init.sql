@@ -79,4 +79,13 @@ CREATE TABLE IF NOT EXISTS public.contract
     updated_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS public.apikey
+(
+    id SERIAL PRIMARY KEY,
+    user_id INT REFERENCES apiuser(id),
+    access_key TEXT NOT NULL,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
 END;

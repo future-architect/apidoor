@@ -76,7 +76,7 @@ func TestPostContract(t *testing.T) {
 		{
 			name: "create contract properly",
 			req: model.PostContractReq{
-				UserAccountId: userAccountIDs[0],
+				UserAccountID: userAccountIDs[0],
 				ProductName:   productNames[0],
 			},
 			wantStatus: http.StatusCreated,
@@ -93,7 +93,7 @@ func TestPostContract(t *testing.T) {
 		{
 			name: "user item with the requested account id does not exist",
 			req: model.PostContractReq{
-				UserAccountId: "not_exist",
+				UserAccountID: "not_exist",
 				ProductName:   productNames[0],
 			},
 			wantStatus: http.StatusBadRequest,
@@ -106,7 +106,7 @@ func TestPostContract(t *testing.T) {
 		{
 			name: "product item with the requested product name does not exist",
 			req: model.PostContractReq{
-				UserAccountId: userAccountIDs[0],
+				UserAccountID: userAccountIDs[0],
 				ProductName:   "not_exist",
 			},
 			wantStatus: http.StatusBadRequest,
@@ -119,7 +119,7 @@ func TestPostContract(t *testing.T) {
 		{
 			name: "product_name field is missed",
 			req: model.PostContractReq{
-				UserAccountId: userAccountIDs[0],
+				UserAccountID: userAccountIDs[0],
 			},
 			wantStatus: http.StatusBadRequest,
 			wantResp: validator.BadRequestResp{

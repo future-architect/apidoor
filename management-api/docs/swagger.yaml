@@ -65,6 +65,22 @@ definitions:
     - swagger_url
     - thumbnail
     type: object
+  model.PostAPIKeyReq:
+    properties:
+      user_account_id:
+        type: string
+    type: object
+  model.PostAPIKeyResp:
+    properties:
+      access_key:
+        type: string
+      created_at:
+        type: string
+      updated_at:
+        type: string
+      user_account_id:
+        type: string
+    type: object
   model.PostAPIRoutingReq:
     properties:
       api_key:
@@ -381,6 +397,32 @@ paths:
           schema:
             type: string
       summary: checks if API works
+  /keys:
+    post:
+      description: post api key used for authentication in apidoor gateway
+      parameters:
+      - description: api key owner
+        in: body
+        name: api_info
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostAPIKeyReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.PostAPIKeyResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: post api key
   /products:
     post:
       description: Post an API product

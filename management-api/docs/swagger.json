@@ -276,6 +276,46 @@
                 }
             }
         },
+        "/keys": {
+            "post": {
+                "description": "post api key used for authentication in apidoor gateway",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "post api key",
+                "parameters": [
+                    {
+                        "description": "api key owner",
+                        "name": "api_info",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostAPIKeyReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.PostAPIKeyResp"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/products": {
             "post": {
                 "description": "Post an API product",
@@ -491,6 +531,31 @@
                     "type": "string"
                 },
                 "thumbnail": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PostAPIKeyReq": {
+            "type": "object",
+            "properties": {
+                "user_account_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PostAPIKeyResp": {
+            "type": "object",
+            "properties": {
+                "access_key": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "user_account_id": {
                     "type": "string"
                 }
             }
