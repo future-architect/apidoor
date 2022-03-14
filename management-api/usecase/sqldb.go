@@ -131,17 +131,16 @@ func (sd sqlDB) searchAPIInfo(ctx context.Context, params *model.SearchAPIInfoPa
 		list = append(list, row.APIInfo)
 		count = row.Count
 	}
-	metaData := model.SearchAPIInfoMetaData{
-		ResultSet: model.ResultSet{
-			Count:  count,
-			Limit:  params.Limit,
-			Offset: params.Offset,
-		},
-	}
 
 	return &model.SearchAPIInfoResp{
-		APIList:               list,
-		SearchAPIInfoMetaData: metaData,
+		APIList: list,
+		SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+			ResultSet: model.ResultSet{
+				Count:  count,
+				Limit:  params.Limit,
+				Offset: params.Offset,
+			},
+		},
 	}, nil
 }
 
