@@ -2,11 +2,9 @@ package managementapi
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"github.com/future-architect/apidoor/managementapi/model"
-	"github.com/future-architect/apidoor/managementapi/validator"
+	"github.com/future-architect/apidoor/managementapi/usecase"
 	"io"
 	"log"
 	"net/http"
@@ -24,56 +22,21 @@ import (
 func PostAPIInfo(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
-		resp := validator.NewBadRequestResp(`unexpected request Content-Type, it must be "application/json"`)
-		if respBytes, err := json.Marshal(resp); err == nil {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(respBytes)
-		} else {
-			log.Printf("write bad request response failed: %v", err)
-			http.Error(w, "server error", http.StatusInternalServerError)
-		}
+		writeErrResponse(w, usecase.ClientError(errors.New(`unexpected request Content-Type, it must be "application/json"`)))
 		return
 	}
 	body := new(bytes.Buffer)
 	io.Copy(body, r.Body)
 
 	var req model.PostAPIInfoReq
-	if err := json.Unmarshal(body.Bytes(), &req); err != nil {
-		if errors.Is(err, model.UnmarshalJsonErr) {
-			log.Printf("failed to parse json body: %v", err)
-			resp := validator.NewBadRequestResp(model.UnmarshalJsonErr.Error())
-			if respBytes, err := json.Marshal(resp); err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write(respBytes)
-			} else {
-				log.Printf("write bad request response failed: %v", err)
-				http.Error(w, "server error", http.StatusInternalServerError)
-			}
-		} else if ve, ok := err.(validator.ValidationErrors); ok {
-			log.Printf("input validation failed:\n%v", err)
-			if respBytes, err := json.Marshal(ve.ToBadRequestResp()); err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write(respBytes)
-			} else {
-				log.Printf("write bad request response failed: %v", err)
-				http.Error(w, "server error", http.StatusInternalServerError)
-			}
-		} else {
-			// unreachable
-			log.Printf("invalid body: %v", err)
-			http.Error(w, fmt.Sprintf("invalid body"), http.StatusBadRequest)
-		}
+	if ok := unmarshalJSONAndValidate(w, body.Bytes(), &req); !ok {
 		return
 	}
 
-	if err := db.postAPIInfo(r.Context(), &req); err != nil {
-		log.Printf("db insert api info error: %v", err)
-		http.Error(w, "server error", http.StatusInternalServerError)
+	err := usecase.PostAPIInfo(r.Context(), &req)
+	if err != nil {
+		writeErrResponse(w, err)
 	}
-
 	w.WriteHeader(http.StatusCreated)
 	io.WriteString(w, "Created")
 }
