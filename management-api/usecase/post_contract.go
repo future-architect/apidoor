@@ -18,32 +18,32 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 		return ServerError{err}
 	}
 
-	productID, err := fetchProductID(ctx, req.ProductName)
-	if err != nil {
-		log.Printf("fetch product id error: %v", err)
-		if errors.Is(err, ErrNotFound) {
-			return ClientError{fmt.Errorf("product_name %s does not exist", req.ProductName)}
+	products := make([]*model.ContractProductsDB, len(req.Products))
+	for i, product := range req.Products {
+		productID, err := fetchProductID(ctx, product.ProductName)
+		if err != nil {
+			log.Printf("fetch product id error: %v", err)
+			if errors.Is(err, ErrNotFound) {
+				return ClientError{fmt.Errorf("product_name %s does not exist", product.ProductName)}
+			}
+			return ServerError{err}
 		}
-		return ServerError{err}
+		products[i] = &model.ContractProductsDB{
+			ProductID:   productID,
+			Description: product.Description,
+		}
 	}
 
-	contract := model.Contract{
-		UserID:    userID,
-		ProductID: productID,
+	contract := model.PostContractDB{
+		UserID:   userID,
+		Products: products,
 	}
 
 	if err := db.postContract(ctx, &contract); err != nil {
 		log.Printf("db insert contract error: %v", err)
 		// this error occurs the api_user or the product is deleted after fetching its id
 		if constraintErr, ok := err.(*dbConstraintErr); ok {
-			var errMsg string
-			switch constraintErr.field {
-			case "user_id":
-				errMsg = fmt.Sprintf("account_id %s does not exist", req.UserAccountID)
-			case "contract_id":
-				errMsg = fmt.Sprintf("product_name %s does not exist", req.ProductName)
-			}
-			return ClientError{errors.New(errMsg)}
+			return ClientError{fmt.Errorf("product_name %s does not exist", constraintErr.value)}
 		}
 		return ServerError{err}
 	}

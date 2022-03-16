@@ -256,21 +256,50 @@ func (sd sqlDB) fetchProduct(ctx context.Context, productName string) (*model.Pr
 	return &product, nil
 }
 
-func (sd sqlDB) postContract(ctx context.Context, contract *model.Contract) error {
-	_, err := sd.driver.NamedExecContext(ctx,
-		`INSERT INTO contract(user_id, product_id, created_at, updated_at)
-				VALUES (:user_id, :product_id, current_timestamp, current_timestamp) RETURNING id`, contract)
+func (sd sqlDB) postContract(ctx context.Context, contract *model.PostContractDB) error {
+	tx, err := sd.driver.BeginTxx(ctx, &sql.TxOptions{})
 	if err != nil {
-		if postgresErr, ok := err.(*pq.Error); ok {
-			if postgresErr.Code == foreignKeyErrCode {
-				return &dbConstraintErr{
-					constraintType: foreignKeyErr,
-					field:          postgresErr.Column,
-					message:        "insert content failed: foreign key constraint",
+		return fmt.Errorf("begin transaction failed: %w", err)
+	}
+
+	stmt, err := tx.PreparexContext(ctx,
+		`INSERT INTO contract(user_id, created_at, updated_at)
+				VALUES ($1, current_timestamp, current_timestamp) RETURNING id`)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("prepare sql to insert contract failed: %w", err)
+	}
+
+	var contractID int
+	err = stmt.QueryRowxContext(ctx, contract.UserID).Scan(&contractID)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("execute sql to insert contract failed: %w", err)
+	}
+
+	for _, product := range contract.Products {
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO contract_product_content(contract_id, product_id, description, created_at, updated_at)
+					VALUES ($1, $2, $3, current_timestamp, current_timestamp)`,
+			contractID, product.ProductID, product.Description)
+		if err != nil {
+			tx.Rollback()
+			if postgresErr, ok := err.(*pq.Error); ok {
+				if postgresErr.Code == foreignKeyErrCode {
+					return &dbConstraintErr{
+						constraintType: foreignKeyErr,
+						field:          "product_id",
+						value:          product.ProductID,
+						message:        fmt.Sprintf("insert content, product_id = %d, failed: foreign key constraint", product.ProductID),
+					}
 				}
 			}
+			return fmt.Errorf("insert content, api_id = %d, failed: %w", product.ProductID, err)
 		}
-		return fmt.Errorf("execute sql to insert product failed: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction faield: %w", err)
 	}
 	return nil
 }

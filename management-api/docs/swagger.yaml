@@ -44,6 +44,15 @@ definitions:
     - param_type
     - value
     type: object
+  model.ContractProducts:
+    properties:
+      description:
+        type: string
+      product_name:
+        type: string
+    required:
+    - product_name
+    type: object
   model.EmptyResp:
     type: object
   model.PostAPIInfoReq:
@@ -111,12 +120,15 @@ definitions:
     type: object
   model.PostContractReq:
     properties:
-      product_name:
-        type: string
+      products:
+        items:
+          $ref: '#/definitions/model.ContractProducts'
+        minItems: 1
+        type: array
       user_id:
         type: string
     required:
-    - product_name
+    - products
     - user_id
     type: object
   model.PostProductReq:

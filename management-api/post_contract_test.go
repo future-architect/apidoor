@@ -14,7 +14,10 @@ import (
 )
 
 func TestPostContract(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE contract"); err != nil {
+	if _, err := db.Exec("TRUNCATE contract_product_content"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec("DELETE FROM contract"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec("DELETE FROM apiuser"); err != nil {
@@ -24,7 +27,8 @@ func TestPostContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		db.Exec("TRUNCATE contract")
+		db.Exec("TRUNCATE contract_product_content")
+		db.Exec("DELETE FROM contract")
 		db.Exec("DELETE FROM apiuser")
 		db.Exec("DELETE FROM product")
 	}()
@@ -60,61 +64,95 @@ func TestPostContract(t *testing.T) {
 		userIds[i] = id
 	}
 
-	type checkDBValues struct {
-		userID    int
-		productID int
-	}
-
 	tests := []struct {
-		name          string
-		req           model.PostContractReq
-		wantStatus    int
-		wantResp      interface{}
-		checkDBValues *checkDBValues
-		wantDBResp    *model.Contract
+		name                  string
+		req                   model.PostContractReq
+		wantStatus            int
+		wantResp              interface{}
+		wantDBID              *int
+		wantContractProductDB []contractProduct
 	}{
 		{
 			name: "create contract properly",
 			req: model.PostContractReq{
 				UserAccountID: userAccountIDs[0],
-				ProductName:   productNames[0],
+				Products: []*model.ContractProducts{
+					{
+						ProductName: productNames[0],
+						Description: "api1",
+					},
+				},
 			},
 			wantStatus: http.StatusCreated,
 			wantResp:   "Created",
-			checkDBValues: &checkDBValues{
-				userID:    userIds[0],
-				productID: productIDs[0],
+			wantDBID:   &userIds[0],
+			wantContractProductDB: []contractProduct{
+				{
+					ProductID:   productIDs[0],
+					Description: "api1",
+				},
 			},
-			wantDBResp: &model.Contract{
-				UserID:    userIds[0],
-				ProductID: productIDs[0],
+		},
+		{
+			name: "products field has multiple products",
+			req: model.PostContractReq{
+				UserAccountID: userAccountIDs[1],
+				Products: []*model.ContractProducts{
+					{
+						ProductName: productNames[0],
+						Description: "api1",
+					},
+					{
+						ProductName: productNames[1],
+						Description: "api2",
+					},
+				},
+			},
+			wantStatus: http.StatusCreated,
+			wantResp:   "Created",
+			wantDBID:   &userIds[1],
+			wantContractProductDB: []contractProduct{
+				{
+					ProductID:   productIDs[0],
+					Description: "api1",
+				},
+				{
+					ProductID:   productIDs[1],
+					Description: "api2",
+				},
 			},
 		},
 		{
 			name: "user item with the requested account id does not exist",
 			req: model.PostContractReq{
 				UserAccountID: "not_exist",
-				ProductName:   productNames[0],
+				Products: []*model.ContractProducts{
+					{
+						ProductName: productNames[0],
+						Description: "api1",
+					},
+				},
 			},
 			wantStatus: http.StatusBadRequest,
 			wantResp: validator.BadRequestResp{
 				Message: "account_id not_exist does not exist",
 			},
-			checkDBValues: nil,
-			wantDBResp:    nil,
 		},
 		{
 			name: "product item with the requested product name does not exist",
 			req: model.PostContractReq{
 				UserAccountID: userAccountIDs[0],
-				ProductName:   "not_exist",
+				Products: []*model.ContractProducts{
+					{
+						ProductName: "not_exist",
+						Description: "api1",
+					},
+				},
 			},
 			wantStatus: http.StatusBadRequest,
 			wantResp: validator.BadRequestResp{
 				Message: "product_name not_exist does not exist",
 			},
-			checkDBValues: nil,
-			wantDBResp:    nil,
 		},
 		{
 			name: "product_name field is missed",
@@ -126,15 +164,13 @@ func TestPostContract(t *testing.T) {
 				Message: "input validation error",
 				ValidationErrors: &validator.ValidationErrors{
 					{
-						Field:          "product_name",
+						Field:          "products",
 						ConstraintType: "required",
 						Message:        "required field, but got empty",
-						Got:            "",
+						Got:            0.0,
 					},
 				},
 			},
-			checkDBValues: nil,
-			wantDBResp:    nil,
 		},
 	}
 
@@ -178,28 +214,57 @@ func TestPostContract(t *testing.T) {
 			}
 
 			// db check
-			if tt.checkDBValues == nil {
+			if tt.wantDBID == nil {
 				return
 			}
 
-			rows, err := db.Queryx(`SELECT user_id, product_id
-       				FROM contract WHERE user_id=$1 and product_id=$2`, tt.checkDBValues.userID, tt.checkDBValues.productID)
+			rows, err := db.Queryx(`SELECT id
+					       				FROM contract WHERE user_id=$1 `, tt.wantDBID)
+			//rows, err := db.Queryx(`SELECT user_id FROM contract`)
 			if err != nil {
 				t.Errorf("db get api info error: %v", err)
 				return
 			}
 
-			var contract model.Contract
+			contractID := -1
 			for rows.Next() {
-				if err := rows.StructScan(&contract); err != nil {
-					t.Errorf("reading row error: %v", err)
-					return
+				err = rows.Scan(&contractID)
+				if err != nil {
+					t.Errorf("scan contract id failed: %v", err)
 				}
 			}
-			if diff := cmp.Diff(*tt.wantDBResp, contract); diff != "" {
-				t.Errorf("db get contract responce differs:\n %v", diff)
+			if contractID == -1 {
+				t.Errorf("cannot get contract id")
+				return
 			}
+
+			rows, err = db.Queryx(`SELECT product_id, description
+					       				FROM contract_product_content WHERE contract_id=$1 ORDER BY product_id`, contractID)
+			if err != nil {
+				t.Errorf("db get api info error: %v", err)
+				return
+			}
+
+			gotContractProduct := make([]contractProduct, 0)
+			var cp contractProduct
+			for rows.Next() {
+				if err = rows.StructScan(&cp); err != nil {
+					t.Errorf("cannnot scan contract product: %v", err)
+					return
+				}
+				gotContractProduct = append(gotContractProduct, cp)
+			}
+
+			if diff := cmp.Diff(tt.wantContractProductDB, gotContractProduct); diff != "" {
+				t.Errorf("contract_product_content differs: \n%s", diff)
+			}
+
 		})
 	}
 
+}
+
+type contractProduct struct {
+	ProductID   int    `db:"product_id"`
+	Description string `db:"description"`
 }
