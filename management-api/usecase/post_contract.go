@@ -14,9 +14,8 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 		log.Printf("fetch user id error: %v", err)
 		if errors.Is(err, ErrNotFound) {
 			return ClientError{fmt.Errorf("account_id %s does not exist", req.UserAccountId)}
-		} else {
-			return ServerError{err}
 		}
+		return ServerError{err}
 	}
 
 	productID, err := fetchProductID(ctx, req.ProductName)
@@ -24,9 +23,8 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 		log.Printf("fetch product id error: %v", err)
 		if errors.Is(err, ErrNotFound) {
 			return ClientError{fmt.Errorf("product_name %s does not exist", req.ProductName)}
-		} else {
-			return ServerError{err}
 		}
+		return ServerError{err}
 	}
 
 	contract := model.Contract{
@@ -46,9 +44,8 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 				errMsg = fmt.Sprintf("product_name %s does not exist", req.ProductName)
 			}
 			return ClientError{errors.New(errMsg)}
-		} else {
-			return ServerError{err}
 		}
+		return ServerError{err}
 	}
 	return nil
 }
