@@ -513,6 +513,20 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ContractProducts": {
+            "type": "object",
+            "required": [
+                "product_name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "product_name": {
+                    "type": "string"
+                }
+            }
+        },
         "model.EmptyResp": {
             "type": "object"
         },
@@ -612,12 +626,16 @@ const docTemplate = `{
         "model.PostContractReq": {
             "type": "object",
             "required": [
-                "product_name",
+                "products",
                 "user_id"
             ],
             "properties": {
-                "product_name": {
-                    "type": "string"
+                "products": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.ContractProducts"
+                    }
                 },
                 "user_id": {
                     "type": "string"
