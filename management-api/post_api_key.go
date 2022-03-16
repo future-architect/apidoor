@@ -2,6 +2,7 @@ package managementapi
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/usecase"
@@ -10,21 +11,22 @@ import (
 	"net/http"
 )
 
-// PostAPIToken godoc
-// @Summary post api tokens for call external api
-// @Description post api tokens for calling external api
+// PostAPIKey godoc
+// @Summary post api key
+// @Description post api key used for authentication in apidoor gateway
 // @produce json
-// @Param tokens body model.PostAPITokenReq true "api token description"
-// @Success 201 {string} string
+// @Param api_info body model.PostAPIKeyReq true "api key owner"
+// @Success 201 {object} model.PostAPIKeyResp
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
-// @Router /api/token [post]
-func PostAPIToken(w http.ResponseWriter, r *http.Request) {
+// @Router /keys [post]
+func PostAPIKey(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
 		writeErrResponse(w, usecase.NewClientError(errors.New(`unexpected request Content-Type, it must be "application/json"`)))
 		return
 	}
+
 	body := new(bytes.Buffer)
 	if _, err := io.Copy(body, r.Body); err != nil {
 		log.Printf("reading request body failed: %v", err)
@@ -32,18 +34,25 @@ func PostAPIToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req model.PostAPITokenReq
+	var req model.PostAPIKeyReq
 	if ok := unmarshalJSONAndValidate(w, body.Bytes(), &req); !ok {
 		return
 	}
 
-	// check whether api routing exists
-	if err := usecase.PostAPIToken(r.Context(), req); err != nil {
+	resp, err := usecase.PostAPIKey(r.Context(), req)
+	if err != nil {
 		writeErrResponse(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	io.WriteString(w, "Created")
+	respBody, err := json.Marshal(resp)
+	if err != nil {
+		log.Printf("create json response error: %v", err)
+		http.Error(w, "server error", http.StatusInternalServerError)
+		return
+	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(respBody)
 }

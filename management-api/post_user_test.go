@@ -253,6 +253,7 @@ func TestPostUser(t *testing.T) {
 }
 
 func testBadRequestResp(t *testing.T, want *validator.BadRequestResp, got []byte) {
+	t.Helper()
 	var gotBody validator.BadRequestResp
 	if err := json.Unmarshal(got, &gotBody); err != nil {
 		t.Errorf("parsing body as BadRequestResp failed: %v\ngot: %v", err, string(got))
@@ -262,5 +263,4 @@ func testBadRequestResp(t *testing.T, want *validator.BadRequestResp, got []byte
 	if diff := cmp.Diff(gotBody, *want); diff != "" {
 		t.Errorf("bad request response differs:\n%v", diff)
 	}
-
 }

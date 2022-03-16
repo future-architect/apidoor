@@ -9,11 +9,11 @@ import (
 )
 
 func PostContract(ctx context.Context, req model.PostContractReq) error {
-	userID, err := fetchUserID(ctx, req.UserAccountId)
+	userID, err := fetchUserID(ctx, req.UserAccountID)
 	if err != nil {
 		log.Printf("fetch user id error: %v", err)
 		if errors.Is(err, ErrNotFound) {
-			return ClientError{fmt.Errorf("account_id %s does not exist", req.UserAccountId)}
+			return ClientError{fmt.Errorf("account_id %s does not exist", req.UserAccountID)}
 		}
 		return ServerError{err}
 	}
@@ -39,7 +39,7 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 			var errMsg string
 			switch constraintErr.field {
 			case "user_id":
-				errMsg = fmt.Sprintf("account_id %s does not exist", req.UserAccountId)
+				errMsg = fmt.Sprintf("account_id %s does not exist", req.UserAccountID)
 			case "contract_id":
 				errMsg = fmt.Sprintf("product_name %s does not exist", req.ProductName)
 			}
@@ -49,6 +49,9 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 	}
 	return nil
 }
+
+// TODO: fetch*関数の位置
+// おそらくusecase/のファイルをオブジェクトの種類ごとにして、user.goや、product.goあたりを見るのが良さそう
 
 func fetchUserID(ctx context.Context, accountID string) (int, error) {
 	// TODO　契約する権限の確認 (管理者ユーザと被管理ユーザのテーブルを作って用いる?)

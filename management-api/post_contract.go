@@ -26,7 +26,11 @@ func PostContract(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	body := new(bytes.Buffer)
-	io.Copy(body, r.Body)
+	if _, err := io.Copy(body, r.Body); err != nil {
+		log.Printf("reading request body failed: %v", err)
+		writeErrResponse(w, usecase.NewServerError(errors.New(`server error`)))
+		return
+	}
 
 	var req model.PostContractReq
 	if ok := unmarshalJSONAndValidate(w, body.Bytes(), &req); !ok {

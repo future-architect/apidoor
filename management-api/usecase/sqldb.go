@@ -287,3 +287,28 @@ type dbConstraintErr struct {
 func (dc dbConstraintErr) Error() string {
 	return dc.message
 }
+
+func (sd sqlDB) postAPIKey(ctx context.Context, apiKey model.APIKey) (*model.APIKey, error) {
+	ret := new(model.APIKey)
+	stmt, err := sd.driver.PrepareNamedContext(ctx,
+		`INSERT INTO apikey(user_id, access_key, created_at, updated_at)
+				VALUES (:user_id, :access_key, current_timestamp, current_timestamp) returning *`)
+	if err != nil {
+		return nil, fmt.Errorf("preparing sql query failed: %w", err)
+	}
+
+	err = stmt.QueryRowx(apiKey).StructScan(ret)
+	if err != nil {
+		if postgresErr, ok := err.(*pq.Error); ok {
+			if postgresErr.Code == foreignKeyErrCode {
+				return nil, &dbConstraintErr{
+					constraintType: foreignKeyErr,
+					field:          postgresErr.Column,
+					message:        "insert content failed: foreign key constraint",
+				}
+			}
+		}
+		return nil, fmt.Errorf("execute sql to insert api key failed: %w", err)
+	}
+	return ret, nil
+}

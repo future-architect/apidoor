@@ -250,7 +250,7 @@ type Contract struct {
 }
 
 type PostContractReq struct {
-	UserAccountId string `json:"user_id" db:"user_id" validate:"required,printascii"`
+	UserAccountID string `json:"user_id" db:"user_id" validate:"required,printascii"`
 	ProductName   string `json:"product_name" db:"product_id" validate:"required,printascii"`
 }
 
@@ -331,4 +331,37 @@ func (da *DeleteAPITokenReq) UnmarshalJSON(data []byte) error {
 		Alias: (*Alias)(da),
 	}
 	return validator.UnmarshalJSON(da, data, target)
+}
+
+/////////////
+// api key //
+/////////////
+
+type APIKey struct {
+	ID        int    `json:"id" db:"id"`
+	UserID    int    `json:"user_id" db:"user_id"`
+	AccessKey string `json:"access_key" db:"access_key"`
+	CreatedAt string `json:"created_at" db:"created_at"`
+	UpdatedAt string `json:"updated_at" db:"updated_at"`
+}
+
+type PostAPIKeyReq struct {
+	UserAccountID string `json:"user_account_id" validator:"required,printascii"`
+}
+
+func (pk *PostAPIKeyReq) UnmarshalJSON(data []byte) error {
+	type Alias PostAPIKeyReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pk),
+	}
+	return validator.UnmarshalJSON(pk, data, target)
+}
+
+type PostAPIKeyResp struct {
+	UserAccountID string `json:"user_account_id"`
+	AccessKey     string `json:"access_key"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
 }

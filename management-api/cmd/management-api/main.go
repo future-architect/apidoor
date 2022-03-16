@@ -35,8 +35,11 @@ func main() {
 		r.Route("/products", func(r chi.Router) {
 			r.Post("/", managementapi.PostProduct)
 		})
-		r.Route("/contraacts", func(r chi.Router) {
+		r.Route("/contracts", func(r chi.Router) {
 			r.Post("/", managementapi.PostContract)
+		})
+		r.Route("/keys", func(r chi.Router) {
+			r.Post("/", managementapi.PostAPIKey)
 		})
 
 	})
