@@ -244,14 +244,13 @@ type APIContent struct {
 type Contract struct {
 	ID        int    `json:"id" db:"id"`
 	UserID    int    `json:"user_id" db:"user_id"`
-	ProductID int    `json:"product_id" db:"product_id"`
 	CreatedAt string `json:"created_at" db:"created_at"`
 	UpdatedAt string `json:"updated_at" db:"updated_at"`
 }
 
 type PostContractReq struct {
-	UserAccountID string `json:"user_id" db:"user_id" validate:"required,printascii"`
-	ProductName   string `json:"product_name" db:"product_id" validate:"required,printascii"`
+	UserAccountID string              `json:"user_id" validate:"required,printascii"`
+	Products      []*ContractProducts `json:"products" validate:"required,gte=1,dive,required"`
 }
 
 func (pr *PostContractReq) UnmarshalJSON(data []byte) error {
@@ -262,6 +261,21 @@ func (pr *PostContractReq) UnmarshalJSON(data []byte) error {
 		Alias: (*Alias)(pr),
 	}
 	return validator.UnmarshalJSON(pr, data, target)
+}
+
+type ContractProducts struct {
+	ProductName string `json:"product_name" validate:"required"`
+	Description string `json:"description"`
+}
+
+type PostContractDB struct {
+	UserID   int
+	Products []*ContractProductsDB
+}
+
+type ContractProductsDB struct {
+	ProductID   int    `db:"product_name"`
+	Description string `db:"description"`
 }
 
 /////////////

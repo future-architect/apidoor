@@ -74,7 +74,16 @@ CREATE TABLE IF NOT EXISTS public.contract
 (
     id SERIAL PRIMARY KEY,
     user_id INT REFERENCES apiuser(id),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS public.contract_product_content
+(
+    id SERIAL PRIMARY KEY,
+    contract_id INT REFERENCES contract(id),
     product_id INT REFERENCES product(id),
+    description TEXT,
     created_at TIMESTAMP,
     updated_at TIMESTAMP
 );
