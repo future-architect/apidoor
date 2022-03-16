@@ -1,6 +1,9 @@
 package validator
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-playground/validator/v10"
 	"reflect"
@@ -205,4 +208,26 @@ func ValidateStruct(target interface{}) error {
 	valErrors := NewValidationErrors(fieldErrs)
 
 	return valErrors
+}
+
+var (
+	UnmarshalJsonErr        = errors.New("failed to parse body as json")
+	OtherInputValidationErr = errors.New("input validation failed")
+)
+
+func UnmarshalJSON(v interface{}, data []byte, target interface{}) error {
+	r := bytes.NewReader(data)
+	if err := json.NewDecoder(r).Decode(target); err != nil {
+		return UnmarshalJsonErr
+	}
+
+	if err := ValidateStruct(v); err != nil {
+		if ve, ok := err.(ValidationErrors); ok {
+			return ve
+		} else {
+			// unreachable, because ValidateStruct returns ValidationErrors or nil
+			return OtherInputValidationErr
+		}
+	}
+	return nil
 }

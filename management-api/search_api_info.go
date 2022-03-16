@@ -3,7 +3,9 @@ package managementapi
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"github.com/future-architect/apidoor/managementapi/model"
+	"github.com/future-architect/apidoor/managementapi/usecase"
 	"github.com/future-architect/apidoor/managementapi/validator"
 	"log"
 	"net/http"
@@ -40,25 +42,17 @@ func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if ve, ok := err.(validator.ValidationErrors); ok {
 			log.Printf("input validation failed:\n%v", err)
-			if respBytes, err := json.Marshal(ve.ToBadRequestResp()); err == nil {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write(respBytes)
-			} else {
-				log.Printf("write bad request response failed: %v", err)
-				http.Error(w, "server error", http.StatusInternalServerError)
-			}
+			writeErrResponse(w, ve)
 		} else {
 			log.Printf("validate query param error: %v", err)
-			http.Error(w, "param validation error", http.StatusBadRequest)
+			writeErrResponse(w, usecase.NewClientError(errors.New("param validation error")))
 		}
 		return
 	}
 
-	respBody, err := db.searchAPIInfo(r.Context(), params)
+	respBody, err := usecase.SearchAPIINfo(r.Context(), params)
 	if err != nil {
-		log.Printf("search api info db error: %v", err)
-		http.Error(w, "server error", http.StatusInternalServerError)
+		writeErrResponse(w, err)
 		return
 	}
 

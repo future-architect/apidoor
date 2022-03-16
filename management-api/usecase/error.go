@@ -1,5 +1,21 @@
 package usecase
 
-type ClientError error
+import "github.com/future-architect/apidoor/managementapi/validator"
 
-type ServerError error
+type ValidateError validator.ValidationErrors
+
+type ClientError struct {
+	error
+}
+
+func NewClientError(err error) ClientError {
+	return ClientError{err}
+}
+
+type ServerError struct {
+	error
+}
+
+func NewServerError(err error) ServerError {
+	return ServerError{err}
+}

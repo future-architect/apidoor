@@ -60,7 +60,21 @@ func writeErrResponse(w http.ResponseWriter, err error) {
 			}
 		case usecase.ServerError:
 			http.Error(w, "server error", http.StatusInternalServerError)
+		case validator.ValidationErrors:
+			if respBytes, err := json.Marshal(err.ToBadRequestResp()); err == nil {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusBadRequest)
+				w.Write(respBytes)
+			} else {
+				log.Printf("write bad request response failed: %v", err)
+				http.Error(w, "server error", http.StatusInternalServerError)
+			}
+		default:
+			// unexpected error occurred
+			log.Printf("unexpected error returned: %v", err)
+			http.Error(w, "server error", http.StatusInternalServerError)
 		}
+
 	}
 }
 
