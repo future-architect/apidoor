@@ -18,20 +18,10 @@ func PostContract(ctx context.Context, req model.PostContractReq) error {
 		return ServerError{err}
 	}
 
-	products := make([]*model.ContractProductsDB, len(req.Products))
-	for i, product := range req.Products {
-		productID, err := fetchProductID(ctx, product.ProductName)
-		if err != nil {
-			log.Printf("fetch product id error: %v", err)
-			if errors.Is(err, ErrNotFound) {
-				return ClientError{fmt.Errorf("product_name %s does not exist", product.ProductName)}
-			}
-			return ServerError{err}
-		}
-		products[i] = &model.ContractProductsDB{
-			ProductID:   productID,
-			Description: product.Description,
-		}
+	products, err := fetchProductIDs(ctx, req.Products)
+	if err != nil {
+		log.Printf("fetch ids of products error: %v", err)
+		return err
 	}
 
 	contract := model.PostContractDB{
@@ -63,11 +53,28 @@ func fetchUserID(ctx context.Context, accountID string) (int, error) {
 	return user.ID, nil
 }
 
-func fetchProductID(ctx context.Context, productName string) (int, error) {
-	product, err := db.fetchProduct(ctx, productName)
-	if err != nil {
-		return 0, fmt.Errorf("fetch product id db error: %w", err)
+func fetchProductIDs(ctx context.Context, products []*model.ContractProducts) ([]*model.ContractProductsDB, error) {
+	productNames := make([]string, len(products))
+	for i, product := range products {
+		productNames[i] = product.ProductName
 	}
 
-	return product.ID, nil
+	productMap, err := db.fetchProducts(ctx, productNames)
+	if err != nil {
+		return nil, ServerError{err}
+	}
+
+	contractProducts := make([]*model.ContractProductsDB, len(products))
+	for i, product := range products {
+		matchedProduct, ok := productMap[product.ProductName]
+		if !ok {
+			return nil, ClientError{fmt.Errorf("product_name %s does not exist", product.ProductName)}
+		}
+		contractProducts[i] = &model.ContractProductsDB{
+			ProductID:   matchedProduct.ID,
+			Description: product.Description,
+		}
+	}
+
+	return contractProducts, nil
 }

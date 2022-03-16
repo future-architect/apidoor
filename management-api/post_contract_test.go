@@ -155,7 +155,7 @@ func TestPostContract(t *testing.T) {
 			},
 		},
 		{
-			name: "product_name field is missed",
+			name: "products field is missed",
 			req: model.PostContractReq{
 				UserAccountID: userAccountIDs[0],
 			},
@@ -167,6 +167,26 @@ func TestPostContract(t *testing.T) {
 						Field:          "products",
 						ConstraintType: "required",
 						Message:        "required field, but got empty",
+						Got:            0.0,
+					},
+				},
+			},
+		},
+		{
+			name: "product_name field is an empty array",
+			req: model.PostContractReq{
+				UserAccountID: userAccountIDs[0],
+				Products:      []*model.ContractProducts{},
+			},
+			wantStatus: http.StatusBadRequest,
+			wantResp: validator.BadRequestResp{
+				Message: "input validation error",
+				ValidationErrors: &validator.ValidationErrors{
+					{
+						Field:          "products",
+						ConstraintType: "length_gte",
+						Message:        "input array length is 0, but it must be greater than or equal to 1",
+						Gte:            "1",
 						Got:            0.0,
 					},
 				},
