@@ -25,6 +25,10 @@ var (
 	searchAPISQLTemplateStr string
 	searchAPISQLTemplate    *template.Template
 
+	//go:embed sql/fetch_products.sql
+	fetchProductsSQLTemplateStr string
+	fetchProductsSQLTemplate    *template.Template
+
 	foreignKeyErrCode pq.ErrorCode   = "23503"
 	foreignKeyErr     constraintType = "foreign key constraint"
 
@@ -41,7 +45,11 @@ func init() {
 	// setup sql template
 	searchAPISQLTemplate, err = template.New("search API SQL template").Parse(searchAPISQLTemplateStr)
 	if err != nil {
-		log.Fatalf("create searchAPISQL template %v", err)
+		log.Fatalf("creating searchAPISQL template failed: %v", err)
+	}
+	fetchProductsSQLTemplate, err = template.New("fetch API products by product names SQL template").Parse(fetchProductsSQLTemplateStr)
+	if err != nil {
+		log.Fatalf("creating fetchProductsSQL template failed: %v", err)
 	}
 }
 
@@ -254,6 +262,33 @@ func (sd sqlDB) fetchProduct(ctx context.Context, productName string) (*model.Pr
 		return nil, ErrNotFound
 	}
 	return &product, nil
+}
+
+func (sd sqlDB) fetchProducts(ctx context.Context, productNames []string) (map[string]model.Product, error) {
+	var query bytes.Buffer
+	if err := fetchProductsSQLTemplate.Execute(&query, productNames); err != nil {
+		return nil, fmt.Errorf("generate SQL error: %w", err)
+	}
+	parameters := make(map[string]interface{})
+	for i, name := range productNames {
+		parameters[fmt.Sprintf("name%d", i)] = name
+	}
+
+	rows, err := sd.driver.NamedQueryContext(ctx, query.String(), parameters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch product: %w", err)
+	}
+
+	products := make(map[string]model.Product)
+	var product model.Product
+	for rows.Next() {
+		if err := rows.StructScan(&product); err != nil {
+			return nil, fmt.Errorf("failed to scan result as product: %w", err)
+		}
+		products[product.Name] = product
+	}
+
+	return products, nil
 }
 
 func (sd sqlDB) postContract(ctx context.Context, contract *model.PostContractDB) error {
