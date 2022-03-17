@@ -40,6 +40,7 @@ func main() {
 		})
 		r.Route("/keys", func(r chi.Router) {
 			r.Post("/", managementapi.PostAPIKey)
+			r.Post("/products", managementapi.PostAPIKeyProducts)
 		})
 
 	})

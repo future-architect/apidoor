@@ -6,5 +6,4 @@ WHERE name in (
     {{- end }}
     :name{{- $i}}
     {{ end -}}
-)
-;
+);

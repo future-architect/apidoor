@@ -16,14 +16,14 @@ import (
 )
 
 func TestPostAPIKey(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE apikey"); err != nil {
+	if _, err := db.Exec("DELETE FROM apikey"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec("DELETE FROM apiuser"); err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
-		db.Exec("TRUNCATE apikey")
+		db.Exec("DELETE FROM apikey")
 		db.Exec("DELETE FROM apiuser")
 	}()
 

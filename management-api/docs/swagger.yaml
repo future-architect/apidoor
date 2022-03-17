@@ -44,6 +44,20 @@ definitions:
     - param_type
     - value
     type: object
+  model.AuthorizedContractProducts:
+    properties:
+      contract_id:
+        type: integer
+      product_ids:
+        description: |-
+          ProductIDs is the list of product which is linked to the key
+          if this field is nil or empty, all products the contract contains will be linked
+        items:
+          type: integer
+        type: array
+    required:
+    - contract_id
+    type: object
   model.ContractProducts:
     properties:
       description:
@@ -74,10 +88,25 @@ definitions:
     - swagger_url
     - thumbnail
     type: object
+  model.PostAPIKeyProductsReq:
+    properties:
+      apikey_id:
+        type: integer
+      contracts:
+        items:
+          $ref: '#/definitions/model.AuthorizedContractProducts'
+        minItems: 1
+        type: array
+    required:
+    - apikey_id
+    - contracts
+    type: object
   model.PostAPIKeyReq:
     properties:
       user_account_id:
         type: string
+    required:
+    - user_account_id
     type: object
   model.PostAPIKeyResp:
     properties:
@@ -435,6 +464,34 @@ paths:
           schema:
             type: string
       summary: post api key
+  /keys/products:
+    post:
+      description: Post relationship between api key and authorized products linked
+        to the key
+      parameters:
+      - description: relationship between apikey and products linked to the apikey
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostAPIKeyProductsReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Post relationship between api key and authorized products linked to
+        the key
   /products:
     post:
       description: Post an API product

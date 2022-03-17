@@ -97,4 +97,14 @@ CREATE TABLE IF NOT EXISTS public.apikey
     updated_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS public.apikey_contract_product_authorized
+(
+    id SERIAL PRIMARY KEY,
+    apikey_id INT REFERENCES apikey(id),
+    contract_product_id INT REFERENCES contract_product_content(id),
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+
+
 END;

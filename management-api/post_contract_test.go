@@ -14,7 +14,7 @@ import (
 )
 
 func TestPostContract(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE contract_product_content"); err != nil {
+	if _, err := db.Exec("DELETE FROM contract_product_content"); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec("DELETE FROM contract"); err != nil {
@@ -27,7 +27,7 @@ func TestPostContract(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer func() {
-		db.Exec("TRUNCATE contract_product_content")
+		db.Exec("DELETE FROM contract_product_content")
 		db.Exec("DELETE FROM contract")
 		db.Exec("DELETE FROM apiuser")
 		db.Exec("DELETE FROM product")

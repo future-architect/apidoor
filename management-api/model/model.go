@@ -360,7 +360,7 @@ type APIKey struct {
 }
 
 type PostAPIKeyReq struct {
-	UserAccountID string `json:"user_account_id" validator:"required,printascii"`
+	UserAccountID string `json:"user_account_id" validate:"required,printascii"`
 }
 
 func (pk *PostAPIKeyReq) UnmarshalJSON(data []byte) error {
@@ -378,4 +378,49 @@ type PostAPIKeyResp struct {
 	AccessKey     string `json:"access_key"`
 	CreatedAt     string `json:"created_at"`
 	UpdatedAt     string `json:"updated_at"`
+}
+
+type APIKeyContractProductAuthorized struct {
+	ApiKeyID          int
+	ContractProductID int
+	CreatedAt         string `json:"created_at" db:"created_at"`
+	UpdatedAt         string `json:"updated_at" db:"updated_at"`
+}
+
+type PostAPIKeyProductsReq struct {
+	ApiKeyID  *int                         `json:"apikey_id" validate:"required"`
+	Contracts []AuthorizedContractProducts `json:"contracts" validate:"required,gte=1,dive"`
+}
+
+func (pkp PostAPIKeyProductsReq) ContractIDMap() map[int]AuthorizedContractProducts {
+	ret := make(map[int]AuthorizedContractProducts)
+	for _, contract := range pkp.Contracts {
+		ret[contract.ContractID] = contract
+	}
+	return ret
+}
+
+func (pkp *PostAPIKeyProductsReq) UnmarshalJSON(data []byte) error {
+	type Alias PostAPIKeyProductsReq
+	target := &struct {
+		*Alias
+	}{
+		Alias: (*Alias)(pkp),
+	}
+	fmt.Println(string(data))
+	return validator.UnmarshalJSON(pkp, data, target)
+}
+
+type AuthorizedContractProducts struct {
+	ContractID int `json:"contract_id" validate:"required"`
+
+	// ProductIDs is the list of product which is linked to the key
+	// if this field is nil or empty, all products the contract contains will be linked
+	ProductIDs []int `json:"product_ids,omitempty"`
+}
+
+type ContractProductDB struct {
+	ID         int `db:"id"`
+	ContractID int `db:"contract_id"`
+	ProductID  int `db:"product_id"`
 }

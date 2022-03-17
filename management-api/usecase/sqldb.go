@@ -29,6 +29,10 @@ var (
 	fetchProductsSQLTemplateStr string
 	fetchProductsSQLTemplate    *template.Template
 
+	//go:embed sql/fetch_products_linked_to_contracts.sql
+	fetchProductsLinkedToContractsSQLTemplateStr string
+	fetchProductsLinkedToContractsSQLTemplate    *template.Template
+
 	foreignKeyErrCode pq.ErrorCode   = "23503"
 	foreignKeyErr     constraintType = "foreign key constraint"
 
@@ -51,6 +55,12 @@ func init() {
 	if err != nil {
 		log.Fatalf("creating fetchProductsSQL template failed: %v", err)
 	}
+
+	fetchProductsLinkedToContractsSQLTemplate, err = template.New("fetch contract_products").Parse(fetchProductsLinkedToContractsSQLTemplateStr)
+	if err != nil {
+		log.Fatalf("creating fetchProductsLinkedToContractsSQL template failed: %v", err)
+	}
+
 }
 
 type sqlDB struct {
@@ -339,19 +349,6 @@ func (sd sqlDB) postContract(ctx context.Context, contract *model.PostContractDB
 	return nil
 }
 
-type constraintType string
-
-type dbConstraintErr struct {
-	constraintType constraintType
-	field          string
-	value          interface{}
-	message        string
-}
-
-func (dc dbConstraintErr) Error() string {
-	return dc.message
-}
-
 func (sd sqlDB) postAPIKey(ctx context.Context, apiKey model.APIKey) (*model.APIKey, error) {
 	ret := new(model.APIKey)
 	stmt, err := sd.driver.PrepareNamedContext(ctx,
@@ -375,4 +372,111 @@ func (sd sqlDB) postAPIKey(ctx context.Context, apiKey model.APIKey) (*model.API
 		return nil, fmt.Errorf("execute sql to insert api key failed: %w", err)
 	}
 	return ret, nil
+}
+
+func (sd sqlDB) fetchAPIKeyUser(ctx context.Context, apiKeyId int) (int, error) {
+	var ret int
+	rows, err := sd.driver.QueryxContext(ctx,
+		` SELECT user_id FROM apikey WHERE id = $1`, apiKeyId)
+	if err != nil {
+		return 0, fmt.Errorf("executing sql query failed: %w", err)
+	}
+
+	cnt := 0
+	for rows.Next() {
+		if err = rows.Scan(&ret); err != nil {
+			return 0, fmt.Errorf("scanning result into api_key failed: %v", err)
+		}
+		cnt++
+	}
+	if cnt == 0 {
+		return 0, ErrNotFound
+	}
+	return ret, nil
+}
+
+func (sd sqlDB) fetchContractProductToAuth(ctx context.Context, userID int, contractProducts []model.AuthorizedContractProducts) ([]model.ContractProductDB, error) {
+	var query bytes.Buffer
+	if err := fetchProductsLinkedToContractsSQLTemplate.Execute(&query, contractProducts); err != nil {
+		return nil, fmt.Errorf("generate SQL error: %w", err)
+	}
+	parameters := make(map[string]interface{})
+	parameters["user_id"] = userID
+	for i, contract := range contractProducts {
+		parameters[fmt.Sprintf("contract_id_%d", i)] = contract.ContractID
+		for j, productID := range contract.ProductIDs {
+			parameters[fmt.Sprintf("product_id_%d_%d", i, j)] = productID
+		}
+	}
+
+	rows, err := sd.driver.NamedQueryContext(ctx, query.String(), parameters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch products: %w", err)
+	}
+
+	products := make([]model.ContractProductDB, 0)
+	var product model.ContractProductDB
+	for rows.Next() {
+		if err := rows.StructScan(&product); err != nil {
+			return nil, fmt.Errorf("failed to scan result as contract_product: %w", err)
+		}
+		products = append(products, product)
+	}
+	return products, nil
+}
+
+func (sd sqlDB) postAPIKeyContractProductAuthorized(ctx context.Context, apiKeyID int, contractProducts []model.ContractProductDB) error {
+	tx, err := sd.driver.BeginTxx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return fmt.Errorf("begin transaction failed: %w", err)
+	}
+	for _, cp := range contractProducts {
+		_, err = tx.ExecContext(ctx,
+			`INSERT INTO apikey_contract_product_authorized(apikey_id, contract_product_id, created_at, updated_at)
+					VALUES ($1, $2, current_timestamp, current_timestamp)`,
+			apiKeyID, cp.ID)
+		if err != nil {
+			tx.Rollback()
+			if postgresErr, ok := err.(*pq.Error); ok {
+				if postgresErr.Code == foreignKeyErrCode {
+					switch postgresErr.Column {
+					case "apikey_id":
+						return &dbConstraintErr{
+							constraintType: foreignKeyErr,
+							field:          "apikey_id",
+							value:          apiKeyID,
+							message:        fmt.Sprintf("insert item, apikey_id = %d, failed: foreign key constraint", apiKeyID),
+						}
+					case "contract_product_id":
+						return &dbConstraintErr{
+							constraintType: foreignKeyErr,
+							field:          "contract_product_id",
+							value:          cp.ID,
+							message:        fmt.Sprintf("insert item, contract_product_id = %d, failed: foreign key constraint", cp.ID),
+						}
+					}
+				}
+			}
+			return fmt.Errorf("insert item, contract_product_id = %d, failed: %w", cp.ID, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit transaction faield: %w", err)
+	}
+
+	return nil
+}
+
+type constraintType string
+
+type dbConstraintErr struct {
+	constraintType constraintType
+	field          string
+	value          interface{}
+	message        string
+}
+
+func (dc dbConstraintErr) Error() string {
+	return dc.message
 }
