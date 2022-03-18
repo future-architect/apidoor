@@ -324,6 +324,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/keys/products": {
+            "post": {
+                "description": "Post relationship between api key and authorized products linked to the key",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Post relationship between api key and authorized products linked to the key",
+                "parameters": [
+                    {
+                        "description": "relationship between apikey and products linked to the apikey",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostAPIKeyProductsReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/products": {
             "post": {
                 "description": "Post an API product",
@@ -513,6 +553,24 @@ const docTemplate = `{
                 }
             }
         },
+        "model.AuthorizedContractProducts": {
+            "type": "object",
+            "required": [
+                "contract_id"
+            ],
+            "properties": {
+                "contract_id": {
+                    "type": "integer"
+                },
+                "product_ids": {
+                    "description": "ProductIDs is the list of product which is linked to the key\nif this field is nil or empty, all products the contract contains will be linked",
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
         "model.ContractProducts": {
             "type": "object",
             "required": [
@@ -557,8 +615,30 @@ const docTemplate = `{
                 }
             }
         },
+        "model.PostAPIKeyProductsReq": {
+            "type": "object",
+            "required": [
+                "apikey_id",
+                "contracts"
+            ],
+            "properties": {
+                "apikey_id": {
+                    "type": "integer"
+                },
+                "contracts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/model.AuthorizedContractProducts"
+                    }
+                }
+            }
+        },
         "model.PostAPIKeyReq": {
             "type": "object",
+            "required": [
+                "user_account_id"
+            ],
             "properties": {
                 "user_account_id": {
                     "type": "string"
