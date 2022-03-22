@@ -11,14 +11,14 @@ import (
 )
 
 // PostProduct godoc
-// @Summary Post a product
-// @Description Post an API product
+// @Summary Post API product
+// @Description Post API product
 // @produce json
-// @Param product body model.PostProductReq true "product definition"
+// @Param product body model.PostProductReq true "api product"
 // @Success 201 {string} string
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
-// @Router /products [post]
+// @Router /api [post]
 func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
@@ -36,9 +36,9 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if ok := unmarshalJSONAndValidate(w, body.Bytes(), &req); !ok {
 		return
 	}
-	req = req.Convert()
 
-	if err := usecase.PostProduct(r.Context(), req); err != nil {
+	err := usecase.PostProduct(r.Context(), &req)
+	if err != nil {
 		writeErrResponse(w, err)
 		return
 	}

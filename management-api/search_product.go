@@ -11,27 +11,27 @@ import (
 	"net/http"
 )
 
-// SearchAPIInfo godoc
-// @Summary search for api info
-// @Description Get list of APIs and its information
+// SearchProduct godoc
+// @Summary search for products
+// @Description search products
 // @produce json
 // @Param q query string true "search query words (split words by '.', ex: 'foo.bar'). If containing multiple words, items which match the all search words return"
 // @Param target_fields query string false "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')" default(all)
 // @Param pattern_match query string false "pattern match, chosen from 'exact' or 'partial'" Enums(exact, partial) default(partial)
 // @Param limit query int false "the maximum number of results" default(50) minimum(1) maximum(100)
 // @Param offset query int false "the starting point for the result set" default(0)
-// @Success 200 {object} model.SearchAPIInfoResp
+// @Success 200 {object} model.SearchProductResp
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} string
 // @Router /api/search [get]
-func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
+func SearchProduct(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Printf("parse param error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
 		return
 	}
 
-	var req model.SearchAPIInfoReq
+	var req model.SearchProductReq
 	if err := model.SchemaDecoder.Decode(&req, r.Form); err != nil {
 		log.Printf("parse query param error: %v", err)
 		http.Error(w, "server error", http.StatusInternalServerError)
@@ -50,7 +50,7 @@ func SearchAPIInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	respBody, err := usecase.SearchAPIINfo(r.Context(), params)
+	respBody, err := usecase.SearchProduct(r.Context(), params)
 	if err != nil {
 		writeErrResponse(w, err)
 		return

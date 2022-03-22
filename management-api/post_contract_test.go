@@ -38,8 +38,8 @@ func TestPostContract(t *testing.T) {
 	productIDs := make([]int, len(productNames))
 	for i, name := range productNames {
 		stmt, err := db.Preparex(
-			`INSERT INTO product(name, source, description, thumbnail, display_name, created_at, updated_at)
-			VALUES ($1, 'a', 'a', 'a', 'a', current_timestamp, current_timestamp) RETURNING id`)
+			`INSERT INTO product(name, source, description, thumbnail, display_name, base_path, swagger_url, created_at, updated_at)
+			VALUES ($1, 'a', 'a', 'a', 'a', 'a', 'a', current_timestamp, current_timestamp) RETURNING id`)
 		if err != nil {
 			t.Error(err)
 			return
@@ -240,9 +240,8 @@ func TestPostContract(t *testing.T) {
 
 			rows, err := db.Queryx(`SELECT id
 					       				FROM contract WHERE user_id=$1 `, tt.wantDBID)
-			//rows, err := db.Queryx(`SELECT user_id FROM contract`)
 			if err != nil {
-				t.Errorf("db get api info error: %v", err)
+				t.Errorf("db get contracts  error: %v", err)
 				return
 			}
 
@@ -261,7 +260,7 @@ func TestPostContract(t *testing.T) {
 			rows, err = db.Queryx(`SELECT product_id, description
 					       				FROM contract_product_content WHERE contract_id=$1 ORDER BY product_id`, contractID)
 			if err != nil {
-				t.Errorf("db get api info error: %v", err)
+				t.Errorf("db get contract product error: %v", err)
 				return
 			}
 

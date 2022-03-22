@@ -7,24 +7,24 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
+func TestSearchProductReq_CreateParams(t *testing.T) {
 	tests := []struct {
 		name  string
-		input SearchAPIInfoReq
-		want  *SearchAPIInfoParams
+		input SearchProductReq
+		want  *SearchProductParams
 		// wantErr は期待されるerrorでvalidator.FieldErrorsが返る。validator.FieldErrorは出力に関わるFieldとTagのみ比較する
 		wantErr validator.ValidationErrors
 	}{
 		{
 			name: "パーセントエンコードされたクエリを分割して、デコードできる",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q:            "a.bc%2ed.efg",
 				TargetFields: "name.description",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
-			want: &SearchAPIInfoParams{
+			want: &SearchProductParams{
 				Q:            []string{"a", "bc.d", "efg"},
 				TargetFields: []string{"name", "description"},
 				PatternMatch: "exact",
@@ -35,14 +35,14 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "target_fieldsがallのとき、展開される",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q:            "abc",
 				TargetFields: "all",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
-			want: &SearchAPIInfoParams{
+			want: &SearchProductParams{
 				Q:            []string{"abc"},
 				TargetFields: []string{"name", "source", "description"},
 				PatternMatch: "exact",
@@ -53,14 +53,14 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "target_fieldsがallを含めて複数あるとき、all単独のときと同様に展開される",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q:            "abc",
 				TargetFields: "all.name",
 				PatternMatch: "exact",
 				Limit:        50,
 				Offset:       0,
 			},
-			want: &SearchAPIInfoParams{
+			want: &SearchProductParams{
 				Q:            []string{"abc"},
 				TargetFields: []string{"name", "source", "description"},
 				PatternMatch: "exact",
@@ -71,10 +71,10 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "未指定時に既定の値が設定される",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q: "abc",
 			},
-			want: &SearchAPIInfoParams{
+			want: &SearchProductParams{
 				Q:            []string{"abc"},
 				TargetFields: []string{"name", "source", "description"},
 				PatternMatch: "partial",
@@ -85,7 +85,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "クエリが空",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				TargetFields: "name.description",
 				PatternMatch: "exact",
 				Limit:        50,
@@ -103,7 +103,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "クエリに検索語に空文字列がある",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q: "abc.",
 			},
 			want: nil,
@@ -118,7 +118,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "クエリがURL encodedとして不正",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q: "a%g3bc",
 			},
 			want: nil,
@@ -133,7 +133,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "TargetFieldsに不正な値が含まれている",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q:            "abc",
 				TargetFields: "name.wrong",
 				PatternMatch: "exact",
@@ -153,7 +153,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "PatternMatchが不正な値",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q:            "abc",
 				TargetFields: "all",
 				PatternMatch: "wrong",
@@ -173,7 +173,7 @@ func TestSearchAPIInfoReq_CreateParams(t *testing.T) {
 		},
 		{
 			name: "Limitが上限を超えている",
-			input: SearchAPIInfoReq{
+			input: SearchProductReq{
 				Q:            "abc",
 				TargetFields: "name",
 				PatternMatch: "exact",

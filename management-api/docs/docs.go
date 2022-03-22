@@ -18,34 +18,34 @@ const docTemplate = `{
     "paths": {
         "/api": {
             "get": {
-                "description": "Get list of APIs and its information",
+                "description": "Get list of API products",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Get list of API info.",
+                "summary": "Get list of products.",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.APIInfoList"
+                            "$ref": "#/definitions/model.ProductList"
                         }
                     }
                 }
             },
             "post": {
-                "description": "Get list of APIs and its information",
+                "description": "Post API product",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "Get list of API information",
+                "summary": "Post API product",
                 "parameters": [
                     {
-                        "description": "api information",
-                        "name": "api_info",
+                        "description": "api product",
+                        "name": "product",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/model.PostAPIInfoReq"
+                            "$ref": "#/definitions/model.PostProductReq"
                         }
                     }
                 ],
@@ -73,11 +73,11 @@ const docTemplate = `{
         },
         "/api/search": {
             "get": {
-                "description": "Get list of APIs and its information",
+                "description": "search products",
                 "produces": [
                     "application/json"
                 ],
-                "summary": "search for api info",
+                "summary": "search for products",
                 "parameters": [
                     {
                         "type": "string",
@@ -125,7 +125,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.SearchAPIInfoResp"
+                            "$ref": "#/definitions/model.SearchProductResp"
                         }
                     },
                     "400": {
@@ -294,7 +294,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "api key owner",
-                        "name": "api_info",
+                        "name": "api_key",
                         "in": "body",
                         "required": true,
                         "schema": {
@@ -339,46 +339,6 @@ const docTemplate = `{
                         "required": true,
                         "schema": {
                             "$ref": "#/definitions/model.PostAPIKeyProductsReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/validator.BadRequestResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/products": {
-            "post": {
-                "description": "Post an API product",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Post a product",
-                "parameters": [
-                    {
-                        "description": "product definition",
-                        "name": "product",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.PostProductReq"
                         }
                     }
                 ],
@@ -486,54 +446,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.APIContent": {
-            "type": "object",
-            "required": [
-                "id"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "model.APIInfo": {
-            "type": "object",
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "swagger_url": {
-                    "type": "string"
-                },
-                "thumbnail": {
-                    "type": "string"
-                }
-            }
-        },
-        "model.APIInfoList": {
-            "type": "object",
-            "properties": {
-                "api_info_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.APIInfo"
-                    }
-                }
-            }
-        },
         "model.AccessToken": {
             "type": "object",
             "required": [
@@ -587,33 +499,6 @@ const docTemplate = `{
         },
         "model.EmptyResp": {
             "type": "object"
-        },
-        "model.PostAPIInfoReq": {
-            "type": "object",
-            "required": [
-                "description",
-                "name",
-                "source",
-                "swagger_url",
-                "thumbnail"
-            ],
-            "properties": {
-                "description": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "source": {
-                    "type": "string"
-                },
-                "swagger_url": {
-                    "type": "string"
-                },
-                "thumbnail": {
-                    "type": "string"
-                }
-            }
         },
         "model.PostAPIKeyProductsReq": {
             "type": "object",
@@ -726,21 +611,18 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "description",
+                "display_name",
                 "name",
                 "source",
+                "swagger_url",
                 "thumbnail"
             ],
             "properties": {
-                "api_contents": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.APIContent"
-                    }
-                },
                 "description": {
                     "type": "string"
                 },
                 "display_name": {
+                    "description": "OwnerID     *int   ` + "`" + `json:\"owner_id\" db:\"owner_id\" validate:\"required\"` + "`" + `",
                     "type": "string"
                 },
                 "is_available": {
@@ -750,6 +632,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "source": {
+                    "type": "string"
+                },
+                "swagger_url": {
                     "type": "string"
                 },
                 "thumbnail": {
@@ -779,6 +664,56 @@ const docTemplate = `{
                 }
             }
         },
+        "model.Product": {
+            "type": "object",
+            "properties": {
+                "base_path": {
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "display_name": {
+                    "description": "OwnerID         int    ` + "`" + `json:\"owner\" db:\"owner\"` + "`" + `",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_available": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "swagger_url": {
+                    "type": "string"
+                },
+                "thumbnail": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ProductList": {
+            "type": "object",
+            "properties": {
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Product"
+                    }
+                }
+            }
+        },
         "model.ResultSet": {
             "type": "object",
             "properties": {
@@ -793,7 +728,7 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SearchAPIInfoMetaData": {
+        "model.SearchProductMetaData": {
             "type": "object",
             "properties": {
                 "result_set": {
@@ -801,17 +736,17 @@ const docTemplate = `{
                 }
             }
         },
-        "model.SearchAPIInfoResp": {
+        "model.SearchProductResp": {
             "type": "object",
             "properties": {
-                "api_info_list": {
+                "metadata": {
+                    "$ref": "#/definitions/model.SearchProductMetaData"
+                },
+                "product_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.APIInfo"
+                        "$ref": "#/definitions/model.Product"
                     }
-                },
-                "metadata": {
-                    "$ref": "#/definitions/model.SearchAPIInfoMetaData"
                 }
             }
         },

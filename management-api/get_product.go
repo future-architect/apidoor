@@ -10,21 +10,21 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// GetAPIInfo godoc
-// @Summary Get list of API info.
-// @Description Get list of APIs and its information
+// GetProducts godoc
+// @Summary Get list of products.
+// @Description Get list of API products
 // @produce json
-// @Success 200 {object} model.APIInfoList
+// @Success 200 {object} model.ProductList
 // @Router /api [get]
-func GetAPIInfo(w http.ResponseWriter, r *http.Request) {
+func GetProducts(w http.ResponseWriter, r *http.Request) {
 
-	list, err := usecase.GetAPIInfo(r.Context())
+	list, err := usecase.GetProducts(r.Context())
 	if err != nil {
 		writeErrResponse(w, err)
 		return
 	}
 
-	res, err := json.Marshal(model.APIInfoList{List: list})
+	res, err := json.Marshal(model.ProductList{List: list})
 	if err != nil {
 		log.Print("error occurs while reading response")
 		writeErrResponse(w, usecase.NewServerError(err))

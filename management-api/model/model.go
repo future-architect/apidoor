@@ -39,41 +39,82 @@ type ResultSet struct {
 type EmptyResp struct{}
 
 //////////////
-// api info //
+// products //
 //////////////
 
-type APIInfo struct {
-	ID          int    `json:"id" db:"id"`
-	Name        string `json:"name" db:"name"`
-	Source      string `json:"source" db:"source"`
-	Description string `json:"description" db:"description"`
-	Thumbnail   string `json:"thumbnail" db:"thumbnail"`
-	SwaggerURL  string `json:"swagger_url" db:"swagger_url"`
+// TODO: productの管理者情報の追加 https://github.com/future-architect/apidoor/issues/79
+
+type Product struct {
+	ID   int    `json:"id" db:"id"`
+	Name string `json:"name" db:"name"`
+	// OwnerID         int    `json:"owner" db:"owner"`
+	DisplayName     string `json:"display_name" db:"display_name"`
+	Source          string `json:"source" db:"source"`
+	Description     string `json:"description" db:"description"`
+	Thumbnail       string `json:"thumbnail" db:"thumbnail"`
+	BasePath        string `json:"base_path" db:"base_path"`
+	SwaggerURL      string `json:"swagger_url" db:"swagger_url"`
+	IsAvailableCode int    `json:"is_available" db:"is_available"`
+	CreatedAt       string `json:"created_at" db:"created_at"`
+	UpdatedAt       string `json:"updated_at" db:"updated_at"`
 }
 
-type APIInfoList struct {
-	List []APIInfo `json:"api_info_list"`
+type ProductList struct {
+	List []Product `json:"product_list"`
 }
 
-type PostAPIInfoReq struct {
-	Name        string `json:"name" db:"name" validate:"required"`
-	Source      string `json:"source" db:"source" validate:"required"`
+type PostProductReq struct {
+	Name   string `json:"name" db:"name" validate:"required"`
+	Source string `json:"source" db:"source" validate:"required"`
+	// OwnerID     *int   `json:"owner_id" db:"owner_id" validate:"required"`
+	DisplayName string `json:"display_name" db:"display_name" validate:"required"`
 	Description string `json:"description" db:"description" validate:"required"`
 	Thumbnail   string `json:"thumbnail" db:"thumbnail" validate:"required,url"`
 	SwaggerURL  string `json:"swagger_url" db:"swagger_url" validate:"required,url"`
+	IsAvailable bool   `json:"is_available"`
 }
 
-func (pi *PostAPIInfoReq) UnmarshalJSON(data []byte) error {
-	type Alias PostAPIInfoReq
+func (pp *PostProductReq) UnmarshalJSON(data []byte) error {
+	type Alias PostProductReq
 	target := &struct {
 		*Alias
 	}{
-		Alias: (*Alias)(pi),
+		Alias: (*Alias)(pp),
 	}
-	return validator.UnmarshalJSON(pi, data, target)
+	return validator.UnmarshalJSON(pp, data, target)
 }
 
-type SearchAPIInfoReq struct {
+func (pp *PostProductReq) DBParam(basePath string) PostProductDB {
+	isAvailable := 0
+	if pp.IsAvailable {
+		isAvailable = 1
+	}
+
+	return PostProductDB{
+		Name:        pp.Name,
+		Source:      pp.Source,
+		DisplayName: pp.DisplayName,
+		Description: pp.Description,
+		Thumbnail:   pp.Thumbnail,
+		BasePath:    basePath,
+		SwaggerURL:  pp.SwaggerURL,
+		IsAvailable: isAvailable,
+	}
+}
+
+type PostProductDB struct {
+	Name   string `db:"name"`
+	Source string `db:"source"`
+	// OwnerID     int    `db:"owner_id"`
+	DisplayName string `db:"display_name"`
+	Description string `db:"description"`
+	Thumbnail   string `db:"thumbnail"`
+	BasePath    string `db:"base_path"`
+	SwaggerURL  string `db:"swagger_url"`
+	IsAvailable int    `db:"is_available"`
+}
+
+type SearchProductReq struct {
 	Q            string `json:"q" schema:"name" validate:"required,url_encoded"`
 	TargetFields string `json:"target_fields" schema:"target_fields"`
 	PatternMatch string `json:"pattern_match" schema:"pattern_match"`
@@ -81,7 +122,7 @@ type SearchAPIInfoReq struct {
 	Offset       int    `json:"offset" schema:"offset"`
 }
 
-func (sr SearchAPIInfoReq) CreateParams() (*SearchAPIInfoParams, error) {
+func (sr SearchProductReq) CreateParams() (*SearchProductParams, error) {
 	var err error
 	if err = validator.ValidateStruct(sr); err != nil {
 		return nil, err
@@ -115,7 +156,7 @@ func (sr SearchAPIInfoReq) CreateParams() (*SearchAPIInfoParams, error) {
 		limit = ResultLimitDefault
 	}
 
-	params := SearchAPIInfoParams{
+	params := SearchProductParams{
 		Q:            qSplit,
 		TargetFields: targetFieldExpand,
 		PatternMatch: patternMatch,
@@ -130,21 +171,21 @@ func (sr SearchAPIInfoReq) CreateParams() (*SearchAPIInfoParams, error) {
 	return &params, nil
 }
 
-type SearchAPIInfoResult struct {
-	APIInfo
+type SearchProductResult struct {
+	Product
 	Count int `db:"count"`
 }
 
-type SearchAPIInfoMetaData struct {
+type SearchProductMetaData struct {
 	ResultSet ResultSet `json:"result_set"`
 }
 
-type SearchAPIInfoResp struct {
-	APIList               []APIInfo             `json:"api_info_list"`
-	SearchAPIInfoMetaData SearchAPIInfoMetaData `json:"metadata"`
+type SearchProductResp struct {
+	ProductList           []Product             `json:"product_list"`
+	SearchProductMetaData SearchProductMetaData `json:"metadata"`
 }
 
-type SearchAPIInfoParams struct {
+type SearchProductParams struct {
 	Q            []string `json:"q" validate:"gte=1,dive,ne="`
 	TargetFields []string `json:"target_fields" validate:"dive,eq=all|eq=name|eq=description|eq=source"`
 	PatternMatch string   `json:"pattern_match" validate:"eq=exact|eq=partial"`
@@ -182,57 +223,6 @@ type User struct {
 	PermissionFlag    string `json:"permission_flag" db:"permission_flag"`
 	CreatedAt         string `json:"created_at" db:"created_at"`
 	UpdatedAt         string `json:"updated_at" db:"updated_at"`
-}
-
-/////////////
-// product //
-/////////////
-
-type Product struct {
-	ID              int    `json:"id" db:"id"`
-	Name            string `json:"name" db:"name"`
-	DisplayName     string `json:"display_name" db:"display_name"`
-	Source          string `json:"source" db:"source"`
-	Description     string `json:"description" db:"description"`
-	Thumbnail       string `json:"thumbnail" db:"thumbnail"`
-	IsAvailableCode int    `json:"is_available" db:"is_available"`
-	CreatedAt       string `json:"created_at" db:"created_at"`
-	UpdatedAt       string `json:"updated_at" db:"updated_at"`
-}
-
-type PostProductReq struct {
-	Name            string       `json:"name" db:"name" validate:"required,alphanum"`
-	DisplayName     string       `json:"display_name" db:"display_name"`
-	Source          string       `json:"source" db:"source" validate:"required"`
-	Description     string       `json:"description" db:"description" validate:"required"`
-	Thumbnail       string       `json:"thumbnail" db:"thumbnail" validate:"required,url"`
-	Contents        []APIContent `json:"api_contents" validate:"dive"`
-	IsAvailable     bool         `json:"is_available"`
-	IsAvailableCode int          `json:"-" db:"is_available"`
-}
-
-func (pp *PostProductReq) UnmarshalJSON(data []byte) error {
-	type Alias PostProductReq
-	target := &struct {
-		*Alias
-	}{
-		Alias: (*Alias)(pp),
-	}
-	return validator.UnmarshalJSON(pp, data, target)
-}
-
-func (pp PostProductReq) Convert() PostProductReq {
-	if pp.IsAvailable {
-		pp.IsAvailableCode = 1
-	} else {
-		pp.IsAvailableCode = 0
-	}
-	return pp
-}
-
-type APIContent struct {
-	ID          int    `json:"id" db:"id" validate:"required"`
-	Description string `json:"description" db:"description"`
 }
 
 //////////////

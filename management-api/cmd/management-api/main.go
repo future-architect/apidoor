@@ -23,9 +23,6 @@ func main() {
 			r.Post("/", managementapi.PostAPIRouting)
 		})
 		r.Route("/api", func(r chi.Router) {
-			r.Get("/", managementapi.GetAPIInfo)
-			r.Post("/", managementapi.PostAPIInfo)
-			r.Get("/search", managementapi.SearchAPIInfo)
 			r.Post("/token", managementapi.PostAPIToken)
 			r.Delete("/token", managementapi.DeleteAPIToken)
 		})
@@ -34,6 +31,8 @@ func main() {
 		})
 		r.Route("/products", func(r chi.Router) {
 			r.Post("/", managementapi.PostProduct)
+			r.Get("/", managementapi.GetProducts)
+			r.Get("/search", managementapi.SearchProduct)
 		})
 		r.Route("/contracts", func(r chi.Router) {
 			r.Post("/", managementapi.PostContract)

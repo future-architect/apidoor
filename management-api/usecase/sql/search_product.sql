@@ -10,7 +10,7 @@ INNER JOIN
     {{ if ne $j 0 }}
     UNION
     {{- end }}
-    SELECT * FROM apiinfo
+    SELECT * FROM product
     {{- if eq $.PatternMatch "exact"}}
     WHERE {{ $member }} = :q{{- $i}}
     {{ else }}

@@ -16,37 +16,41 @@ import (
 	"github.com/gorilla/schema"
 )
 
-func TestSearchAPIInfo(t *testing.T) {
+func TestSearchProduct(t *testing.T) {
 	// insert data for test
-	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
+	if _, err := db.Exec("DELETE FROM product"); err != nil {
 		t.Fatal(err)
 	}
 
-	var data = []model.APIInfo{
+	var data = []model.Product{
 		{
 			Name:        "Awesome API",
 			Source:      "Nice Company",
-			Description: "provide fantastic information.",
+			DisplayName: "display",
+			Description: "provide fantastic product.",
 			Thumbnail:   "test.com/img/aaa",
 			SwaggerURL:  "example.com/api/awesome",
 		},
 		{
 			Name:        "Awesome API v2",
 			Source:      "Very Nice Company",
-			Description: "provide special information.",
+			DisplayName: "display",
+			Description: "provide special product.",
 			Thumbnail:   "test.com/img/bbb",
 			SwaggerURL:  "example.com/api/v2/awesome",
 		},
 		{
 			Name:        "Great API",
 			Source:      "Nice Company",
-			Description: "provide special information.",
+			DisplayName: "display",
+			Description: "provide special product.",
 			Thumbnail:   "test.com/img/ccc",
 			SwaggerURL:  "example.com/api/great",
 		},
 		{
 			Name:        "Search API",
 			Source:      "Great Company",
+			DisplayName: "display",
 			Description: "search for example.com.",
 			Thumbnail:   "test.com/img/ddd",
 			SwaggerURL:  "example.com/api/great",
@@ -54,6 +58,7 @@ func TestSearchAPIInfo(t *testing.T) {
 		{
 			Name:        "Search API2",
 			Source:      "Good Company",
+			DisplayName: "display",
 			Description: "search for example.net.",
 			Thumbnail:   "test.com/img/ddd",
 			SwaggerURL:  "example.com/api/great",
@@ -62,12 +67,12 @@ func TestSearchAPIInfo(t *testing.T) {
 
 	q := `
 	INSERT INTO
-		apiinfo(name, source, description, thumbnail, swagger_url)
+		product(name, source, display_name, description, thumbnail, swagger_url, base_path, created_at, updated_at)
 	VALUES
-		($1, $2, $3, $4, $5)
+		($1, $2, $3, $4, $5, $6, $7, current_timestamp, current_timestamp)
 	`
 	for _, d := range data {
-		if _, err := db.Exec(q, d.Name, d.Source, d.Description, d.Thumbnail, d.SwaggerURL); err != nil {
+		if _, err := db.Exec(q, d.Name, d.Source, d.DisplayName, d.Description, d.Thumbnail, d.SwaggerURL, "/foo"); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -76,28 +81,28 @@ func TestSearchAPIInfo(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		params     model.SearchAPIInfoReq
+		params     model.SearchProductReq
 		wantStatus int
-		wantResp   interface{} // *managementapi.SearchAPIInfoResp
+		wantResp   interface{} // *management-api.SearchProductResp
 	}{
 		{
 			name: "完全一致の検索ができる",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q:            "Awesome API",
 				PatternMatch: "exact",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: model.SearchAPIInfoResp{
-				APIList: []model.APIInfo{
+			wantResp: model.SearchProductResp{
+				ProductList: []model.Product{
 					{
 						Name:        "Awesome API",
 						Source:      "Nice Company",
-						Description: "provide fantastic information.",
+						Description: "provide fantastic product.",
 						Thumbnail:   "test.com/img/aaa",
 						SwaggerURL:  "example.com/api/awesome",
 					},
 				},
-				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+				SearchProductMetaData: model.SearchProductMetaData{
 					ResultSet: model.ResultSet{
 						Count:  1,
 						Limit:  50,
@@ -108,28 +113,28 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "部分一致の検索ができる(pattern matchは省略可能)",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q: "Awesome API",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: model.SearchAPIInfoResp{
-				APIList: []model.APIInfo{
+			wantResp: model.SearchProductResp{
+				ProductList: []model.Product{
 					{
 						Name:        "Awesome API",
 						Source:      "Nice Company",
-						Description: "provide fantastic information.",
+						Description: "provide fantastic product.",
 						Thumbnail:   "test.com/img/aaa",
 						SwaggerURL:  "example.com/api/awesome",
 					},
 					{
 						Name:        "Awesome API v2",
 						Source:      "Very Nice Company",
-						Description: "provide special information.",
+						Description: "provide special product.",
 						Thumbnail:   "test.com/img/bbb",
 						SwaggerURL:  "example.com/api/v2/awesome",
 					},
 				},
-				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+				SearchProductMetaData: model.SearchProductMetaData{
 					ResultSet: model.ResultSet{
 						Count:  2,
 						Limit:  50,
@@ -140,12 +145,12 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "複数キーワードであり、また、パーセントエンコーディングを持つキーワードを含む部分一致検索ができる",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q: "Search.example%2ecom",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: model.SearchAPIInfoResp{
-				APIList: []model.APIInfo{
+			wantResp: model.SearchProductResp{
+				ProductList: []model.Product{
 					{
 						Name:        "Search API",
 						Source:      "Great Company",
@@ -154,7 +159,7 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+				SearchProductMetaData: model.SearchProductMetaData{
 					ResultSet: model.ResultSet{
 						Count:  1,
 						Limit:  50,
@@ -165,13 +170,13 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "フィールドを指定して検索ができる",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q:            "Great",
 				TargetFields: "source.description",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: model.SearchAPIInfoResp{
-				APIList: []model.APIInfo{
+			wantResp: model.SearchProductResp{
+				ProductList: []model.Product{
 					{
 						Name:        "Search API",
 						Source:      "Great Company",
@@ -180,7 +185,7 @@ func TestSearchAPIInfo(t *testing.T) {
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+				SearchProductMetaData: model.SearchProductMetaData{
 					ResultSet: model.ResultSet{
 						Count:  1,
 						Limit:  50,
@@ -191,23 +196,23 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "limitで件数を制限し、offsetで開始位置を指定できる",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q:            "special",
 				PatternMatch: "partial",
 				Offset:       1,
 			},
 			wantStatus: http.StatusOK,
-			wantResp: model.SearchAPIInfoResp{
-				APIList: []model.APIInfo{
+			wantResp: model.SearchProductResp{
+				ProductList: []model.Product{
 					{
 						Name:        "Great API",
 						Source:      "Nice Company",
-						Description: "provide special information.",
+						Description: "provide special product.",
 						Thumbnail:   "test.com/img/ccc",
 						SwaggerURL:  "example.com/api/great",
 					},
 				},
-				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+				SearchProductMetaData: model.SearchProductMetaData{
 					ResultSet: model.ResultSet{
 						Count:  2,
 						Limit:  50,
@@ -218,13 +223,13 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "検索結果が0件",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q: "not exist",
 			},
 			wantStatus: http.StatusOK,
-			wantResp: model.SearchAPIInfoResp{
-				APIList: []model.APIInfo{},
-				SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+			wantResp: model.SearchProductResp{
+				ProductList: []model.Product{},
+				SearchProductMetaData: model.SearchProductMetaData{
 					ResultSet: model.ResultSet{
 						Count:  0,
 						Limit:  50,
@@ -235,7 +240,7 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "リクエストパラメータが不正",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q:            "img",
 				TargetFields: "name.thumbnail",
 			},
@@ -255,7 +260,7 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "Qパラメータが未指定、または空文字列",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				TargetFields: "name",
 			},
 			wantStatus: http.StatusBadRequest,
@@ -273,7 +278,7 @@ func TestSearchAPIInfo(t *testing.T) {
 		},
 		{
 			name: "Qパラメータに空文字列が含まれている",
-			params: model.SearchAPIInfoReq{
+			params: model.SearchProductReq{
 				Q:            "Awesome..API",
 				TargetFields: "name",
 			},
@@ -293,7 +298,7 @@ func TestSearchAPIInfo(t *testing.T) {
 	}
 
 	defer func() {
-		if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
+		if _, err := db.Exec("DELETE FROM product"); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -306,7 +311,7 @@ func TestSearchAPIInfo(t *testing.T) {
 			}
 			r := httptest.NewRequest(http.MethodGet, "localhost:3000/api/search?"+form.Encode(), nil)
 			w := httptest.NewRecorder()
-			managementapi.SearchAPIInfo(w, r)
+			managementapi.SearchProduct(w, r)
 
 			rw := w.Result()
 			defer rw.Body.Close()
@@ -320,28 +325,29 @@ func TestSearchAPIInfo(t *testing.T) {
 				t.Fatal(err)
 			}
 			switch tt.wantResp.(type) {
-			case model.SearchAPIInfoResp:
-				testCompareBodyAsSearchAPIInfoResp(t, tt.wantResp.(model.SearchAPIInfoResp), body)
+			case model.SearchProductResp:
+				testCompareBodyAsSearchProductResp(t, tt.wantResp.(model.SearchProductResp), body)
 			case validator.BadRequestResp:
 				want := tt.wantResp.(validator.BadRequestResp)
 				testBadRequestResp(t, &want, body)
 			case string:
 				testCompareBodyAsString(t, tt.wantResp.(string), body)
 			default:
-				t.Error("wantResp is neither SearchAPIInfoResp, BadRequestResp nor string")
+				t.Error("wantResp is neither SearchProductResp, BadRequestResp nor string")
 			}
 
 		})
 	}
 }
 
-func testCompareBodyAsSearchAPIInfoResp(t *testing.T, want model.SearchAPIInfoResp, got []byte) {
-	var respBody model.SearchAPIInfoResp
+func testCompareBodyAsSearchProductResp(t *testing.T, want model.SearchProductResp, got []byte) {
+	var respBody model.SearchProductResp
 	if err := json.Unmarshal(got, &respBody); err != nil {
-		t.Errorf("parse body as search api info response error: %v", err)
+		t.Errorf("parse body as search product response error: %v", err)
 		return
 	}
-	if diff := cmp.Diff(want, respBody, cmpopts.IgnoreFields(model.APIInfo{}, "ID")); diff != "" {
+	if diff := cmp.Diff(want, respBody,
+		cmpopts.IgnoreFields(model.Product{}, "ID", "DisplayName", "BasePath", "CreatedAt", "UpdatedAt")); diff != "" {
 		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 }

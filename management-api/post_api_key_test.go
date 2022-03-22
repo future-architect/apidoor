@@ -141,7 +141,7 @@ func testPostAPIKeyDB(t *testing.T, got *model.PostAPIKeyResp) {
 	rows, err := db.Queryx(`SELECT access_key
        				FROM apikey WHERE access_key=$1`, got.AccessKey)
 	if err != nil {
-		t.Errorf("db get api info error: %v", err)
+		t.Errorf("db get apikey error: %v", err)
 		return
 	}
 	cnt := 0

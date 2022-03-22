@@ -59,6 +59,7 @@ func fetchProductIDs(ctx context.Context, products []*model.ContractProducts) ([
 		productNames[i] = product.ProductName
 	}
 
+	// TODO: is_availableがtrueなproductからのみ取得する
 	productMap, err := db.fetchProducts(ctx, productNames)
 	if err != nil {
 		return nil, ServerError{err}

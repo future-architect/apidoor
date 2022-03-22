@@ -16,12 +16,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-// TODO: ../sqldb.goとの統合
-
 var db *sqlDB
 
 var (
-	//go:embed sql/search_api.sql
+	//go:embed sql/search_product.sql
 	searchAPISQLTemplateStr string
 	searchAPISQLTemplate    *template.Template
 
@@ -89,15 +87,15 @@ func NewSqlDB() (*sqlDB, error) {
 	}, nil
 }
 
-func (sd sqlDB) getAPIInfo(ctx context.Context) ([]model.APIInfo, error) {
-	rows, err := sd.driver.QueryxContext(ctx, "SELECT * from apiinfo")
+func (sd sqlDB) getProducts(ctx context.Context) ([]model.Product, error) {
+	rows, err := sd.driver.QueryxContext(ctx, "SELECT * from product")
 	if err != nil {
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	var list []model.APIInfo
+	var list []model.Product
 	for rows.Next() {
-		var row model.APIInfo
+		var row model.Product
 
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
@@ -109,17 +107,18 @@ func (sd sqlDB) getAPIInfo(ctx context.Context) ([]model.APIInfo, error) {
 	return list, nil
 }
 
-func (sd sqlDB) postAPIInfo(ctx context.Context, info *model.PostAPIInfoReq) error {
+func (sd sqlDB) postProduct(ctx context.Context, product *model.PostProductDB) error {
 	_, err := sd.driver.NamedExecContext(ctx,
-		"INSERT INTO apiinfo(name, source, description, thumbnail, swagger_url) VALUES(:name, :source, :description, :thumbnail, :swagger_url)",
-		info)
+		`INSERT INTO product(name, source, display_name, description, thumbnail, base_path, swagger_url, is_available, created_at, updated_at)
+			VALUES(:name, :source, :display_name, :description, :thumbnail, :base_path, :swagger_url, :is_available, current_timestamp, current_timestamp)`,
+		product)
 	if err != nil {
 		return fmt.Errorf("sql execution error: %w", err)
 	}
 	return nil
 }
 
-func (sd sqlDB) searchAPIInfo(ctx context.Context, params *model.SearchAPIInfoParams) (*model.SearchAPIInfoResp, error) {
+func (sd sqlDB) searchProduct(ctx context.Context, params *model.SearchProductParams) (*model.SearchProductResp, error) {
 	var query bytes.Buffer
 	if err := searchAPISQLTemplate.Execute(&query, params); err != nil {
 		return nil, fmt.Errorf("generate SQL error: %w", err)
@@ -138,21 +137,21 @@ func (sd sqlDB) searchAPIInfo(ctx context.Context, params *model.SearchAPIInfoPa
 		return nil, fmt.Errorf("sql execution error: %w", err)
 	}
 
-	list := make([]model.APIInfo, 0)
+	list := make([]model.Product, 0)
 	count := 0
 	for rows.Next() {
-		var row model.SearchAPIInfoResult
+		var row model.SearchProductResult
 		if err := rows.StructScan(&row); err != nil {
 			return nil, fmt.Errorf("scanning record error: %w", err)
 		}
 
-		list = append(list, row.APIInfo)
+		list = append(list, row.Product)
 		count = row.Count
 	}
 
-	return &model.SearchAPIInfoResp{
-		APIList: list,
-		SearchAPIInfoMetaData: model.SearchAPIInfoMetaData{
+	return &model.SearchProductResp{
+		ProductList: list,
+		SearchProductMetaData: model.SearchProductMetaData{
 			ResultSet: model.ResultSet{
 				Count:  count,
 				Limit:  params.Limit,
@@ -170,54 +169,6 @@ func (sd sqlDB) postUser(ctx context.Context, user *model.PostUserReq) error {
 		user)
 	if err != nil {
 		return fmt.Errorf("sql execution error: %w", err)
-	}
-	return nil
-}
-
-func (sd sqlDB) postProduct(ctx context.Context, product *model.PostProductReq) error {
-	tx, err := sd.driver.BeginTxx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return fmt.Errorf("begin transaction failed: %w", err)
-	}
-	stmt, err := tx.PrepareNamedContext(ctx,
-		`INSERT INTO product(name, display_name, source, description, thumbnail, is_available, created_at, updated_at)
-				VALUES (:name, :display_name, :source, :description, :thumbnail, :is_available, current_timestamp, current_timestamp)
-				RETURNING id`)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("prepare sql to insert product failed: %w", err)
-	}
-
-	var productID int
-	err = stmt.QueryRowxContext(ctx, product).Scan(&productID)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("execute sql to insert product failed: %w", err)
-	}
-
-	for _, content := range product.Contents {
-		_, err = tx.ExecContext(ctx,
-			`INSERT INTO product_api_content(product_id, api_id, description, created_at, updated_at)
-					VALUES ($1, $2, $3, current_timestamp, current_timestamp)`,
-			productID, content.ID, content.Description)
-		if err != nil {
-			tx.Rollback()
-			if postgresErr, ok := err.(*pq.Error); ok {
-				if postgresErr.Code == foreignKeyErrCode {
-					return &dbConstraintErr{
-						constraintType: foreignKeyErr,
-						field:          "api_id",
-						value:          content.ID,
-						message:        fmt.Sprintf("insert content, api_id = %d, failed: foreign key constraint", content.ID),
-					}
-				}
-			}
-			return fmt.Errorf("insert content, api_id = %d, failed: %w", content.ID, err)
-		}
-	}
-
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("commit transaction faield: %w", err)
 	}
 	return nil
 }

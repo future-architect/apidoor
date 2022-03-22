@@ -15,7 +15,7 @@ import (
 // @Summary post api key
 // @Description post api key used for authentication in apidoor gateway
 // @produce json
-// @Param api_info body model.PostAPIKeyReq true "api key owner"
+// @Param api_key body model.PostAPIKeyReq true "api key owner"
 // @Success 201 {object} model.PostAPIKeyResp
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
