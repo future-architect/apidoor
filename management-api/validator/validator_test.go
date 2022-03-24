@@ -1,7 +1,6 @@
-package validator_test
+package validator
 
 import (
-	"github.com/future-architect/apidoor/managementapi"
 	"github.com/google/go-cmp/cmp"
 	"testing"
 )
@@ -25,7 +24,7 @@ func TestValidator(t *testing.T) {
 	tests := []struct {
 		name       string
 		input      user
-		wantErr    *managementapi.ValidationErrors
+		wantErr    *ValidationErrors
 		wantErrMsg string
 	}{
 		{
@@ -35,7 +34,7 @@ func TestValidator(t *testing.T) {
 				BloodType:       "AB",
 				FavoriteNumbers: []int{12},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "last_name",
 					ConstraintType: "required",
@@ -55,7 +54,7 @@ func TestValidator(t *testing.T) {
 				BloodType:       "C",
 				FavoriteNumbers: []int{12},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "blood_type",
 					ConstraintType: "enum",
@@ -77,7 +76,7 @@ func TestValidator(t *testing.T) {
 				Age:             200,
 				FavoriteNumbers: []int{12},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "age",
 					ConstraintType: "lte",
@@ -98,7 +97,7 @@ func TestValidator(t *testing.T) {
 				BloodType:       "A",
 				FavoriteNumbers: []int{},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "favorite_numbers",
 					ConstraintType: "length_gte",
@@ -119,7 +118,7 @@ func TestValidator(t *testing.T) {
 				BloodType:       "A",
 				FavoriteNumbers: []int{2, 0},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "favorite_numbers[1]",
 					ConstraintType: "gte",
@@ -141,7 +140,7 @@ func TestValidator(t *testing.T) {
 				Email:           "foo.@example.com",
 				FavoriteNumbers: []int{2, 1},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "email",
 					ConstraintType: "email",
@@ -162,7 +161,7 @@ func TestValidator(t *testing.T) {
 				FavoriteNumbers: []int{2, 1},
 				Email:           "foo.@example.com",
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "email",
 					ConstraintType: "email",
@@ -187,7 +186,7 @@ func TestValidator(t *testing.T) {
 					},
 				},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "addresses[0].city",
 					ConstraintType: "required",
@@ -211,7 +210,7 @@ func TestValidator(t *testing.T) {
 					},
 				},
 			},
-			wantErr: &managementapi.ValidationErrors{
+			wantErr: &ValidationErrors{
 				{
 					Field:          "last_name",
 					ConstraintType: "required",
@@ -259,7 +258,7 @@ func TestValidator(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := managementapi.ValidateStruct(tt.input)
+			err := ValidateStruct(tt.input)
 			if err == nil {
 				if tt.wantErr != nil {
 					t.Errorf("no error returned, but it is expected that the following error occurs\n%v", tt.wantErr)
