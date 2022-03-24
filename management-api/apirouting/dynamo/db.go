@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/future-architect/apidoor/managementapi/model"
+	swaggerparser "github.com/future-architect/apidoor/managementapi/swagger-parser"
 	"github.com/guregu/dynamo"
 	"log"
 	"os"
@@ -15,6 +16,7 @@ type APIRouting struct {
 	client           *dynamo.DB
 	apiRoutingTable  string
 	accessTokenTable string
+	swaggerTable     string
 }
 
 func New() *APIRouting {
@@ -25,6 +27,11 @@ func New() *APIRouting {
 	accessTokenTable := os.Getenv("DYNAMO_TABLE_ACCESS_TOKEN")
 	if apiRoutingTable == "" {
 		log.Fatal("missing DYNAMO_TABLE_API_TOKEN env")
+	}
+
+	swaggerTable := os.Getenv("DYNAMO_TABLE_SWAGGER")
+	if swaggerTable == "" {
+		log.Fatal("missing DYNAMO_TABLE_SWAGGER env")
 	}
 
 	var client *dynamo.DB
@@ -44,6 +51,7 @@ func New() *APIRouting {
 		client:           client,
 		apiRoutingTable:  apiRoutingTable,
 		accessTokenTable: accessTokenTable,
+		swaggerTable:     swaggerTable,
 	}
 }
 
@@ -75,6 +83,46 @@ func (ar APIRouting) DeleteAPIToken(ctx context.Context, req model.DeleteAPIToke
 	return ar.client.Table(ar.accessTokenTable).
 		Delete("key", key).
 		RunWithContext(ctx)
+}
+
+func (ar APIRouting) PostSwagger(ctx context.Context, productID int, info *swaggerparser.Swagger) error {
+	swagger := newSwagger(productID, info)
+	return ar.client.Table(ar.swaggerTable).
+		Put(swagger).RunWithContext(ctx)
+}
+
+type swagger struct {
+	ProductID      int      `dynamo:"product_id"`
+	Schemes        []string `dynamo:"schemes"`
+	ForwardURLBase string   `dynamo:"forward_url_base"`
+	PathBase       string   `dynamo:"path_base"`
+	APIList        []api    `dynamo:"api_list"`
+}
+
+func newSwagger(productID int, info *swaggerparser.Swagger) swagger {
+	return swagger{
+		ProductID:      productID,
+		Schemes:        info.Schemes,
+		ForwardURLBase: info.ForwardURLBase,
+		PathBase:       info.PathBase,
+		APIList:        newAPIList(info.APIs),
+	}
+}
+
+type api struct {
+	ForwardURL string `dynamo:"forward_url"`
+	Path       string `dynamo:"path"`
+}
+
+func newAPIList(apis []swaggerparser.API) []api {
+	ret := make([]api, len(apis))
+	for i, v := range apis {
+		ret[i] = api{
+			ForwardURL: v.ForwardURL,
+			Path:       v.Path,
+		}
+	}
+	return ret
 }
 
 type routing struct {

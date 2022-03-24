@@ -107,11 +107,20 @@ func (sd sqlDB) getProducts(ctx context.Context) ([]model.Product, error) {
 	return list, nil
 }
 
-func (sd sqlDB) postProduct(ctx context.Context, product *model.PostProductDB) error {
-	_, err := sd.driver.NamedExecContext(ctx,
+func (sd sqlDB) postProduct(ctx context.Context, product *model.PostProductDB) (*model.Product, error) {
+	ret := new(model.Product)
+	stmt, err := sd.driver.PrepareNamedContext(ctx,
 		`INSERT INTO product(name, source, display_name, description, thumbnail, base_path, swagger_url, is_available, created_at, updated_at)
-			VALUES(:name, :source, :display_name, :description, :thumbnail, :base_path, :swagger_url, :is_available, current_timestamp, current_timestamp)`,
-		product)
+			VALUES(:name, :source, :display_name, :description, :thumbnail, :base_path, :swagger_url, :is_available, current_timestamp, current_timestamp) RETURNING *`)
+	err = stmt.QueryRowxContext(ctx, product).StructScan(ret)
+	if err != nil {
+		return nil, fmt.Errorf("sql execution error: %w", err)
+	}
+	return ret, nil
+}
+
+func (sd sqlDB) deleteProduct(ctx context.Context, productID int) error {
+	_, err := sd.driver.ExecContext(ctx, `DELETE FROM product WHERE id = $1`, productID)
 	if err != nil {
 		return fmt.Errorf("sql execution error: %w", err)
 	}

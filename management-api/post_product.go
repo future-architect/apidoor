@@ -2,6 +2,7 @@ package managementapi
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/usecase"
@@ -18,7 +19,7 @@ import (
 // @Success 201 {string} string
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
-// @Router /api [post]
+// @Router /products [post]
 func PostProduct(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("unexpected request content: %s", r.Header.Get("Content-Type"))
@@ -37,11 +38,18 @@ func PostProduct(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := usecase.PostProduct(r.Context(), &req)
+	product, err := usecase.PostProduct(r.Context(), &req)
 	if err != nil {
 		writeErrResponse(w, err)
 		return
 	}
+	ret, err := json.Marshal(product)
+	if err != nil {
+		log.Print("error occurs while reading response")
+		writeErrResponse(w, usecase.NewServerError(err))
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	io.WriteString(w, "Created")
+	w.Write(ret)
 }
