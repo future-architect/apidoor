@@ -1,4 +1,4 @@
-package swagger_parser
+package swaggerparser
 
 import (
 	"bytes"

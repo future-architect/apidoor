@@ -6,6 +6,7 @@ import (
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/validator"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,6 +17,21 @@ import (
 )
 
 func TestPostProduct(t *testing.T) {
+	dbType := managementapi.GetAPIDBType(t)
+	if dbType != managementapi.DYNAMO {
+		log.Println("this test is valid when dynamodb is used, skip")
+		return
+	}
+
+	managementapi.Setup(t,
+		`aws dynamodb --profile local --endpoint-url http://localhost:4566 create-table --cli-input-json file://../dynamo_table/swagger_table.json`,
+	)
+	t.Cleanup(func() {
+		managementapi.Teardown(t,
+			`aws dynamodb --profile local --endpoint-url http://localhost:4566 delete-table --table swagger`,
+		)
+	})
+
 	if _, err := db.Exec("DELETE FROM product"); err != nil {
 		t.Fatal(err)
 	}
@@ -38,7 +54,7 @@ func TestPostProduct(t *testing.T) {
 				DisplayName: "display1",
 				Description: "provide fantastic product.",
 				Thumbnail:   "http://example.com/api.awesome",
-				SwaggerURL:  "http://example.com/api/awesome",
+				SwaggerURL:  "http://api.example.com/v2/swagger.json",
 			},
 			wantHttpStatus: http.StatusCreated,
 			wantRecords: []model.Product{
@@ -48,11 +64,19 @@ func TestPostProduct(t *testing.T) {
 					DisplayName: "display1",
 					Description: "provide fantastic product.",
 					Thumbnail:   "http://example.com/api.awesome",
-					BasePath:    "/todo",
-					SwaggerURL:  "http://example.com/api/awesome",
+					BasePath:    "/sample_gateway",
+					SwaggerURL:  "http://api.example.com/v2/swagger.json",
 				},
 			},
-			wantResp: "Created",
+			wantResp: model.Product{
+				Name:        "Awesome API",
+				Source:      "Company1",
+				DisplayName: "display1",
+				Description: "provide fantastic product.",
+				Thumbnail:   "http://example.com/api.awesome",
+				BasePath:    "/sample_gateway",
+				SwaggerURL:  "http://api.example.com/v2/swagger.json",
+			},
 		},
 		{
 			name:        "Fieldに空文字列がある場合は登録できない",
@@ -63,7 +87,7 @@ func TestPostProduct(t *testing.T) {
 				DisplayName: "display2",
 				Description: "provide fantastic product.",
 				Thumbnail:   "http://example.com/api.awesome",
-				SwaggerURL:  "http://example.com/api/awesome",
+				SwaggerURL:  "http://api.example.com/v2/swagger.json",
 			},
 			wantHttpStatus: http.StatusBadRequest,
 			wantRecords:    []model.Product{},
@@ -87,7 +111,7 @@ func TestPostProduct(t *testing.T) {
 				Source:      "Company3",
 				Description: "provide fantastic product.",
 				Thumbnail:   "http://example.com/api.awesome",
-				SwaggerURL:  "http://example.com/api/awesome",
+				SwaggerURL:  "http://api.example.com/v2/swagger.json",
 			},
 			wantHttpStatus: http.StatusBadRequest,
 			wantRecords:    []model.Product{},
@@ -152,6 +176,9 @@ func TestPostProduct(t *testing.T) {
 			case validator.BadRequestResp:
 				want := tt.wantResp.(validator.BadRequestResp)
 				testBadRequestResp(t, &want, resp)
+			case model.Product:
+				want := tt.wantResp.(model.Product)
+				testProduct(t, &want, resp)
 			default:
 				t.Errorf("type of wantResp is not unsupported")
 			}
@@ -162,4 +189,17 @@ func TestPostProduct(t *testing.T) {
 		t.Fatal(err)
 	}
 
+}
+
+func testProduct(t *testing.T, want *model.Product, got []byte) {
+	t.Helper()
+	var gotBody model.Product
+	if err := json.Unmarshal(got, &gotBody); err != nil {
+		t.Errorf("parsing body as product failed: %v\ngot: %v", err, string(got))
+		return
+	}
+
+	if diff := cmp.Diff(gotBody, *want, cmpopts.IgnoreFields(model.Product{}, "ID", "CreatedAt", "UpdatedAt")); diff != "" {
+		t.Errorf("product differs:\n%v", diff)
+	}
 }
