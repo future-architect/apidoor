@@ -23,7 +23,7 @@ import (
 // @Success 200 {object} model.SearchProductResp
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} string
-// @Router /api/search [get]
+// @Router /products/search [get]
 func SearchProduct(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Printf("parse param error: %v", err)

@@ -241,95 +241,6 @@ info:
   title: Management API
   version: "1.0"
 paths:
-  /api:
-    get:
-      description: Get list of API products
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.ProductList'
-      summary: Get list of products.
-    post:
-      description: Post API product
-      parameters:
-      - description: api product
-        in: body
-        name: product
-        required: true
-        schema:
-          $ref: '#/definitions/model.PostProductReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/validator.BadRequestResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Post API product
-  /api/search:
-    get:
-      description: search products
-      parameters:
-      - description: 'search query words (split words by ''.'', ex: ''foo.bar'').
-          If containing multiple words, items which match the all search words return'
-        in: query
-        name: q
-        required: true
-        type: string
-      - default: all
-        description: 'search target fields. You can choose field(s) from ''all'' (represents
-          searching all fields), ''name'', ''description'', or ''source''. (if there
-          are multiple target fields, split target by ''.'', ex: ''name.source'')'
-        in: query
-        name: target_fields
-        type: string
-      - default: partial
-        description: pattern match, chosen from 'exact' or 'partial'
-        enum:
-        - exact
-        - partial
-        in: query
-        name: pattern_match
-        type: string
-      - default: 50
-        description: the maximum number of results
-        in: query
-        maximum: 100
-        minimum: 1
-        name: limit
-        type: integer
-      - default: 0
-        description: the starting point for the result set
-        in: query
-        name: offset
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/model.SearchProductResp'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/validator.BadRequestResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: search for products
   /api/token:
     delete:
       description: delete api tokens for calling external api
@@ -476,6 +387,95 @@ paths:
             type: string
       summary: Post relationship between api key and authorized products linked to
         the key
+  /products:
+    get:
+      description: Get list of API products
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ProductList'
+      summary: Get list of products.
+    post:
+      description: Post API product
+      parameters:
+      - description: api product
+        in: body
+        name: product
+        required: true
+        schema:
+          $ref: '#/definitions/model.PostProductReq'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/model.Product'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Post API product
+  /products/search:
+    get:
+      description: search products
+      parameters:
+      - description: 'search query words (split words by ''.'', ex: ''foo.bar'').
+          If containing multiple words, items which match the all search words return'
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: all
+        description: 'search target fields. You can choose field(s) from ''all'' (represents
+          searching all fields), ''name'', ''description'', or ''source''. (if there
+          are multiple target fields, split target by ''.'', ex: ''name.source'')'
+        in: query
+        name: target_fields
+        type: string
+      - default: partial
+        description: pattern match, chosen from 'exact' or 'partial'
+        enum:
+        - exact
+        - partial
+        in: query
+        name: pattern_match
+        type: string
+      - default: 50
+        description: the maximum number of results
+        in: query
+        maximum: 100
+        minimum: 1
+        name: limit
+        type: integer
+      - default: 0
+        description: the starting point for the result set
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.SearchProductResp'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/validator.BadRequestResp'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: search for products
   /routing:
     post:
       description: Post a new API routing

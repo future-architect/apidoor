@@ -16,133 +16,6 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api": {
-            "get": {
-                "description": "Get list of API products",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Get list of products.",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.ProductList"
-                        }
-                    }
-                }
-            },
-            "post": {
-                "description": "Post API product",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Post API product",
-                "parameters": [
-                    {
-                        "description": "api product",
-                        "name": "product",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.PostProductReq"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Created",
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/validator.BadRequestResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/search": {
-            "get": {
-                "description": "search products",
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "search for products",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "search query words (split words by '.', ex: 'foo.bar'). If containing multiple words, items which match the all search words return",
-                        "name": "q",
-                        "in": "query",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "default": "all",
-                        "description": "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')",
-                        "name": "target_fields",
-                        "in": "query"
-                    },
-                    {
-                        "enum": [
-                            "exact",
-                            "partial"
-                        ],
-                        "type": "string",
-                        "default": "partial",
-                        "description": "pattern match, chosen from 'exact' or 'partial'",
-                        "name": "pattern_match",
-                        "in": "query"
-                    },
-                    {
-                        "maximum": 100,
-                        "minimum": 1,
-                        "type": "integer",
-                        "default": 50,
-                        "description": "the maximum number of results",
-                        "name": "limit",
-                        "in": "query"
-                    },
-                    {
-                        "type": "integer",
-                        "default": 0,
-                        "description": "the starting point for the result set",
-                        "name": "offset",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/model.SearchProductResp"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/validator.BadRequestResp"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "/api/token": {
             "post": {
                 "description": "post api tokens for calling external api",
@@ -347,6 +220,133 @@ const docTemplate = `{
                         "description": "Created",
                         "schema": {
                             "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/products": {
+            "get": {
+                "description": "Get list of API products",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Get list of products.",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ProductList"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Post API product",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Post API product",
+                "parameters": [
+                    {
+                        "description": "api product",
+                        "name": "product",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PostProductReq"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/model.Product"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/validator.BadRequestResp"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/products/search": {
+            "get": {
+                "description": "search products",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "search for products",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "search query words (split words by '.', ex: 'foo.bar'). If containing multiple words, items which match the all search words return",
+                        "name": "q",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "default": "all",
+                        "description": "search target fields. You can choose field(s) from 'all' (represents searching all fields), 'name', 'description', or 'source'. (if there are multiple target fields, split target by '.', ex: 'name.source')",
+                        "name": "target_fields",
+                        "in": "query"
+                    },
+                    {
+                        "enum": [
+                            "exact",
+                            "partial"
+                        ],
+                        "type": "string",
+                        "default": "partial",
+                        "description": "pattern match, chosen from 'exact' or 'partial'",
+                        "name": "pattern_match",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 50,
+                        "description": "the maximum number of results",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 0,
+                        "description": "the starting point for the result set",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.SearchProductResp"
                         }
                     },
                     "400": {

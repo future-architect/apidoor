@@ -16,7 +16,7 @@ import (
 // @Description Post API product
 // @produce json
 // @Param product body model.PostProductReq true "api product"
-// @Success 201 {string} string
+// @Success 201 {object} model.Product
 // @Failure 400 {object} validator.BadRequestResp
 // @Failure 500 {string} error
 // @Router /products [post]
