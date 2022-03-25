@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/future-architect/apidoor/managementapi/model"
+	swaggerparser "github.com/future-architect/apidoor/managementapi/swagger-parser"
+	"github.com/future-architect/apidoor/managementapi/usecase"
 	"github.com/future-architect/apidoor/managementapi/validator"
 	"io"
 	"log"
@@ -35,6 +37,8 @@ func TestPostProduct(t *testing.T) {
 	if _, err := db.Exec("DELETE FROM product"); err != nil {
 		t.Fatal(err)
 	}
+
+	usecase.Parser = swaggerparser.NewParser(swaggerparser.TestFetcher{})
 
 	tests := []struct {
 		name           string

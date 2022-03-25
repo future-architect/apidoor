@@ -4,7 +4,6 @@
 test: test-redis test-dynamo
 
 test-redis:
-	export TEST_MODE="test"; \
 	export DATABASE_DRIVER="postgres"; \
 	export DATABASE_HOST="127.0.0.1"; \
 	export DATABASE_PORT="5432"; \
@@ -18,7 +17,6 @@ test-redis:
 	go test -race -v ./
 
 test-dynamo:
-	export TEST_MODE="test"; \
 	export DATABASE_DRIVER="postgres"; \
 	export DATABASE_HOST="127.0.0.1"; \
 	export DATABASE_PORT="5432"; \

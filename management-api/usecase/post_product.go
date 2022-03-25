@@ -7,21 +7,12 @@ import (
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/swagger-parser"
 	"log"
-	"os"
 )
 
-var parser swaggerparser.Parser
-
-func init() {
-	if os.Getenv("TEST_MODE") == "" {
-		parser = swaggerparser.NewParser(swaggerparser.NewDefaultFetcher())
-	} else {
-		parser = swaggerparser.NewParser(swaggerparser.TestFetcher{})
-	}
-}
+var Parser swaggerparser.Parser = swaggerparser.NewParser(swaggerparser.NewDefaultFetcher())
 
 func PostProduct(ctx context.Context, req *model.PostProductReq) (*model.Product, error) {
-	swaggerInfo, err := parser.Parse(ctx, req.SwaggerURL)
+	swaggerInfo, err := Parser.Parse(ctx, req.SwaggerURL)
 	if err != nil {
 		parseErr, _ := err.(swaggerparser.Error)
 		log.Printf("failed to fetch and parse swagger definition file: %v", err)
