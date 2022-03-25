@@ -6,10 +6,10 @@ import (
 	"log"
 )
 
-func GetAPIInfo(ctx context.Context) ([]model.APIInfo, error) {
-	list, err := db.getAPIInfo(ctx)
+func GetProducts(ctx context.Context) ([]model.Product, error) {
+	list, err := db.getProducts(ctx)
 	if err != nil {
-		log.Printf("execute get apiinfo from db error: %v", err)
+		log.Printf("execute get product from db error: %v", err)
 		return nil, err
 	}
 	return list, nil

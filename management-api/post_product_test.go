@@ -3,236 +3,97 @@ package managementapi_test
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"github.com/future-architect/apidoor/managementapi"
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/validator"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/future-architect/apidoor/managementapi"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-type productAPIContent struct {
-	ApiID       int    `db:"api_id"`
-	Description string `db:"description"`
-}
-
 func TestPostProduct(t *testing.T) {
-	if _, err := db.Exec("TRUNCATE product_api_content"); err != nil {
-		t.Fatal(err)
-	}
 	if _, err := db.Exec("DELETE FROM product"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		db.Exec("TRUNCATE product_api_content")
-		db.Exec("DELETE FROM product")
-		db.Exec("DELETE FROM apiinfo")
-	}()
-
-	// set up api info db
-	apiInfoList := model.APIInfoList{
-		List: []model.APIInfo{
-			{
-				Name:        "info1",
-				Source:      "info1 company",
-				Description: "description 1",
-				Thumbnail:   "http://example.com/img1",
-				SwaggerURL:  "http://example.com/test",
-			},
-			{
-				Name:        "info2",
-				Source:      "info2 company",
-				Description: "description 2",
-				Thumbnail:   "http://example.com/img2",
-				SwaggerURL:  "http://example.com/test",
-			},
-		},
-	}
-
-	notExistID := int(1e9)
-
-	for i, info := range apiInfoList.List {
-		stmt, err := db.PrepareNamed(
-			`INSERT INTO apiinfo(name, source, description, thumbnail, swagger_url)
-			VALUES (:name, :source, :description, :thumbnail, :swagger_url) RETURNING id`)
-		if err != nil {
-			t.Fatal(err)
-		}
-		var id int
-		stmt.QueryRowx(info).Scan(&id)
-		apiInfoList.List[i].ID = id
-	}
 
 	tests := []struct {
-		name              string
-		contentType       string
-		req               model.PostProductReq
-		wantHTTPStatus    int
-		wantResp          interface{}
-		wantProductRecord []model.Product
-		wantContentRecord []productAPIContent
+		name           string
+		contentType    string
+		req            model.PostProductReq
+		wantHttpStatus int
+		//wantRecord は期待されるDB作成レコードの値、idは比較対象外
+		wantRecords []model.Product
+		wantResp    interface{}
 	}{
 		{
-			name:        "post product containing multiple APIs",
+			name:        "productを登録できる",
 			contentType: "application/json",
 			req: model.PostProductReq{
-				Name:        "product1",
-				DisplayName: "product 1",
-				Source:      "company 1",
-				Description: "product 1 has two APIs",
-				Thumbnail:   "http://example.com/test",
-				Contents: []model.APIContent{
-					{
-						ID:          apiInfoList.List[0].ID,
-						Description: "first api",
-					},
-					{
-						ID:          apiInfoList.List[1].ID,
-						Description: "second api",
-					},
-				},
-				IsAvailable: false,
+				Name:        "Awesome API",
+				Source:      "Company1",
+				DisplayName: "display1",
+				Description: "provide fantastic product.",
+				Thumbnail:   "http://example.com/api.awesome",
+				SwaggerURL:  "http://example.com/api/awesome",
 			},
-			wantHTTPStatus: http.StatusCreated,
-			wantResp:       "Created",
-			wantProductRecord: []model.Product{
+			wantHttpStatus: http.StatusCreated,
+			wantRecords: []model.Product{
 				{
-					Name:        "product1",
-					DisplayName: "product 1",
-					Source:      "company 1",
-					Description: "product 1 has two APIs",
-					Thumbnail:   "http://example.com/test",
+					Name:        "Awesome API",
+					Source:      "Company1",
+					DisplayName: "display1",
+					Description: "provide fantastic product.",
+					Thumbnail:   "http://example.com/api.awesome",
+					BasePath:    "/todo",
+					SwaggerURL:  "http://example.com/api/awesome",
 				},
 			},
-			wantContentRecord: []productAPIContent{
-				{
-					ApiID:       apiInfoList.List[0].ID,
-					Description: "first api",
-				},
-				{
-					ApiID:       apiInfoList.List[1].ID,
-					Description: "second api",
-				},
-			},
+			wantResp: "Created",
 		},
 		{
-			name:        "post product when some optional fields are omitted",
+			name:        "Fieldに空文字列がある場合は登録できない",
 			contentType: "application/json",
 			req: model.PostProductReq{
-				Name:        "product2",
-				Source:      "company 2",
-				Description: "product 2 has one API",
-				Thumbnail:   "http://example.com/test",
-				Contents: []model.APIContent{
-					{
-						ID: apiInfoList.List[0].ID,
-					},
-				},
-				IsAvailable: true,
+				Name:        "",
+				Source:      "Company2",
+				DisplayName: "display2",
+				Description: "provide fantastic product.",
+				Thumbnail:   "http://example.com/api.awesome",
+				SwaggerURL:  "http://example.com/api/awesome",
 			},
-			wantHTTPStatus: http.StatusCreated,
-			wantResp:       "Created",
-			wantProductRecord: []model.Product{
-				{
-					Name:            "product2",
-					Source:          "company 2",
-					Description:     "product 2 has one API",
-					Thumbnail:       "http://example.com/test",
-					IsAvailableCode: 1,
-				},
-			},
-			wantContentRecord: []productAPIContent{
-				{
-					ApiID: apiInfoList.List[0].ID,
-				},
-			},
-		},
-		{
-			name:        "post product containing no API is allowed",
-			contentType: "application/json",
-			req: model.PostProductReq{
-				Name:        "product3",
-				Source:      "company 3",
-				Description: "product 3 has no API",
-				Thumbnail:   "http://example.com/test",
-				Contents:    []model.APIContent{},
-				IsAvailable: false,
-			},
-			wantHTTPStatus: http.StatusCreated,
-			wantResp:       "Created",
-			wantProductRecord: []model.Product{
-				{
-					Name:        "product3",
-					Source:      "company 3",
-					Description: "product 3 has no API",
-					Thumbnail:   "http://example.com/test",
-				},
-			},
-			wantContentRecord: []productAPIContent{},
-		},
-		{
-			name:        "api id not existing is contained",
-			contentType: "application/json",
-			req: model.PostProductReq{
-				Name:        "product91",
-				DisplayName: "product 91",
-				Source:      "company 91",
-				Description: "product 91 is wrong",
-				Thumbnail:   "http://example.com/test",
-				Contents: []model.APIContent{
-					{
-						ID:          notExistID,
-						Description: "api not existing",
-					},
-				},
-				IsAvailable: false,
-			},
-			wantHTTPStatus: http.StatusBadRequest,
-			wantResp: validator.BadRequestResp{
-				Message:          fmt.Sprintf("api_id %d does not exist", notExistID),
-				ValidationErrors: nil,
-			},
-			wantProductRecord: []model.Product{},
-			wantContentRecord: []productAPIContent{},
-		},
-		{
-			name:        "input validation is failed",
-			contentType: "application/json",
-			req: model.PostProductReq{
-				Name:        "product 92",
-				DisplayName: "product 92",
-				Description: "product 92 is wrong",
-				Thumbnail:   "http://example.com/test",
-				Contents:    []model.APIContent{},
-				IsAvailable: false,
-			},
-			wantHTTPStatus: http.StatusBadRequest,
+			wantHttpStatus: http.StatusBadRequest,
+			wantRecords:    []model.Product{},
 			wantResp: validator.BadRequestResp{
 				Message: "input validation error",
 				ValidationErrors: &validator.ValidationErrors{
 					{
 						Field:          "name",
-						ConstraintType: "alphanum",
-						Message:        "input value, product 92, does not satisfy the format, alphanum",
-						Got:            "product 92",
-					},
-					{
-						Field:          "source",
 						ConstraintType: "required",
 						Message:        "required field, but got empty",
 						Got:            "",
 					},
 				},
 			},
-			wantProductRecord: []model.Product{},
-			wantContentRecord: []productAPIContent{},
+		},
+		{
+			name:        "Content-Typeがapplication/json以外の場合は登録できない",
+			contentType: "text/plain",
+			req: model.PostProductReq{
+				Name:        "wrong content-type",
+				Source:      "Company3",
+				Description: "provide fantastic product.",
+				Thumbnail:   "http://example.com/api.awesome",
+				SwaggerURL:  "http://example.com/api/awesome",
+			},
+			wantHttpStatus: http.StatusBadRequest,
+			wantRecords:    []model.Product{},
+			wantResp: validator.BadRequestResp{
+				Message: `unexpected request Content-Type, it must be "application/json"`,
+			},
 		},
 	}
 
@@ -245,7 +106,7 @@ func TestPostProduct(t *testing.T) {
 			}
 			body := bytes.NewReader(bodyBytes)
 
-			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/products", body)
+			r := httptest.NewRequest(http.MethodPost, "localhost:3000/mgmt/api", body)
 			r.Header.Add("Content-Type", tt.contentType)
 
 			w := httptest.NewRecorder()
@@ -255,18 +116,38 @@ func TestPostProduct(t *testing.T) {
 
 			resp, err := io.ReadAll(rw.Body)
 			if err != nil {
-				t.Errorf("read response body error: %v", err)
+				t.Fatal(err)
+			}
+
+			if rw.StatusCode != tt.wantHttpStatus {
+				t.Errorf("wrong http status code: got %d, want %d", rw.StatusCode, tt.wantHttpStatus)
+			}
+
+			rows, err := db.Queryx("SELECT * from product WHERE source=$1", tt.req.Source)
+			if err != nil {
+				t.Errorf("db get product error: %v", err)
 				return
 			}
 
-			if rw.StatusCode != tt.wantHTTPStatus {
-				t.Errorf("wrong http status code: got %d, want %d", rw.StatusCode, tt.wantHTTPStatus)
+			list := []model.Product{}
+			for rows.Next() {
+				var row model.Product
+
+				if err := rows.StructScan(&row); err != nil {
+					t.Errorf("reading row error: %v", err)
+					return
+				}
+
+				list = append(list, row)
 			}
 
+			if diff := cmp.Diff(tt.wantRecords, list, cmpopts.IgnoreFields(model.Product{}, "ID", "CreatedAt", "UpdatedAt")); diff != "" {
+				t.Errorf("db get list of product responce differs:\n %v", diff)
+			}
 			switch tt.wantResp.(type) {
 			case string:
 				if tt.wantResp != string(resp) {
-					t.Errorf("wrong reponse body: got %s, want %s", resp, tt.wantResp)
+					t.Errorf("response body is not %s, got %s", tt.wantResp, string(resp))
 				}
 			case validator.BadRequestResp:
 				want := tt.wantResp.(validator.BadRequestResp)
@@ -274,51 +155,11 @@ func TestPostProduct(t *testing.T) {
 			default:
 				t.Errorf("type of wantResp is not unsupported")
 			}
-
-			// db check
-			rows, err := db.Queryx(`SELECT id, name, display_name, source, description, thumbnail, is_available
-       				FROM product WHERE name=$1`, tt.req.Name)
-			//rows, err := db.Queryx("SELECT * from apiinfo WHERE name=$1", tt.req.Name)
-			if err != nil {
-				t.Errorf("db get api info error: %v", err)
-				return
-			}
-			productList := make([]model.Product, 0)
-			for rows.Next() {
-				var row model.Product
-				if err := rows.StructScan(&row); err != nil {
-					t.Errorf("reading row error: %v", err)
-					return
-				}
-				productList = append(productList, row)
-			}
-			if diff := cmp.Diff(tt.wantProductRecord, productList,
-				cmpopts.IgnoreFields(model.Product{}, "ID")); diff != "" {
-				t.Errorf("db get list of product responce differs:\n %v", diff)
-			}
-
-			if len(productList) == 0 {
-				return
-			}
-			productID := productList[0].ID
-
-			rows, err = db.Queryx("SELECT api_id, description from product_api_content WHERE product_id=$1", productID)
-			if err != nil {
-				t.Errorf("db get api info error: %v", err)
-				return
-			}
-			contentList := make([]productAPIContent, 0)
-			for rows.Next() {
-				var row productAPIContent
-				if err := rows.StructScan(&row); err != nil {
-					t.Errorf("reading row error: %v", err)
-					return
-				}
-				contentList = append(contentList, row)
-			}
-			if diff := cmp.Diff(tt.wantContentRecord, contentList); diff != "" {
-				t.Errorf("db get list of content responce differs:\n %v", diff)
-			}
 		})
 	}
+
+	if _, err := db.Exec("DELETE FROM product"); err != nil {
+		t.Fatal(err)
+	}
+
 }

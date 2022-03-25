@@ -37,45 +37,49 @@ func init() {
 	}
 }
 
-func TestGetAPIInfo(t *testing.T) {
+func TestGetProducts(t *testing.T) {
 	// insert data for test
-	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
+	if _, err := db.Exec("DELETE FROM product"); err != nil {
 		t.Fatal(err)
 	}
 
-	var data = []model.APIInfo{
+	var data = []model.Product{
 		{
 			Name:        "Awesome API",
 			Source:      "Nice Company",
-			Description: "provide fantastic information.",
+			DisplayName: "display1",
+			Description: "provide fantastic product.",
 			Thumbnail:   "test.com/img/123",
+			BasePath:    "test",
 			SwaggerURL:  "example.com/api/awesome",
 		},
 		{
 			Name:        "Awesome API v2",
 			Source:      "Nice Company",
-			Description: "provide special information.",
+			DisplayName: "display2",
+			Description: "provide special product.",
 			Thumbnail:   "test.com/img/456",
+			BasePath:    "test",
 			SwaggerURL:  "example.com/api/v2/awesome",
 		},
 	}
 
 	q := `
 	INSERT INTO
-		apiinfo(name, source, description, thumbnail, swagger_url)
+		product(name, source, display_name, description, thumbnail, swagger_url, base_path, created_at, updated_at)
 	VALUES
-		($1, $2, $3, $4, $5)
+		($1, $2, $3, $4, $5, $6, $7, current_timestamp, current_timestamp)
 	`
 	for _, d := range data {
-		if _, err := db.Exec(q, d.Name, d.Source, d.Description, d.Thumbnail, d.SwaggerURL); err != nil {
+		if _, err := db.Exec(q, d.Name, d.Source, d.DisplayName, d.Description, d.Thumbnail, d.SwaggerURL, d.BasePath); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	// test if GetAPIInfo works correctly
+	// test if GetProducts works correctly
 	r := httptest.NewRequest(http.MethodGet, "localhost:3000/api", nil)
 	w := httptest.NewRecorder()
-	managementapi.GetAPIInfo(w, r)
+	managementapi.GetProducts(w, r)
 
 	rw := w.Result()
 	defer rw.Body.Close()
@@ -84,17 +88,17 @@ func TestGetAPIInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var res model.APIInfoList
+	var res model.ProductList
 	if err := json.Unmarshal(body, &res); err != nil {
 		t.Fatal(err)
 	}
 
-	if diff := cmp.Diff(data, res.List, cmpopts.IgnoreFields(model.APIInfo{}, "ID")); diff != "" {
+	if diff := cmp.Diff(data, res.List, cmpopts.IgnoreFields(model.Product{}, "ID", "CreatedAt", "UpdatedAt")); diff != "" {
 		t.Errorf("unexpected response: differs=\n%v", diff)
 	}
 
 	// reset database
-	if _, err := db.Exec("DELETE FROM apiinfo"); err != nil {
+	if _, err := db.Exec("DELETE FROM product"); err != nil {
 		t.Fatal(err)
 	}
 }

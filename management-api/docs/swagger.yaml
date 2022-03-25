@@ -1,36 +1,5 @@
 basePath: /mgmt
 definitions:
-  model.APIContent:
-    properties:
-      description:
-        type: string
-      id:
-        type: integer
-    required:
-    - id
-    type: object
-  model.APIInfo:
-    properties:
-      description:
-        type: string
-      id:
-        type: integer
-      name:
-        type: string
-      source:
-        type: string
-      swagger_url:
-        type: string
-      thumbnail:
-        type: string
-    type: object
-  model.APIInfoList:
-    properties:
-      api_info_list:
-        items:
-          $ref: '#/definitions/model.APIInfo'
-        type: array
-    type: object
   model.AccessToken:
     properties:
       key:
@@ -68,25 +37,6 @@ definitions:
     - product_name
     type: object
   model.EmptyResp:
-    type: object
-  model.PostAPIInfoReq:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-      source:
-        type: string
-      swagger_url:
-        type: string
-      thumbnail:
-        type: string
-    required:
-    - description
-    - name
-    - source
-    - swagger_url
-    - thumbnail
     type: object
   model.PostAPIKeyProductsReq:
     properties:
@@ -162,13 +112,10 @@ definitions:
     type: object
   model.PostProductReq:
     properties:
-      api_contents:
-        items:
-          $ref: '#/definitions/model.APIContent'
-        type: array
       description:
         type: string
       display_name:
+        description: OwnerID     *int   `json:"owner_id" db:"owner_id" validate:"required"`
         type: string
       is_available:
         type: boolean
@@ -176,12 +123,16 @@ definitions:
         type: string
       source:
         type: string
+      swagger_url:
+        type: string
       thumbnail:
         type: string
     required:
     - description
+    - display_name
     - name
     - source
+    - swagger_url
     - thumbnail
     type: object
   model.PostUserReq:
@@ -199,6 +150,39 @@ definitions:
     - email_address
     - password
     type: object
+  model.Product:
+    properties:
+      base_path:
+        type: string
+      created_at:
+        type: string
+      description:
+        type: string
+      display_name:
+        description: OwnerID         int    `json:"owner" db:"owner"`
+        type: string
+      id:
+        type: integer
+      is_available:
+        type: integer
+      name:
+        type: string
+      source:
+        type: string
+      swagger_url:
+        type: string
+      thumbnail:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  model.ProductList:
+    properties:
+      product_list:
+        items:
+          $ref: '#/definitions/model.Product'
+        type: array
+    type: object
   model.ResultSet:
     properties:
       count:
@@ -208,19 +192,19 @@ definitions:
       offset:
         type: integer
     type: object
-  model.SearchAPIInfoMetaData:
+  model.SearchProductMetaData:
     properties:
       result_set:
         $ref: '#/definitions/model.ResultSet'
     type: object
-  model.SearchAPIInfoResp:
+  model.SearchProductResp:
     properties:
-      api_info_list:
-        items:
-          $ref: '#/definitions/model.APIInfo'
-        type: array
       metadata:
-        $ref: '#/definitions/model.SearchAPIInfoMetaData'
+        $ref: '#/definitions/model.SearchProductMetaData'
+      product_list:
+        items:
+          $ref: '#/definitions/model.Product'
+        type: array
     type: object
   validator.BadRequestResp:
     properties:
@@ -259,24 +243,24 @@ info:
 paths:
   /api:
     get:
-      description: Get list of APIs and its information
+      description: Get list of API products
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.APIInfoList'
-      summary: Get list of API info.
+            $ref: '#/definitions/model.ProductList'
+      summary: Get list of products.
     post:
-      description: Get list of APIs and its information
+      description: Post API product
       parameters:
-      - description: api information
+      - description: api product
         in: body
-        name: api_info
+        name: product
         required: true
         schema:
-          $ref: '#/definitions/model.PostAPIInfoReq'
+          $ref: '#/definitions/model.PostProductReq'
       produces:
       - application/json
       responses:
@@ -292,10 +276,10 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get list of API information
+      summary: Post API product
   /api/search:
     get:
-      description: Get list of APIs and its information
+      description: search products
       parameters:
       - description: 'search query words (split words by ''.'', ex: ''foo.bar'').
           If containing multiple words, items which match the all search words return'
@@ -336,7 +320,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.SearchAPIInfoResp'
+            $ref: '#/definitions/model.SearchProductResp'
         "400":
           description: Bad Request
           schema:
@@ -345,7 +329,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: search for api info
+      summary: search for products
   /api/token:
     delete:
       description: delete api tokens for calling external api
@@ -444,7 +428,7 @@ paths:
       parameters:
       - description: api key owner
         in: body
-        name: api_info
+        name: api_key
         required: true
         schema:
           $ref: '#/definitions/model.PostAPIKeyReq'
@@ -492,32 +476,6 @@ paths:
             type: string
       summary: Post relationship between api key and authorized products linked to
         the key
-  /products:
-    post:
-      description: Post an API product
-      parameters:
-      - description: product definition
-        in: body
-        name: product
-        required: true
-        schema:
-          $ref: '#/definitions/model.PostProductReq'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Created
-          schema:
-            type: string
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/validator.BadRequestResp'
-        "500":
-          description: Internal Server Error
-          schema:
-            type: string
-      summary: Post a product
   /routing:
     post:
       description: Post a new API routing

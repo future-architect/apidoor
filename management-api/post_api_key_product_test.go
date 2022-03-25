@@ -62,8 +62,8 @@ func TestPostAPIKeyProducts(t *testing.T) {
 	productIDs := make([]int, len(productNames))
 	for i, name := range productNames {
 		stmt, err := db.Preparex(
-			`INSERT INTO product(name, source, description, thumbnail, display_name, created_at, updated_at)
-			VALUES ($1, 'a', 'a', 'a', 'a', current_timestamp, current_timestamp) RETURNING id`)
+			`INSERT INTO product(name, source, description, thumbnail, display_name, base_path, swagger_url, created_at, updated_at)
+			VALUES ($1, 'a', 'a', 'a', 'a', 'a', 'a', current_timestamp, current_timestamp) RETURNING id`)
 		if err != nil {
 			t.Error(err)
 			return
@@ -335,7 +335,7 @@ func TestPostAPIKeyProducts(t *testing.T) {
 				rows, err := db.Queryx(`SELECT id
 					       				FROM apikey_contract_product_authorized WHERE apikey_id=$1 AND contract_product_id=$2`, tt.wantDBKeys.apiKeyID, key)
 				if err != nil {
-					t.Errorf("db get api info error: %v", err)
+					t.Errorf("db get apikey_contract_product_authorized error: %v", err)
 					return
 				}
 				contractID := -1
