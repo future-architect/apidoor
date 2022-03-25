@@ -23,10 +23,12 @@ func init() {
 
 type APIDB interface {
 	PostRouting(ctx context.Context, apiKey, path, forwardURL string) error
+	BatchPostRouting(ctx context.Context, items []model.Routing) (int, error)
 	PostAPIToken(ctx context.Context, req model.PostAPITokenReq) error
 	DeleteAPIToken(ctx context.Context, req model.DeleteAPITokenReq) error
 	CountRouting(ctx context.Context, apikey, path string) (int64, error)
 	PostSwagger(ctx context.Context, productID int, info *swaggerparser.Swagger) error
+	BatchGetSwagger(ctx context.Context, productIDs []int) ([]model.Swagger, error)
 }
 
 func createDBDriver(dbType string) (APIDB, error) {

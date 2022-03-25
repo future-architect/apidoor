@@ -53,7 +53,7 @@ func fetchUserID(ctx context.Context, accountID string) (int, error) {
 	return user.ID, nil
 }
 
-func fetchProductIDs(ctx context.Context, products []*model.ContractProducts) ([]*model.ContractProductsDB, error) {
+func fetchProductIDs(ctx context.Context, products []*model.ContractProducts) ([]*model.ContractProductContentDB, error) {
 	productNames := make([]string, len(products))
 	for i, product := range products {
 		productNames[i] = product.ProductName
@@ -65,13 +65,13 @@ func fetchProductIDs(ctx context.Context, products []*model.ContractProducts) ([
 		return nil, ServerError{err}
 	}
 
-	contractProducts := make([]*model.ContractProductsDB, len(products))
+	contractProducts := make([]*model.ContractProductContentDB, len(products))
 	for i, product := range products {
 		matchedProduct, ok := productMap[product.ProductName]
 		if !ok {
 			return nil, ClientError{fmt.Errorf("product_name %s does not exist", product.ProductName)}
 		}
-		contractProducts[i] = &model.ContractProductsDB{
+		contractProducts[i] = &model.ContractProductContentDB{
 			ProductID:   matchedProduct.ID,
 			Description: product.Description,
 		}

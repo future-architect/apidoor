@@ -49,3 +49,13 @@ func (ar APIRouting) PostSwagger(ctx context.Context, productID int, info *swagg
 	//TODO: impl
 	return nil
 }
+
+func (ar APIRouting) BatchPostRouting(ctx context.Context, items []model.Routing) (int, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (ar APIRouting) BatchGetSwagger(ctx context.Context, productIDs []int) ([]model.Swagger, error) {
+	//TODO implement me
+	panic("implement me")
+}

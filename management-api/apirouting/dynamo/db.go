@@ -55,6 +55,7 @@ func New() *APIRouting {
 	}
 }
 
+// TODO: contractの追加
 func (ar APIRouting) PostRouting(ctx context.Context, apikey, path, forwardURL string) error {
 	routing := routing{
 		Apikey:     apikey,
@@ -63,6 +64,15 @@ func (ar APIRouting) PostRouting(ctx context.Context, apikey, path, forwardURL s
 	}
 	return ar.client.Table(ar.apiRoutingTable).
 		Put(routing).RunWithContext(ctx)
+}
+
+func (ar APIRouting) BatchPostRouting(ctx context.Context, items []model.Routing) (int, error) {
+	req := make([]interface{}, len(items))
+	for i, v := range items {
+		req[i] = v
+	}
+	return ar.client.Table(ar.apiRoutingTable).
+		Batch().Write().Put(req...).RunWithContext(ctx)
 }
 
 func (ar APIRouting) CountRouting(ctx context.Context, apikey, path string) (int64, error) {
@@ -91,12 +101,15 @@ func (ar APIRouting) PostSwagger(ctx context.Context, productID int, info *swagg
 		Put(swagger).RunWithContext(ctx)
 }
 
-type swagger struct {
-	ProductID      int      `dynamo:"product_id"`
-	Schemes        []string `dynamo:"schemes"`
-	ForwardURLBase string   `dynamo:"forward_url_base"`
-	PathBase       string   `dynamo:"path_base"`
-	APIList        []api    `dynamo:"api_list"`
+func (ar APIRouting) BatchGetSwagger(ctx context.Context, productIDs []int) ([]model.Swagger, error) {
+	ret := make([]model.Swagger, 0, len(productIDs))
+	req := make([]dynamo.Keyed, len(productIDs))
+	for i, v := range productIDs {
+		req[i] = dynamo.Keys{v, nil}
+	}
+	err := ar.client.Table(ar.swaggerTable).Batch("product_id").
+		Get(req...).AllWithContext(ctx, &ret)
+	return ret, err
 }
 
 func newSwagger(productID int, info *swaggerparser.Swagger) swagger {
@@ -107,6 +120,14 @@ func newSwagger(productID int, info *swaggerparser.Swagger) swagger {
 		PathBase:       info.PathBase,
 		APIList:        newAPIList(info.APIs),
 	}
+}
+
+type swagger struct {
+	ProductID      int      `dynamo:"product_id"`
+	Schemes        []string `dynamo:"schemes"`
+	ForwardURLBase string   `dynamo:"forward_url_base"`
+	PathBase       string   `dynamo:"path_base"`
+	APIList        []api    `dynamo:"api_list"`
 }
 
 type api struct {

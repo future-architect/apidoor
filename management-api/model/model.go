@@ -260,10 +260,10 @@ type ContractProducts struct {
 
 type PostContractDB struct {
 	UserID   int
-	Products []*ContractProductsDB
+	Products []*ContractProductContentDB
 }
 
-type ContractProductsDB struct {
+type ContractProductContentDB struct {
 	ProductID   int    `db:"product_name"`
 	Description string `db:"description"`
 }
@@ -413,4 +413,28 @@ type ContractProductDB struct {
 	ID         int `db:"id"`
 	ContractID int `db:"contract_id"`
 	ProductID  int `db:"product_id"`
+}
+
+type Routing struct {
+	APIKey     string `dynamo:"api_key"`
+	Path       string `dynamo:"path"`
+	ForwardURL string `dynamo:"forward_url"`
+	ContractID int    `dynamo:"contract_id"`
+}
+
+/////////////
+// swagger //
+/////////////
+
+type Swagger struct {
+	ProductID      int      `dynamo:"product_id"`
+	Schemes        []string `dynamo:"schemes"`
+	ForwardURLBase string   `dynamo:"forward_url_base"`
+	PathBase       string   `dynamo:"path_base"`
+	APIList        []API    `dynamo:"api_list"`
+}
+
+type API struct {
+	ForwardURL string `dynamo:"forward_url"`
+	Path       string `dynamo:"path"`
 }
