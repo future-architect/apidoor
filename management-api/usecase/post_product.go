@@ -9,7 +9,7 @@ import (
 	"log"
 )
 
-var Parser swaggerparser.Parser = swaggerparser.NewParser(swaggerparser.NewDefaultFetcher())
+var Parser = swaggerparser.NewParser(swaggerparser.NewDefaultFetcher())
 
 func PostProduct(ctx context.Context, req *model.PostProductReq) (*model.Product, error) {
 	swaggerInfo, err := Parser.Parse(ctx, req.SwaggerURL)
