@@ -20,10 +20,10 @@ type APICallCounter struct {
 	sync.Map
 }
 
-func (ac *APICallCounter) GetCount(ctx context.Context, apikey string, path model.URITemplate) (int, error) {
+func (ac *APICallCounter) GetCount(ctx context.Context, contractID int, path model.URITemplate) (int, error) {
 	key := counterKey{
-		apikey: apikey,
-		path:   path.JoinPath(),
+		contractID: contractID,
+		path:       path.JoinPath(),
 	}
 	return ac.getCount(ctx, key)
 }
@@ -40,7 +40,7 @@ func (ac *APICallCounter) getCount(ctx context.Context, key counterKey) (int, er
 }
 
 func (ac *APICallCounter) updateCount(ctx context.Context, key counterKey) (int, error) {
-	count64, err := db.countBillingAccessLogDB(ctx, key.apikey, key.path, ac.countStartAt())
+	count64, err := db.countBillingAccessLogDB(ctx, key.contractID, key.path, ac.countStartAt())
 	if err != nil {
 		return 0, fmt.Errorf("count api call db error: %w", err)
 	}
@@ -62,8 +62,8 @@ func (ac *APICallCounter) countExpireAt() time.Time {
 }
 
 type counterKey struct {
-	apikey string
-	path   string
+	contractID int
+	path       string
 }
 
 type counterStat struct {

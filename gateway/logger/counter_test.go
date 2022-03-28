@@ -31,28 +31,28 @@ func TestAPICallCounter_GetCount(t *testing.T) {
 	logger.DefaultCountSpanDays = 30
 
 	tests := []struct {
-		name      string
-		apikey    string
-		path      model.URITemplate
-		wantCount int
+		name       string
+		contractID int
+		path       model.URITemplate
+		wantCount  int
 	}{
 		{
-			name:      "count api calls correctly",
-			apikey:    "key1",
-			path:      model.NewURITemplate("api/test"),
-			wantCount: 2,
+			name:       "count api calls correctly",
+			contractID: 0,
+			path:       model.NewURITemplate("api/test"),
+			wantCount:  2,
 		},
 		{
-			name:      "count result is zero",
-			apikey:    "key9",
-			path:      model.NewURITemplate("api/test"),
-			wantCount: 0,
+			name:       "count result is zero",
+			contractID: 99,
+			path:       model.NewURITemplate("api/test"),
+			wantCount:  0,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			count, err := testCounter.GetCount(context.Background(), tt.apikey, tt.path)
+			count, err := testCounter.GetCount(context.Background(), tt.contractID, tt.path)
 			if err != nil {
 				t.Errorf("get count error: %v", err)
 			}
@@ -84,15 +84,17 @@ func TestAPICallCounter_GetCountWithCache(t *testing.T) {
 	logger.DefaultCountSpanDays = 30
 	logger.DefaultCountValidSpan = 30 * time.Second
 
+	contractID := 0
 	apikey := "key1"
 	pathStr := "api/test"
 	path := model.NewURITemplate(pathStr)
 
 	// get count correctly
-	testGetCount(t, apikey, path, 2)
+	testGetCount(t, contractID, path, 2)
 
 	flextime.Fix(startTime.Add(5 * time.Second))
 	putAccessLog(t, logger.LogItem{
+		ContractID:    0,
 		Key:           apikey,
 		TimeStamp:     startTime.Add(5 * time.Second).Format(time.RFC3339),
 		Path:          pathStr,
@@ -101,6 +103,7 @@ func TestAPICallCounter_GetCountWithCache(t *testing.T) {
 	})
 	flextime.Fix(startTime.Add(5 * time.Second))
 	putAccessLog(t, logger.LogItem{
+		ContractID:    0,
 		Key:           apikey,
 		TimeStamp:     startTime.Add(10 * time.Second).Format(time.RFC3339),
 		Path:          pathStr,
@@ -109,16 +112,16 @@ func TestAPICallCounter_GetCountWithCache(t *testing.T) {
 	})
 
 	// the result is not changed, because the cache is valid
-	testGetCount(t, apikey, path, 2)
+	testGetCount(t, contractID, path, 2)
 
 	flextime.Fix(startTime.Add(35 * time.Second))
 	// the result is updated, because the cache is invalid
-	testGetCount(t, apikey, path, 3)
+	testGetCount(t, contractID, path, 3)
 
 }
 
-func testGetCount(t *testing.T, key string, path model.URITemplate, wantCount int) {
-	count, err := testCounter.GetCount(context.Background(), key, path)
+func testGetCount(t *testing.T, contractID int, path model.URITemplate, wantCount int) {
+	count, err := testCounter.GetCount(context.Background(), contractID, path)
 	if err != nil {
 		t.Errorf("get count error: %v", err)
 	}

@@ -41,7 +41,12 @@ func (rd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 
 		pathValue := rd.client.HGet(ctx, key, hk).Val()
 
-		field, err := datasource.CreateField(ctx, key, hk, pathValue)
+		field, err := datasource.CreateField(ctx, &datasource.Routing{
+			APIKey:     key,
+			Path:       hk,
+			ForwardURL: pathValue,
+			ContractID: 0, // TODO: redisでのデータ管理
+		})
 		if err != nil {
 			return nil, fmt.Errorf("fetch field, key = %v, hk = %v, forwardURL = %v, error: %w",
 				key, hk, pathValue, err)

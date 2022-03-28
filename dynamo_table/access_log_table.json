@@ -2,7 +2,7 @@
   "TableName": "access_log",
   "KeySchema": [
     {
-      "AttributeName": "api_key",
+      "AttributeName": "contract_id",
       "KeyType": "HASH"
     },
     {
@@ -12,8 +12,8 @@
   ],
   "AttributeDefinitions": [
     {
-      "AttributeName": "api_key",
-      "AttributeType": "S"
+      "AttributeName": "contract_id",
+      "AttributeType": "N"
     },
     {
       "AttributeName": "timestamp",
