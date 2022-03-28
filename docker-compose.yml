@@ -55,6 +55,7 @@ services:
             - API_DB_TYPE=DYNAMO
             - DYNAMO_ENDPOINT=http://localstack:4566
             - DYNAMO_TABLE_API_ROUTING=api_routing
+            - DYNAMO_TABLE_SWAGGER=swagger
             - AWS_ACCESS_KEY_ID=dummy
             - AWS_SECRET_ACCESS_KEY=dummy
             - AWS_DEFAULT_REGION=ap-northeast-1

@@ -27,8 +27,9 @@ test-dynamo:
 	export API_DB_TYPE="DYNAMO"; \
 	export DYNAMO_TABLE_API_ROUTING="api_routing"; \
 	export DYNAMO_TABLE_ACCESS_TOKEN="access_token"; \
+	export DYNAMO_TABLE_SWAGGER="swagger"; \
 	export DYNAMO_ENDPOINT="http://localhost:4566"; \
-	go test -race -v ./
+	go test -race -v ./...
 
 #################
 # swagger       #

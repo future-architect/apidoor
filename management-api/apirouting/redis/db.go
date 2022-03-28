@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/future-architect/apidoor/managementapi/model"
+	swaggerparser "github.com/future-architect/apidoor/managementapi/swagger-parser"
 	"github.com/go-redis/redis/v8"
 	"os"
 )
@@ -40,6 +41,11 @@ func (ar APIRouting) PostAPIToken(ctx context.Context, req model.PostAPITokenReq
 }
 
 func (ar APIRouting) DeleteAPIToken(ctx context.Context, req model.DeleteAPITokenReq) error {
+	//TODO: impl
+	return nil
+}
+
+func (ar APIRouting) PostSwagger(ctx context.Context, productID int, info *swaggerparser.Swagger) error {
 	//TODO: impl
 	return nil
 }

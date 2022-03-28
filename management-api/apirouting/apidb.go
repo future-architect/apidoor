@@ -6,6 +6,7 @@ import (
 	"github.com/future-architect/apidoor/managementapi/apirouting/dynamo"
 	"github.com/future-architect/apidoor/managementapi/apirouting/redis"
 	"github.com/future-architect/apidoor/managementapi/model"
+	swaggerparser "github.com/future-architect/apidoor/managementapi/swagger-parser"
 	"log"
 	"os"
 )
@@ -25,6 +26,7 @@ type APIDB interface {
 	PostAPIToken(ctx context.Context, req model.PostAPITokenReq) error
 	DeleteAPIToken(ctx context.Context, req model.DeleteAPITokenReq) error
 	CountRouting(ctx context.Context, apikey, path string) (int64, error)
+	PostSwagger(ctx context.Context, productID int, info *swaggerparser.Swagger) error
 }
 
 func createDBDriver(dbType string) (APIDB, error) {

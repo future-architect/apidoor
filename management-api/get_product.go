@@ -15,7 +15,7 @@ import (
 // @Description Get list of API products
 // @produce json
 // @Success 200 {object} model.ProductList
-// @Router /api [get]
+// @Router /products [get]
 func GetProducts(w http.ResponseWriter, r *http.Request) {
 
 	list, err := usecase.GetProducts(r.Context())

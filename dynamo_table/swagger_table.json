@@ -1,0 +1,19 @@
+{
+  "TableName": "swagger",
+  "KeySchema": [
+    {
+      "AttributeName": "product_id",
+      "KeyType": "HASH"
+    }
+  ],
+  "AttributeDefinitions": [
+    {
+      "AttributeName": "product_id",
+      "AttributeType": "N"
+    }
+  ],
+  "ProvisionedThroughput": {
+    "ReadCapacityUnits": 1,
+    "WriteCapacityUnits": 1
+  }
+}
