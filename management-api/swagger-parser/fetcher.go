@@ -51,12 +51,12 @@ func (df DefaultFetcher) Fetch(ctx context.Context, url *url.URL) (*swaggerFile,
 	if err != nil {
 		return nil, newError(FetchServerError, fmt.Errorf("fetch file: %w", err))
 	}
+	defer resp.Body.Close()
 
 	body := new(bytes.Buffer)
 	if _, err = io.Copy(body, resp.Body); err != nil {
 		return nil, newError(FetchClientError, fmt.Errorf("read response body: %w", err))
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		switch resp.StatusCode {
