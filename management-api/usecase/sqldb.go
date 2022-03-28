@@ -334,26 +334,29 @@ func (sd sqlDB) postAPIKey(ctx context.Context, apiKey model.APIKey) (*model.API
 	return ret, nil
 }
 
-func (sd sqlDB) fetchAPIKeyAndUser(ctx context.Context, apiKeyId int) (int, string, error) {
+func (sd sqlDB) fetchAPIKeyAndUser(ctx context.Context, apiKeyId int) (apiKeyAndUserID, error) {
 	var userId int
 	var key string
 	rows, err := sd.driver.QueryxContext(ctx,
 		` SELECT user_id, access_key FROM apikey WHERE id = $1`, apiKeyId)
 	if err != nil {
-		return 0, "", fmt.Errorf("executing sql query failed: %w", err)
+		return apiKeyAndUserID{}, fmt.Errorf("executing sql query failed: %w", err)
 	}
 
 	cnt := 0
 	for rows.Next() {
 		if err = rows.Scan(&userId, &key); err != nil {
-			return 0, "", fmt.Errorf("scanning result into api_key failed: %v", err)
+			return apiKeyAndUserID{}, fmt.Errorf("scanning result into api_key failed: %v", err)
 		}
 		cnt++
 	}
 	if cnt == 0 {
-		return 0, "", ErrNotFound
+		return apiKeyAndUserID{}, ErrNotFound
 	}
-	return userId, key, nil
+	return apiKeyAndUserID{
+		apiKey: key,
+		userID: userId,
+	}, nil
 }
 
 func (sd sqlDB) fetchContractProductToAuth(ctx context.Context, userID int, contractProducts []model.AuthorizedContractProducts) ([]model.ContractProductDB, error) {
@@ -386,37 +389,30 @@ func (sd sqlDB) fetchContractProductToAuth(ctx context.Context, userID int, cont
 	return products, nil
 }
 
-func (sd sqlDB) postAPIKeyContractProductAuthorized(ctx context.Context, apiKeyID int, contractProducts []model.ContractProductDB) ([]int, error) {
-	ids := make([]int, len(contractProducts))
+func (sd sqlDB) postAPIKeyContractProductAuthorized(ctx context.Context, apiKeyID int, contractProducts []model.ContractProductDB) error {
 
 	tx, err := sd.driver.BeginTxx(ctx, &sql.TxOptions{})
 	if err != nil {
-		return nil, fmt.Errorf("begin transaction failed: %w", err)
+		return fmt.Errorf("begin transaction failed: %w", err)
 	}
-	stmt, err := tx.PreparexContext(ctx,
-		`INSERT INTO apikey_contract_product_authorized(apikey_id, contract_product_id, created_at, updated_at)
-					VALUES ($1, $2, current_timestamp, current_timestamp) RETURNING id`)
-	if err != nil {
-		tx.Rollback()
-		return nil, fmt.Errorf("prepare statement failed: %w", err)
-	}
-	for i, cp := range contractProducts {
-		var id int
-		err = stmt.QueryRowxContext(ctx, apiKeyID, cp.ID).Scan(&id)
+	for _, cp := range contractProducts {
+		_, err := tx.ExecContext(ctx,
+			`INSERT INTO apikey_contract_product_authorized(apikey_id, contract_product_id, created_at, updated_at)
+					VALUES ($1, $2, current_timestamp, current_timestamp)`, apiKeyID, cp.ID)
 		if err != nil {
 			tx.Rollback()
 			if postgresErr, ok := err.(*pq.Error); ok {
 				if postgresErr.Code == foreignKeyErrCode {
 					switch postgresErr.Column {
 					case "apikey_id":
-						return nil, &dbConstraintErr{
+						return &dbConstraintErr{
 							constraintType: foreignKeyErr,
 							field:          "apikey_id",
 							value:          apiKeyID,
 							message:        fmt.Sprintf("insert item, apikey_id = %d, failed: foreign key constraint", apiKeyID),
 						}
 					case "contract_product_id":
-						return nil, &dbConstraintErr{
+						return &dbConstraintErr{
 							constraintType: foreignKeyErr,
 							field:          "contract_product_id",
 							value:          cp.ID,
@@ -425,16 +421,15 @@ func (sd sqlDB) postAPIKeyContractProductAuthorized(ctx context.Context, apiKeyI
 					}
 				}
 			}
-			return nil, fmt.Errorf("insert item, contract_product_id = %d, failed: %w", cp.ID, err)
+			return fmt.Errorf("insert item, contract_product_id = %d, failed: %w", cp.ID, err)
 		}
-		ids[i] = id
 	}
 
 	if err = tx.Commit(); err != nil {
-		return nil, fmt.Errorf("commit transaction faield: %w", err)
+		return fmt.Errorf("commit transaction faield: %w", err)
 	}
 
-	return ids, nil
+	return nil
 }
 
 type constraintType string
@@ -448,4 +443,9 @@ type dbConstraintErr struct {
 
 func (dc dbConstraintErr) Error() string {
 	return dc.message
+}
+
+type apiKeyAndUserID struct {
+	apiKey string
+	userID int
 }

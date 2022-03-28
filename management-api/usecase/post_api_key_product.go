@@ -12,7 +12,7 @@ import (
 
 func PostAPIKeyProducts(ctx context.Context, req *model.PostAPIKeyProductsReq) error {
 	apiKeyID := *req.ApiKeyID
-	userID, apiKey, err := db.fetchAPIKeyAndUser(ctx, apiKeyID)
+	keyAndUserID, err := db.fetchAPIKeyAndUser(ctx, apiKeyID)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
 			return ClientError{fmt.Errorf("apikey not found, id %d", *req.ApiKeyID)}
@@ -21,7 +21,7 @@ func PostAPIKeyProducts(ctx context.Context, req *model.PostAPIKeyProductsReq) e
 		return ServerError{err}
 	}
 
-	contractProducts, err := db.fetchContractProductToAuth(ctx, userID, req.Contracts)
+	contractProducts, err := db.fetchContractProductToAuth(ctx, keyAndUserID.userID, req.Contracts)
 	if err != nil {
 		log.Printf("fetching contract product to auth failed: %v", err)
 		return ServerError{err}
@@ -38,7 +38,7 @@ func PostAPIKeyProducts(ctx context.Context, req *model.PostAPIKeyProductsReq) e
 	}
 
 	// TODO: 中途失敗時のrollback処理
-	_, err = db.postAPIKeyContractProductAuthorized(ctx, apiKeyID, contractProducts)
+	err = db.postAPIKeyContractProductAuthorized(ctx, apiKeyID, contractProducts)
 	if err != nil {
 		log.Printf("insert apikey_contract_product_authorized db error: %v", err)
 		if err, ok := err.(dbConstraintErr); ok {
@@ -54,7 +54,7 @@ func PostAPIKeyProducts(ctx context.Context, req *model.PostAPIKeyProductsReq) e
 		log.Printf("get swagger info list db error: %v", err)
 		return ServerError{err}
 	}
-	routings, err := generateRoutings(apiKey, contractProducts, swaggers)
+	routings, err := generateRoutings(keyAndUserID.apiKey, contractProducts, swaggers)
 	if err != nil {
 		log.Printf("in generating routings, data consistency error: %v", err)
 		return ServerError{err}

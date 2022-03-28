@@ -200,11 +200,10 @@ func TestPostAPIKeyProducts(t *testing.T) {
 	}
 	log.Printf("swaggers %v", swaggers)
 
-	dbEndpoint := os.Getenv("DYNAMO_ENDPOINT")
 	dbDynamo := dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
 		Profile:           "local",
 		SharedConfigState: session.SharedConfigEnable,
-		Config:            aws.Config{Endpoint: aws.String(dbEndpoint)},
+		Config:            aws.Config{Endpoint: aws.String("http://localhost:4566")},
 	})))
 	swaggerTable := os.Getenv("DYNAMO_TABLE_SWAGGER")
 	routingTable := os.Getenv("DYNAMO_TABLE_API_ROUTING")
