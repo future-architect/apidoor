@@ -10,6 +10,8 @@ import (
 	"net/http"
 )
 
+// TODO: routingsにcontractIDが加わったことへの対応、または、このAPIの削除
+
 // PostAPIRouting godoc
 // @Summary Post an API routing
 // @Description Post a new API routing

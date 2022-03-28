@@ -334,25 +334,29 @@ func (sd sqlDB) postAPIKey(ctx context.Context, apiKey model.APIKey) (*model.API
 	return ret, nil
 }
 
-func (sd sqlDB) fetchAPIKeyUser(ctx context.Context, apiKeyId int) (int, error) {
-	var ret int
+func (sd sqlDB) fetchAPIKeyAndUser(ctx context.Context, apiKeyId int) (apiKeyAndUserID, error) {
+	var userId int
+	var key string
 	rows, err := sd.driver.QueryxContext(ctx,
-		` SELECT user_id FROM apikey WHERE id = $1`, apiKeyId)
+		` SELECT user_id, access_key FROM apikey WHERE id = $1`, apiKeyId)
 	if err != nil {
-		return 0, fmt.Errorf("executing sql query failed: %w", err)
+		return apiKeyAndUserID{}, fmt.Errorf("executing sql query failed: %w", err)
 	}
 
 	cnt := 0
 	for rows.Next() {
-		if err = rows.Scan(&ret); err != nil {
-			return 0, fmt.Errorf("scanning result into api_key failed: %v", err)
+		if err = rows.Scan(&userId, &key); err != nil {
+			return apiKeyAndUserID{}, fmt.Errorf("scanning result into api_key failed: %v", err)
 		}
 		cnt++
 	}
 	if cnt == 0 {
-		return 0, ErrNotFound
+		return apiKeyAndUserID{}, ErrNotFound
 	}
-	return ret, nil
+	return apiKeyAndUserID{
+		apiKey: key,
+		userID: userId,
+	}, nil
 }
 
 func (sd sqlDB) fetchContractProductToAuth(ctx context.Context, userID int, contractProducts []model.AuthorizedContractProducts) ([]model.ContractProductDB, error) {
@@ -386,15 +390,15 @@ func (sd sqlDB) fetchContractProductToAuth(ctx context.Context, userID int, cont
 }
 
 func (sd sqlDB) postAPIKeyContractProductAuthorized(ctx context.Context, apiKeyID int, contractProducts []model.ContractProductDB) error {
+
 	tx, err := sd.driver.BeginTxx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("begin transaction failed: %w", err)
 	}
 	for _, cp := range contractProducts {
-		_, err = tx.ExecContext(ctx,
+		_, err := tx.ExecContext(ctx,
 			`INSERT INTO apikey_contract_product_authorized(apikey_id, contract_product_id, created_at, updated_at)
-					VALUES ($1, $2, current_timestamp, current_timestamp)`,
-			apiKeyID, cp.ID)
+					VALUES ($1, $2, current_timestamp, current_timestamp)`, apiKeyID, cp.ID)
 		if err != nil {
 			tx.Rollback()
 			if postgresErr, ok := err.(*pq.Error); ok {
@@ -439,4 +443,9 @@ type dbConstraintErr struct {
 
 func (dc dbConstraintErr) Error() string {
 	return dc.message
+}
+
+type apiKeyAndUserID struct {
+	apiKey string
+	userID int
 }

@@ -4,17 +4,40 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/future-architect/apidoor/managementapi"
 	"github.com/future-architect/apidoor/managementapi/model"
 	"github.com/future-architect/apidoor/managementapi/validator"
+	"github.com/google/go-cmp/cmp"
+	"github.com/guregu/dynamo"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"testing"
 )
 
 func TestPostAPIKeyProducts(t *testing.T) {
+	dbType := managementapi.GetAPIDBType(t)
+	if dbType != managementapi.DYNAMO {
+		log.Println("this test is valid when dynamodb is used, skip")
+		return
+	}
+
+	managementapi.Setup(t,
+		`aws dynamodb --profile local --endpoint-url http://localhost:4566 create-table --cli-input-json file://../dynamo_table/api_routing_table.json`,
+		`aws dynamodb --profile local --endpoint-url http://localhost:4566 create-table --cli-input-json file://../dynamo_table/swagger_table.json`,
+	)
+	t.Cleanup(func() {
+		managementapi.Teardown(t,
+			`aws dynamodb --profile local --endpoint-url http://localhost:4566 delete-table --table swagger`,
+			`aws dynamodb --profile local --endpoint-url http://localhost:4566 delete-table --table api_routing`,
+		)
+	})
+
 	if _, err := db.Exec("TRUNCATE apikey_contract_product_authorized"); err != nil {
 		t.Fatal(err)
 	}
@@ -120,6 +143,78 @@ func TestPostAPIKeyProducts(t *testing.T) {
 		contractProductContentIDs[i] = id
 	}
 
+	//dynamodb setup
+	swaggers := []model.Swagger{
+		{
+			Schemes:        []string{"http"},
+			PathBase:       "/product1",
+			ForwardURLBase: "example.com/v1",
+			APIList: []model.API{
+				{
+					ForwardURL: "/user",
+					Path:       "/path_user",
+				},
+				{
+					ForwardURL: "/user/{user_id}",
+					Path:       "/path_user/{user_id}",
+				},
+			},
+		},
+		{
+			Schemes:        []string{"http", "https"},
+			PathBase:       "/product2",
+			ForwardURLBase: "example.com/v2",
+			APIList: []model.API{
+				{
+					ForwardURL: "/user",
+					Path:       "/user",
+				},
+			},
+		},
+		{
+			Schemes:        []string{"http"},
+			PathBase:       "/product3",
+			ForwardURLBase: "example.com/v3",
+			APIList: []model.API{
+				{
+					ForwardURL: "/user",
+					Path:       "/user",
+				},
+			},
+		},
+		{
+			Schemes:        []string{"http"},
+			PathBase:       "/product4",
+			ForwardURLBase: "example.com/v4",
+			APIList: []model.API{
+				{
+					ForwardURL: "/user",
+					Path:       "/user",
+				},
+			},
+		},
+	}
+
+	for i := range swaggers {
+		swaggers[i].ProductID = productIDs[i]
+	}
+	log.Printf("swaggers %v", swaggers)
+
+	dbDynamo := dynamo.New(session.Must(session.NewSessionWithOptions(session.Options{
+		Profile:           "local",
+		SharedConfigState: session.SharedConfigEnable,
+		Config:            aws.Config{Endpoint: aws.String("http://localhost:4566")},
+	})))
+	swaggerTable := os.Getenv("DYNAMO_TABLE_SWAGGER")
+	routingTable := os.Getenv("DYNAMO_TABLE_API_ROUTING")
+	for _, swagger := range swaggers {
+		if err := dbDynamo.Table(swaggerTable).Put(swagger).Run(); err != nil {
+			t.Errorf("put swagger failed: %v", err)
+			return
+		}
+	}
+
+	//test cases
 	type dbKeys struct {
 		apiKeyID          int
 		contractProductID []int
@@ -128,11 +223,13 @@ func TestPostAPIKeyProducts(t *testing.T) {
 	notExistID := -1
 
 	tests := []struct {
-		name       string
-		req        model.PostAPIKeyProductsReq
-		wantStatus int
-		wantResp   interface{}
-		wantDBKeys *dbKeys
+		name             string
+		req              model.PostAPIKeyProductsReq
+		wantStatus       int
+		wantResp         interface{}
+		wantDBKeys       *dbKeys
+		checkRoutingsKey string
+		wantRoutings     []model.Routing
 	}{
 		{
 			name: "linking a product to apikey properly",
@@ -145,11 +242,26 @@ func TestPostAPIKeyProducts(t *testing.T) {
 					},
 				},
 			},
-			wantStatus: http.StatusCreated,
-			wantResp:   "Created",
+			wantStatus:       http.StatusCreated,
+			wantResp:         "Created",
+			checkRoutingsKey: "0",
 			wantDBKeys: &dbKeys{
 				apiKeyID:          apikeyIDs[0],
 				contractProductID: []int{contractProductContentIDs[0]},
+			},
+			wantRoutings: []model.Routing{
+				{
+					APIKey:     "0",
+					Path:       "/product1/path_user",
+					ForwardURL: "http://example.com/v1/user",
+					ContractID: contractIDs[0],
+				},
+				{
+					APIKey:     "0",
+					Path:       "/product1/path_user/{user_id}",
+					ForwardURL: "http://example.com/v1/user/{user_id}",
+					ContractID: contractIDs[0],
+				},
 			},
 		},
 		{
@@ -159,18 +271,45 @@ func TestPostAPIKeyProducts(t *testing.T) {
 				Contracts: []model.AuthorizedContractProducts{
 					{
 						ContractID: contractIDs[1],
-						ProductIDs: []int{ /*productIDs[0]*/ },
+						ProductIDs: []int{productIDs[0]},
 					},
 					{
 						ContractID: contractIDs[2],
 					},
 				},
 			},
-			wantStatus: http.StatusCreated,
-			wantResp:   "Created",
+			wantStatus:       http.StatusCreated,
+			wantResp:         "Created",
+			checkRoutingsKey: "1",
 			wantDBKeys: &dbKeys{
 				apiKeyID:          apikeyIDs[1],
 				contractProductID: []int{contractProductContentIDs[2], contractProductContentIDs[4], contractProductContentIDs[5]},
+			},
+			wantRoutings: []model.Routing{
+				{
+					APIKey:     "1",
+					Path:       "/product1/path_user",
+					ForwardURL: "http://example.com/v1/user",
+					ContractID: contractIDs[1],
+				},
+				{
+					APIKey:     "1",
+					Path:       "/product1/path_user/{user_id}",
+					ForwardURL: "http://example.com/v1/user/{user_id}",
+					ContractID: contractIDs[1],
+				},
+				{
+					APIKey:     "1",
+					Path:       "/product3/user",
+					ForwardURL: "http://example.com/v3/user",
+					ContractID: contractIDs[2],
+				},
+				{
+					APIKey:     "1",
+					Path:       "/product4/user",
+					ForwardURL: "http://example.com/v4/user",
+					ContractID: contractIDs[2],
+				},
 			},
 		},
 		{
@@ -349,7 +488,21 @@ func TestPostAPIKeyProducts(t *testing.T) {
 					t.Errorf("cannot get %dth item, apikey_id %d, contract_product_id %d", i, tt.wantDBKeys.apiKeyID, key)
 					return
 				}
+			}
 
+			// dynamodb check
+			if tt.wantRoutings == nil {
+				return
+			}
+			var gotRoutings []model.Routing
+			err = dbDynamo.Table(routingTable).Get("api_key", tt.checkRoutingsKey).All(&gotRoutings)
+			if err != nil {
+				t.Errorf("get routings db error: %v", err)
+				return
+			}
+
+			if diff := cmp.Diff(tt.wantRoutings, gotRoutings); diff != "" {
+				t.Errorf("gotten routings differ:\n%v", diff)
 			}
 
 		})
