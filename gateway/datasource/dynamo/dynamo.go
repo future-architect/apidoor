@@ -12,12 +12,6 @@ import (
 	"os"
 )
 
-type APIRouting struct {
-	APIKey     string `dynamo:"api_key"`
-	Path       string `dynamo:"path"`
-	ForwardURL string `dynamo:"forward_url"`
-}
-
 type DataSource struct {
 	client          *dynamo.DB
 	apiRoutingTable string
@@ -50,7 +44,7 @@ func New() *DataSource {
 }
 
 func (dd DataSource) GetFields(ctx context.Context, key string) (model.Fields, error) {
-	var routingList []*APIRouting
+	var routingList []*datasource.Routing
 	err := dd.client.Table(dd.apiRoutingTable).
 		Get("api_key", key).
 		AllWithContext(ctx, &routingList)
@@ -63,7 +57,7 @@ func (dd DataSource) GetFields(ctx context.Context, key string) (model.Fields, e
 
 	fields := make([]model.Field, 0, len(routingList))
 	for _, routing := range routingList {
-		field, err := datasource.CreateField(ctx, routing.APIKey, routing.Path, routing.ForwardURL)
+		field, err := datasource.CreateField(ctx, routing)
 		if err != nil {
 			return nil, fmt.Errorf("fetch field, key = %v, hk = %v, forwardURL = %v, error: %w",
 				routing.APIKey, routing.Path, routing.ForwardURL, err)

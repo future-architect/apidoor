@@ -98,7 +98,7 @@ func (h DefaultHandler) Handle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := h.Appender.Do(apikey, result.Field.Path.JoinPath(), r, res, calcBillingStatus); err != nil {
+	if err := h.Appender.Do(result.ContractID, apikey, result.Field.Path.JoinPath(), r, res, calcBillingStatus); err != nil {
 		log.Printf("[ERROR] appender write err: %v\n", err)
 	}
 }

@@ -27,7 +27,7 @@ func (bs BillingStatus) String() string {
 
 type Appender interface {
 	UpdateDB(ctx context.Context)
-	Do(key, path string, r *http.Request,
+	Do(contractID int, key, path string, r *http.Request,
 		apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) error
 }
 
@@ -56,9 +56,9 @@ type DefaultAppender struct {
 	LogItems LogItems
 }
 
-func (a *DefaultAppender) Do(key, path string, r *http.Request,
+func (a *DefaultAppender) Do(contractID int, key, path string, r *http.Request,
 	apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) error {
-	logItem, err := NewLogItem(key, path, apiResp, calcBillingStatus)
+	logItem, err := NewLogItem(contractID, key, path, apiResp, calcBillingStatus)
 	record := make([]string, 0, len(LogOptionPattern))
 	for _, logOption := range LogOptionPattern {
 		logOption(&record, &logItem, r)
@@ -94,9 +94,9 @@ func NewCSVAppender(writer *csv.Writer) CSVAppender {
 	}
 }
 
-func (a *CSVAppender) Do(key, path string, r *http.Request,
+func (a *CSVAppender) Do(contractID int, key, path string, r *http.Request,
 	apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) error {
-	logItem, err := NewLogItem(key, path, apiResp, calcBillingStatus)
+	logItem, err := NewLogItem(contractID, key, path, apiResp, calcBillingStatus)
 	record := make([]string, 0, len(LogOptionPattern))
 	for _, logOption := range LogOptionPattern {
 		logOption(&record, &logItem, r)
@@ -118,6 +118,7 @@ func (a *CSVAppender) UpdateDB(ctx context.Context) {
 }
 
 type LogItem struct {
+	ContractID    int           `dynamo:"contract_id"`
 	TimeStamp     string        `dynamo:"timestamp"`
 	Key           string        `dynamo:"api_key"`
 	Path          string        `dynamo:"path"`
@@ -125,8 +126,9 @@ type LogItem struct {
 	BillingStatus BillingStatus `dynamo:"billing_status"`
 }
 
-func NewLogItem(key, path string, apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) (LogItem, error) {
+func NewLogItem(contractID int, key, path string, apiResp *http.Response, calcBillingStatus func(resp *http.Response) BillingStatus) (LogItem, error) {
 	return LogItem{
+		ContractID:    contractID,
 		TimeStamp:     flextime.Now().Format(time.RFC3339),
 		Key:           key,
 		Path:          path,

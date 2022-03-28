@@ -17,6 +17,7 @@ func (err *MyError) Error() string {
 }
 
 type Field struct {
+	ContractID int
 	// Template is a gateway path
 	Template URITemplate
 	// Path is a  destination api path
@@ -51,6 +52,7 @@ type FieldResult struct {
 	Field        Field
 	ForwardURL   string
 	TemplatePath string
+	ContractID   int
 }
 
 func (f Fields) LookupTemplate(path string) (*FieldResult, error) {
@@ -58,7 +60,7 @@ func (f Fields) LookupTemplate(path string) (*FieldResult, error) {
 	for _, v := range f {
 		if params, ok := u.Match(v.Template); ok {
 			forwardURL := v.createForwardURL(params)
-			return &FieldResult{Field: v, ForwardURL: forwardURL, TemplatePath: v.Template.JoinPath()}, nil
+			return &FieldResult{Field: v, ForwardURL: forwardURL, TemplatePath: v.Template.JoinPath(), ContractID: v.ContractID}, nil
 		}
 	}
 	return nil, ErrUnauthorizedRequest // Not found path

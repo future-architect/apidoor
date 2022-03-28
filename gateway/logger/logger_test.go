@@ -59,6 +59,7 @@ func TestUpdateLog(t *testing.T) {
 
 	tests := []struct {
 		name           string
+		contractID     int
 		key            string
 		path           string
 		header         map[string]string
@@ -68,6 +69,7 @@ func TestUpdateLog(t *testing.T) {
 	}{
 		{
 			name:           "billing status is billing",
+			contractID:     0,
 			key:            "key",
 			path:           "path",
 			responseStatus: http.StatusOK,
@@ -76,6 +78,7 @@ func TestUpdateLog(t *testing.T) {
 		},
 		{
 			name:           "billing status is not billing",
+			contractID:     0,
 			key:            "key",
 			path:           "path",
 			responseStatus: http.StatusInternalServerError,
@@ -83,9 +86,10 @@ func TestUpdateLog(t *testing.T) {
 			wantLog:        "2021-12-27T17:01:41Z,key,path,500,not billing\n",
 		},
 		{
-			name: "write header values",
-			key:  "key",
-			path: "path",
+			name:       "write header values",
+			contractID: 0,
+			key:        "key",
+			path:       "path",
 			header: map[string]string{
 				"TEST1": "header1",
 				"TEST3": "header3",
@@ -122,7 +126,7 @@ func TestUpdateLog(t *testing.T) {
 				StatusCode: tt.responseStatus,
 			}
 
-			appender.Do(tt.key, tt.path, r, &resp, calcBillingStatus)
+			appender.Do(tt.contractID, tt.key, tt.path, r, &resp, calcBillingStatus)
 
 			want := strings.ReplaceAll(tt.wantLog, "\r\n", "\n")
 			//want := tt.wantLog
@@ -146,22 +150,25 @@ func TestUpdateDBRoutine(t *testing.T) {
 
 	appender := logger.NewCSVAppender(csv.NewWriter(io.Discard))
 	inputAccesses := []struct {
-		key  string
-		path string
-		r    *http.Request
-		resp http.Response
+		contractID int
+		key        string
+		path       string
+		r          *http.Request
+		resp       http.Response
 	}{
 		{
-			key:  "api_key1",
-			path: "example.com/api1",
-			r:    httptest.NewRequest(http.MethodGet, "localhost:3000/products", nil),
-			resp: http.Response{StatusCode: http.StatusOK},
+			contractID: 0,
+			key:        "api_key1",
+			path:       "example.com/api1",
+			r:          httptest.NewRequest(http.MethodGet, "localhost:3000/products", nil),
+			resp:       http.Response{StatusCode: http.StatusOK},
 		},
 		{
-			key:  "api_key2",
-			path: "example.com/api2",
-			r:    httptest.NewRequest(http.MethodGet, "localhost:3000/products", nil),
-			resp: http.Response{StatusCode: http.StatusInternalServerError},
+			contractID: 1,
+			key:        "api_key2",
+			path:       "example.com/api2",
+			r:          httptest.NewRequest(http.MethodGet, "localhost:3000/products", nil),
+			resp:       http.Response{StatusCode: http.StatusInternalServerError},
 		},
 	}
 
@@ -173,7 +180,7 @@ func TestUpdateDBRoutine(t *testing.T) {
 	go logger.UpdateDBRoutine(ctx, &appender, 5*time.Second, routineKill, routineFinish)
 	defer logger.CleanupUpdateDBTask(routineKill, routineFinish)
 
-	if err := appender.Do(inputAccesses[0].key, inputAccesses[0].path, inputAccesses[0].r,
+	if err := appender.Do(inputAccesses[0].contractID, inputAccesses[0].key, inputAccesses[0].path, inputAccesses[0].r,
 		&inputAccesses[0].resp, calcBillingStatus); err != nil {
 		t.Errorf("append access log %+v failed: %v", inputAccesses[0], err)
 	}
@@ -185,6 +192,7 @@ func TestUpdateDBRoutine(t *testing.T) {
 
 	testAccessLogDBResult(t, "the process has put an item", []logger.LogItem{
 		{
+			ContractID:    inputAccesses[0].contractID,
 			Key:           inputAccesses[0].key,
 			Path:          inputAccesses[0].path,
 			StatusCode:    http.StatusOK,
@@ -192,7 +200,7 @@ func TestUpdateDBRoutine(t *testing.T) {
 		},
 	})
 
-	if err := appender.Do(inputAccesses[1].key, inputAccesses[1].path, inputAccesses[1].r,
+	if err := appender.Do(inputAccesses[1].contractID, inputAccesses[1].key, inputAccesses[1].path, inputAccesses[1].r,
 		&inputAccesses[1].resp, calcBillingStatus); err != nil {
 		t.Errorf("append access log %+v failed: %v", inputAccesses[1], err)
 	}
@@ -200,6 +208,7 @@ func TestUpdateDBRoutine(t *testing.T) {
 	testAccessLogDBResult(t, "the process has not put the second item",
 		[]logger.LogItem{
 			{
+				ContractID:    inputAccesses[0].contractID,
 				Key:           inputAccesses[0].key,
 				Path:          inputAccesses[0].path,
 				StatusCode:    http.StatusOK,
@@ -213,12 +222,14 @@ func TestUpdateDBRoutine(t *testing.T) {
 	testAccessLogDBResult(t, "the process has put the second item and duplicate putting an item has not occurred",
 		[]logger.LogItem{
 			{
+				ContractID:    inputAccesses[1].contractID,
 				Key:           inputAccesses[1].key,
 				Path:          inputAccesses[1].path,
 				StatusCode:    http.StatusInternalServerError,
 				BillingStatus: logger.NotBilling,
 			},
 			{
+				ContractID:    inputAccesses[0].contractID,
 				Key:           inputAccesses[0].key,
 				Path:          inputAccesses[0].path,
 				StatusCode:    http.StatusOK,

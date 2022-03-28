@@ -12,28 +12,29 @@ var (
 	defaultAPICallMaxLimit = 100
 )
 
-func CreateField(ctx context.Context, key, hkey, forwardURL string) (model.Field, error) {
+func CreateField(ctx context.Context, routing *Routing) (model.Field, error) {
 	var schema string
-	if strings.HasPrefix(forwardURL, "http://") {
+	if strings.HasPrefix(routing.ForwardURL, "http://") {
 		schema = "http"
-		forwardURL = strings.Replace(forwardURL, "http://", "", 1)
-		fmt.Println("Redis After:", forwardURL)
-	} else if strings.HasPrefix(forwardURL, "https://") {
+		routing.ForwardURL = strings.Replace(routing.ForwardURL, "http://", "", 1)
+		fmt.Println("Redis After:", routing.ForwardURL)
+	} else if strings.HasPrefix(routing.ForwardURL, "https://") {
 		schema = "https"
-		forwardURL = strings.Replace(forwardURL, "https://", "", 1)
+		routing.ForwardURL = strings.Replace(routing.ForwardURL, "https://", "", 1)
 	} else {
 		// スキーマが存在しない(tcpなどのスキーマは非対応)
 		schema = "http"
 	}
-	path := model.NewURITemplate(forwardURL)
-	template := model.NewURITemplate(hkey)
+	path := model.NewURITemplate(routing.ForwardURL)
+	template := model.NewURITemplate(routing.Path)
 
-	count, err := logger.APICounter.GetCount(ctx, key, template)
+	count, err := logger.APICounter.GetCount(ctx, routing.ContractID, template)
 	if err != nil {
 		return model.Field{}, fmt.Errorf("fetch api count error: %w", err)
 	}
 
 	return model.Field{
+		ContractID:    routing.ContractID,
 		Template:      template,
 		ForwardSchema: schema,
 		Path:          path,
